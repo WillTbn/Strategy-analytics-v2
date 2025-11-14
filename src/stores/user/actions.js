@@ -132,6 +132,9 @@ const actions = {
   },
   setWallet(payload) {
     this.wallet = payload
+  },
+  setLocation(payload) {
+    this.location = payload
   }
 
 };

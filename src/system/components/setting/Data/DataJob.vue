@@ -15,7 +15,7 @@
 import { computed } from 'vue'
 import { useUserStore } from 'src/stores/user'
 import { storeToRefs } from 'pinia'
-
+import filters from 'src/boot/helpFilter'
 const store = useUserStore()
 const { data } = storeToRefs(store)
 
@@ -25,11 +25,20 @@ defineProps({
 
 const dataJob = computed(() => {
   const dv = data.value || {}
+
+  const patrimonio = () =>{
+    if(dv.patrimonio_valor){
+      return filters.currentValueBR(dv.patrimonio_valor)
+    }
+    return ""
+
+  }
+
   return [
-    { title: 'Atividade Trabalhista', value: dv.job?.role ?? 'Empresário' },
-    { title: 'Renda Média Mensal (R$)', value: dv.job?.salary ?? 'R$ 20.000,00' },
-    { title: 'Renda Média Mensal da Família (R$)', value: dv.job?.family_salary ?? 'R$ 31.000,00' },
-    { title: 'Valor Aproximado Dos Seus Bens (R$)', value: dv.job?.assets_value ?? 'R$ 510.000,00' }
+    { title: 'Atividade Trabalhista', value: dv.profissao?.label ?? 'Empresário' },
+    { title: 'Renda Média Mensal (R$)', value: dv.rendaAnual?.label ?? 'R$ 20.000,00' },
+    { title: 'Renda Média Mensal da Família (R$)', value: dv.rendaAnualFamilia?.label ?? 'R$ 31.000,00' },
+    { title: 'Valor Aproximado Dos Seus Bens (R$)', value: patrimonio() }
   ]
 })
 </script>

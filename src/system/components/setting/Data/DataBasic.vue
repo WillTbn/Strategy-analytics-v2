@@ -63,7 +63,7 @@ const dadosBasicos = computed(() => {
       title: "Nacionalidade",
       value: dv.nationality ?? dv.nacionalidade ?? "Brasileira",
     },
-    { title: "Naturalidade (Cidade, UF)", value: dv.naturalidade ?? "" },
+    { title: "Naturalidade (Cidade, UF)", value: dv.cidade ? `${dv.cidade}, ${dv.estado}` : "" },
     { title: "Data de Nascimento", value: brDate.value },
     { title: "Email", value: dv.email ?? "" },
     {
@@ -79,11 +79,11 @@ const dadosBasicos = computed(() => {
     },
     {
       title: "Nome Completo da Mãe",
-      value: dv.account?.mother ?? dv.cliente?.account?.mother ?? "",
+      value: dv.nome_mae ?? "",
     },
     {
       title: "Nome Completo do Pai",
-      value: dv.account?.father ?? dv.cliente?.account?.father ?? "",
+      value: dv.nome_pai ?? "",
     },
   ];
 });

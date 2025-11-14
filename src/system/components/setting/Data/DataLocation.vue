@@ -27,15 +27,15 @@ const dataLocation = computed(() => {
   const dv = data.value || {};
   const account = dv.account || dv.cliente?.account || {};
   return [
-    { title: "CEP", value: account.address_zip_code ?? "" },
+    { title: "CEP", value: account.address_zip_code || dv.cep },
     {
       title: "Estado",
-      value: account.address_uf || account.address_state || "",
+      value: account.address_uf || dv.estado,
     },
-    { title: "Cidade", value: account.address_city ?? "" },
-    { title: "Logradouro", value: account.address_street ?? "" },
-    { title: "Bairro", value: account.address_district ?? "" },
-    { title: "Complemento", value: account.address_complement ?? "" },
+    { title: "Cidade", value: account.address_city || dv.cidade },
+    { title: "Logradouro", value: account.address_street || dv.rua },
+    { title: "Bairro", value: account.address_district || dv.bairro },
+    { title: "Complemento", value: account.address_complement || dv.cep },
   ];
 });
 </script>

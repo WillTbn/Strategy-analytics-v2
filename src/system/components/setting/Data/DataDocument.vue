@@ -28,21 +28,22 @@ const dataDocuments = computed(() => {
   const dv = data.value || {}
   const account = dv.account || dv.cliente?.account || {}
   // format expedition date if present
-  let expedition = account.rg_date_expedidor || account.rg_date || null
+  let expedition = account.rg_date_expedidor || dv.rg_expedicao_date || null
   if (expedition) {
     try {
       const d = new Date(expedition + ' 00:00:00')
       expedition = date.formatDate(d, 'DD/MM/YYYY')
     } catch (e) {
       // keep raw if formatting fails
+      console.log(e)
     }
   }
 
   return [
     { title: 'CPF', value: account.person || dv.person || dv.cpf || '' },
-    { title: 'RG', value: account.rg ?? '' },
-    { title: 'Orgão Emissor', value: account.rg_emissor ?? '' },
-    { title: 'UF de Expedição', value: account.rg_expedidor ?? '' },
+    { title: 'RG', value: account.rg || dv.rg || '' },
+    { title: 'Orgão Emissor', value: account.rg_emissor || dv.rg_expedicao_uf || '' },
+    { title: 'UF de Expedição', value: account.rg_expedidor || dv.rg_expedicao_uf || '' },
     { title: 'Data de Expedição', value: expedition ?? '' }
   ]
 })
