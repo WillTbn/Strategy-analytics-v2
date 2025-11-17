@@ -24,11 +24,10 @@ defineProps({
 })
 
 const dataContact = computed(() => {
-  // Neste momento os valores são estáticos ou vindos de outra fonte.
-  // Mantemos valores padrão, mas deixamos preparado para usar dados do store no futuro.
+ const dv = data.value || {}
   return [
-    { title: 'Nome Completo do Contato', value: data.value?.contact?.name ?? 'Maria Alice da Silva' },
-    { title: 'Renda Média Mensal (R$)', value: data.value?.contact?.phone ?? '(18) 91502-2191' }
+    { title: 'Nome Completo do Contato', value: dv.contato_nome ?? 'Maria Alice da Silva' },
+    { title: 'Renda Média Mensal (R$)', value: dv.contato_telefone ?? '(18) 91502-2191' }
   ]
 })
 </script>

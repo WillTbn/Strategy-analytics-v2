@@ -1,5 +1,5 @@
 <template>
-  <q-header class="q-ma-md q-pa-sm bg-transparent">
+  <q-header class="q-ma-md q-pa-sm bg-transparent navbar-layout">
     <q-toolbar :class="nav">
       <q-btn flat :to="{ name: 'inicio' }">
         <svg-logo />

@@ -22,6 +22,7 @@
       <div class="col-12">
         <p class="text-weight-bold">Localização</p>
       </div>
+      <!-- <user-location/> -->
       <div
         class="col-3 text-align q-mt-md"
         v-for="(item, index) in localization"
@@ -51,9 +52,13 @@ import { useUserStore } from "src/stores/user";
 import { storeToRefs } from "pinia";
 import useCase from "src/composables/system/useCase";
 import useAccount from "src/composables/system/Requests/useAccount";
+import UserLocation from "./UserLocation.vue";
 import { date } from "quasar";
 export default defineComponent({
   name: "PersonalSetting",
+  components:{
+    UserLocation
+  },
   setup() {
     const sameInput = ref();
     const store = useUserStore();
@@ -114,12 +119,12 @@ export default defineComponent({
           title: "Nacionalidade",
           value:
             userObj.value?.nationality ??
-            userObj.value?.nacionalidade ??
+            userObj.value?.cliente?.nacionalidade ??
             "Brasileira",
         },
         {
           title: "Naturalidade (Cidade, UF)",
-          value: userObj.value?.naturalidade ?? "",
+          value: userObj.value?.cliente?.naturalidade ?? "",
         },
         { title: "Data de Nascimento", value: brDate },
         {
@@ -146,12 +151,14 @@ export default defineComponent({
     //   { title: "CPF", value: data.value.account.person ?? "000.000.000-00" },
     //   { title: "RG", value: data.value.account.rg ?? "00.000.000-00" },
     // ];
+    const getLocation = () =>{
 
+    }
     const localization = [
       {
         title: "Localização Atual",
         value:
-          userObj.value?.account?.language ??
+          userObj.value?.cliente?.language ??
           userObj.value?.language ??
           "Jacareí, SP",
       },
