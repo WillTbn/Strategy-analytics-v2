@@ -1,29 +1,32 @@
 <template>
   <div class="AvatarMenu row items-center">
-    <!-- Avatar que leva às configurações -->
-    <q-btn round :to="{ name: 'config' }" size="40px" unelevated>
-      <q-avatar class="q-my-sm avatar-custom">
-        <template v-if="avatar && avatar.length">
-          <img :src="avatar" />
-        </template>
-        <template v-else>
-          <div class="avatar-initials">{{ initials }}</div>
-        </template>
-      </q-avatar>
-    </q-btn>
-
-    <!-- Botão de logout visível -->
-    <q-btn
-      flat
-      dense
-      color="white"
-      class="q-ml-sm"
-      @click.prevent="handleLogout"
-      title="Sair do sistema"
-    >
-      <q-icon name="logout" />
-      <span class="q-ml-xs text-white">Sair</span>
-    </q-btn>
+    <div class="col">
+      <!-- Avatar que leva às configurações -->
+      <q-btn round :to="{ name: 'config' }">
+        <q-avatar class="q-my-sm avatar-custom">
+          <template v-if="avatar && avatar.length">
+            <img :src="$filters.resolveStorageUrl(avatar)" />
+          </template>
+          <template v-else>
+            <div class="avatar-initials">{{ initials }}</div>
+          </template>
+        </q-avatar>
+      </q-btn>
+    </div>
+    <div class="col">
+      <!-- Botão de logout visível -->
+      <q-btn
+        flat
+        dense
+        color="white"
+        class="q-ml-lg"
+        @click.prevent="handleLogout"
+        title="Sair do sistema"
+        size="sm"
+      >
+        <IconLogout />
+      </q-btn>
+    </div>
   </div>
 </template>
 <script>
@@ -35,7 +38,7 @@ import { useRouter } from "vue-router";
 export default defineComponent({
   name: "AvatarMenu",
   props: {
-    avatar: { type: String },
+    avatar: { type: String, default: '' },
   },
   setup(props) {
     const { logout } = useClientAuth();

@@ -65,7 +65,8 @@ const getters = {
    * soma disponivel para investir com o investido fazendo o saldo da carteira
    */
   setCurrentWallet: (state) => {
-    return addValues(state.wallet.current_investment, state.wallet.current_balance)
+    // return addValues(state.wallet.current_investment, state.wallet.current_balance)
+    return addValues(state.data.cliente.investment.investimento, state.data.cliente.investment.saldo_investivel)
   },
   /**
    * pegando valores formatado do valor de disponivel para investir
