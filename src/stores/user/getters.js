@@ -32,16 +32,20 @@ const getters = {
   },
 
   expiration: (state) => {
-    // Preferir valor na store (populado a partir da API). Não depender de localStorage.
-    return state.data && state.data.expiration_date != null ? true : false;
+    const dataLocal = JSON.parse(localStorage.getItem("SA_user"));
+
+    if (dataLocal) {
+      return dataLocal.expiration_date != null ? true : false;
+    }
   },
   isClient: (state) => {
     return state.data.role_id == 3;
   },
   canAccess: (state) => {
-    // Usar abilities armazenadas na store (setadas durante setUserData)
-    const can = state.abilities || [];
-    return (params) => can.includes(params);
+    const can = JSON.parse(localStorage.getItem(Cookies.get("SA_token")))
+    // console.log('vamos olha para o data -> ', state.data)
+    state.abilities = can
+    return (params) => can.includes(params)
   },
   menuAccess: (state) => (params) => {
     if (state.abilities.length > 0) {
@@ -65,8 +69,7 @@ const getters = {
    * soma disponivel para investir com o investido fazendo o saldo da carteira
    */
   setCurrentWallet: (state) => {
-    // return addValues(state.wallet.current_investment, state.wallet.current_balance)
-    return addValues(state.data.cliente.investment.investimento, state.data.cliente.investment.saldo_investivel)
+    return addValues(state.wallet.current_investment, state.wallet.current_balance)
   },
   /**
    * pegando valores formatado do valor de disponivel para investir

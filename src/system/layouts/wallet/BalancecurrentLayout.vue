@@ -55,7 +55,7 @@ export default defineComponent({
 
     const teste = ref(true);
     const userStore = useUserStore();
-    const { wallet, setCurrentWallet, getAvailableToInvest, getCurrentInvest, investment } =
+    const { wallet, setCurrentWallet, getAvailableToInvest, getCurrentInvest } =
       storeToRefs(userStore);
     const { getWallet, loading } = useDataUser();
     const storeLayout = useStoreLayout();
@@ -102,7 +102,7 @@ export default defineComponent({
         name: "Investimentos",
         brCoin: true,
         objText: false,
-        balance: investment.investimento,
+        balance: "15.312,95",
         colorItem: "bg-primary",
         tooltip: "InvestmentTips",
       },
@@ -110,7 +110,7 @@ export default defineComponent({
         name: "Saldo Investível",
         brCoin: true,
         objText: false,
-        balance: investment.saldo_investivel,
+        balance: "34.454,15",
         colorItem: "bg-info",
         tooltip: "InvestableTips",
       },
@@ -118,7 +118,7 @@ export default defineComponent({
         name: "Banking",
         brCoin: true,
         objText: false,
-        balance: investment.banking,
+        balance: "11.484,71",
         colorItem: "bg-accent",
         tooltip: "BaseBalance",
       },
@@ -139,7 +139,6 @@ export default defineComponent({
       getAvailableToInvest,
       getCurrentInvest,
       dashboard,
-      investment
     };
   },
   // Outras configurações do componente aqui

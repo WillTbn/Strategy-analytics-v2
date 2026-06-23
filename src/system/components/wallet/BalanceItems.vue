@@ -52,7 +52,7 @@
             </p>
           </div>
         </div>
-        <p class="text-roboto-16-400 text-muted col-lg-12 col-auto">
+        <p class="text-roboto-16-400 text-muted col-lg-auto col-12">
           +2% vs. período anterior
         </p>
       </div>
