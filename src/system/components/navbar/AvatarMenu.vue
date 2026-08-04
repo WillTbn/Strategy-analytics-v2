@@ -1,10 +1,23 @@
 <template>
-  <div class="AvatarMenu">
+  <div class="AvatarMenu row items-center no-wrap">
     <!-- <q-item clickable v-ripple :to="{ name: 'config' }"> -->
     <q-btn round :to="{ name: 'config' }" size="16px" unelevated>
       <q-avatar class="q-my-sm avatar-custom">
         <img :src="avatar" />
       </q-avatar>
+    </q-btn>
+    <q-btn
+      round
+      flat
+      dense
+      size="14px"
+      color="white"
+      icon="fa-solid fa-right-from-bracket"
+      class="q-ml-sm"
+      :loading="loading"
+      @click.prevent="setLogout"
+    >
+      <q-tooltip>Sair</q-tooltip>
     </q-btn>
     <!-- </q-item> -->
     <!-- <q-menu
@@ -40,10 +53,11 @@ export default defineComponent({
     avatar: { type: String },
   },
   setup() {
-    const { setLogout } = useAuth();
+    const { setLogout, loading } = useAuth();
 
     return {
       setLogout,
+      loading,
     };
   },
 });

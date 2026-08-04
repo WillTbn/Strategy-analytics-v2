@@ -21,17 +21,17 @@
           </div>
         </div>
         <div class="column q-mt-lg">
-          <span class="text-label q-mt-lg">CPF ou CNPJ</span>
+          <span class="text-label q-mt-lg">E-mail</span>
           <q-input
             v-bind="{ ...$inputStyle }"
             v-model="login.person"
-            mask="###.###.###-##"
-            placeholder="000.000.000-00 | 000.000.000/0001-00"
-            :rules="personRule"
+            type="email"
+            placeholder="seu@email.com"
+            :rules="emailRule"
             ref="personRef"
           />
 
-          <span class="text-label q-mt-lg">Confirmar Senha</span>
+          <span class="text-label q-mt-lg">Senha</span>
           <q-input
             v-model="login.password"
             v-bind="{ ...$inputStyle }"
@@ -105,7 +105,7 @@ export default defineComponent({
     const personRef = ref(null);
     const passwordRef = ref(null);
     const { auth, errors, loading } = useAuth();
-    const { personRule } = useRoles();
+    const { emailRule } = useRoles();
     // const isValidperson = computed(() => errors.person.length > 0);
     const { login } = storeToRefs(useStore);
     const route = useRoute();
@@ -113,7 +113,7 @@ export default defineComponent({
     const onSubmit = () => {
       personRef.value.validate();
       passwordRef.value.validate();
-      if (!personRef.value.hasError || !passwordRef.value.hasError) {
+      if (!personRef.value.hasError && !passwordRef.value.hasError) {
         auth(login.value);
       }
     };
@@ -131,7 +131,7 @@ export default defineComponent({
       loading,
       login,
       isPwd,
-      personRule,
+      emailRule,
       onSubmit,
       auth,
       forgot,
