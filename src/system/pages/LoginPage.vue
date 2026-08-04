@@ -23,6 +23,11 @@
           </div>
         </div>
       </div>
+      <div v-if="route.query.session === 'expired'" class="row justify-center q-mb-md">
+        <q-banner rounded class="col-md-3 col-sm-8 bg-blue-grey-9 text-white">
+          Sua sessão expirou. Entre novamente para continuar.
+        </q-banner>
+      </div>
       <login-layout
         v-if="stateLogin == 'login'"
         @status-login="stateLogin = $event"

@@ -1,4 +1,5 @@
 import { route } from "quasar/wrappers";
+import { Cookies } from "quasar";
 import {
   createRouter,
   createMemoryHistory,
@@ -33,9 +34,9 @@ export default route(function (/* { store, ssrContext } */) {
     routes,
     history: createHistory(process.env.VUE_ROUTER_BASE),
   });
-  Router.beforeEach((to, from, next) => {
-    const { verifyLogged, routeRetorn } = useAuth();
-    const { hasTokenCookie } = useCookies()
+  Router.beforeEach(async (to) => {
+    const { verifyLogged } = useAuth();
+    const { tokenName } = useCookies()
     let home =
       to.name == "home"
         ? "Gestão de Investimentos e Serviços Financeiros"
@@ -45,23 +46,15 @@ export default route(function (/* { store, ssrContext } */) {
         ? `Strategy Analytics -  ${home}`
         : "Strategy Analytics";
     if (to.meta?.auth) {
-
-      if (!hasTokenCookie) {
-        next({ name: 'login' })
-        return
-      }
-      verifyLogged()
+      const authenticated = await verifyLogged();
+      if (!authenticated) return { name: 'login' };
     }
 
     //verificando se o usuário esta logado evitar logar duplicado
     if (to.name == "login") {
-      if (hasTokenCookie) {
-        next({ name: 'config' })
-      }
+      if (Cookies.has(tokenName)) return { name: 'config' };
     }
-
-
-    next()
+    return true;
   });
 
   return Router;

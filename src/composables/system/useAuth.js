@@ -1,7 +1,7 @@
-import { clientApi } from "src/services/clientApi";
 import {
   login as clientLogin,
   getCurrentUser,
+  clientPing,
   logout as clientLogout,
   getApiErrorMessage,
 } from "src/services/clientAuthService";
@@ -16,9 +16,6 @@ import useCookies from "../useCookies";
 const refreshName = process.env.COOKIE_REFRESH ?? "SA_refresh";
 const refreshOptions = { path: "/", secure: true, sameSite: "None" };
 
-// Garante registro único do interceptor de resposta (evita acúmulo a cada navegação)
-let interceptorRegistered = false;
-
 export default function useAuth() {
   const useStore = useUserStore();
   const {
@@ -29,7 +26,7 @@ export default function useAuth() {
   } = useCookies();
 
   const router = useRouter();
-  const { errorNotify, infoNotify, alternativeNotify } = useNotify();
+  const { errorNotify, infoNotify } = useNotify();
   const loading = ref(false);
   const errors = ref({
     person: "",
@@ -44,28 +41,9 @@ export default function useAuth() {
     return {
       ...u,
       roles,
-      role_id: roles.includes("Cliente") ? 3 : 1,
+      role_id: roles.some((item) => ["Cliente", "Client"].includes(item)) ? 3 : 1,
       account: u.account ?? {},
     };
-  };
-
-  // Trata 401 da API do cliente: limpa sessão e volta ao login.
-  const registerInterceptor = () => {
-    if (interceptorRegistered) return;
-    interceptorRegistered = true;
-    clientApi.interceptors.response.use(
-      (res) => Promise.resolve(res),
-      (err) => {
-        if (err?.response?.status === 401) {
-          deleteTokenCookie();
-          Cookies.remove(refreshName, refreshOptions);
-          alternativeNotify("Sessão expirou, refaça login para prosseguir", 3000);
-          router.replace({ path: "/login" });
-          return Promise.resolve(err);
-        }
-        return Promise.reject(err);
-      },
-    );
   };
 
   /**
@@ -84,8 +62,11 @@ export default function useAuth() {
         Cookies.set(refreshName, payload.refreshToken, refreshOptions);
       }
       setUserCookie(normalizeUser(payload.user));
+      await clientPing();
       router.replace({ path: "/system/" });
     } catch (e) {
+      deleteTokenCookie();
+      Cookies.remove(refreshName, refreshOptions);
       errorNotify(getApiErrorMessage(e));
       errors.value = e?.response?.data?.errors ?? errors.value;
     } finally {
@@ -94,11 +75,9 @@ export default function useAuth() {
   };
 
   const verifyLogged = async () => {
-    registerInterceptor();
     const token = Cookies.get(tokenName);
-    if (!token) return;
-    clientApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    await validatetoken();
+    if (!token) return false;
+    return validatetoken();
   };
 
   /**
@@ -108,11 +87,14 @@ export default function useAuth() {
     loading.value = true;
     try {
       const me = await getCurrentUser();
+      await clientPing();
       setUserCookie(normalizeUser(me));
+      return true;
     } catch (e) {
       infoNotify("Faça login!");
       deleteTokenCookie();
       Cookies.remove(refreshName, refreshOptions);
+      return false;
     } finally {
       loading.value = false;
     }

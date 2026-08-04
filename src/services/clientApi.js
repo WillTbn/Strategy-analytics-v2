@@ -11,6 +11,9 @@ import { Cookies } from "quasar";
 const baseURL = process.env.CLIENT_API_URL || "https://strategyanalytics.codebiz.com.br";
 
 const tokenName = process.env.COOKIE_TOKEN_NAME ?? "SA_token";
+const refreshName = process.env.COOKIE_REFRESH ?? "SA_refresh";
+const userCookie = process.env.COOKIE_USER_DATA ?? "SA_user";
+const cookieOptions = { path: "/", secure: true, sameSite: "None" };
 
 const clientApi = axios.create({ baseURL });
 
@@ -43,5 +46,48 @@ clientApi.interceptors.request.use((config) => {
 
   return config;
 });
+
+let refreshPromise = null;
+
+const clearSession = () => {
+  Cookies.remove(tokenName, cookieOptions);
+  Cookies.remove(refreshName, cookieOptions);
+  Cookies.remove(userCookie, cookieOptions);
+};
+
+const renewSession = async () => {
+  const refreshToken = Cookies.get(refreshName);
+  if (!refreshToken) throw new Error("Refresh token indisponível");
+  const { data } = await clientApi.post(
+    "/api/v1/auth/refresh",
+    { refreshToken },
+    { skipAuthRefresh: true },
+  );
+  const payload = data?.data ?? data;
+  Cookies.set(tokenName, payload.accessToken, cookieOptions);
+  if (payload.refreshToken) Cookies.set(refreshName, payload.refreshToken, cookieOptions);
+  return payload.accessToken;
+};
+
+clientApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config;
+    if (error.response?.status !== 401 || original?.skipAuthRefresh || original?._authRetry) {
+      return Promise.reject(error);
+    }
+    original._authRetry = true;
+    try {
+      refreshPromise ??= renewSession().finally(() => { refreshPromise = null; });
+      const accessToken = await refreshPromise;
+      original.headers.Authorization = `Bearer ${accessToken}`;
+      return clientApi(original);
+    } catch (refreshError) {
+      clearSession();
+      if (window.location.pathname !== "/login") window.location.assign("/login?session=expired");
+      return Promise.reject(refreshError);
+    }
+  },
+);
 
 export { clientApi };

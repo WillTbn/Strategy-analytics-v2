@@ -34,6 +34,11 @@ export async function clientPing() {
   return data?.data ?? data;
 }
 
+export async function refresh(refreshToken) {
+  const { data } = await clientApi.post("/api/v1/auth/refresh", { refreshToken }, { skipAuthRefresh: true });
+  return data?.data ?? data;
+}
+
 /**
  * Encerra a sessão na API.
  * Endpoint: POST /api/v1/auth/logout
