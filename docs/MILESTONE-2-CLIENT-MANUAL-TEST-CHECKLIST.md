@@ -1,0 +1,121 @@
+# Checklist manual — Marco 2 — Portal do cliente
+
+Checklist operacional das etapas Client do roteiro mestre mantido em
+`strategy-control/docs/MILESTONE-2-MANUAL-TEST-CHECKLIST.md`.
+
+- Aplicação: `Strategy-analytics-v2`.
+- URL: `http://localhost:9010`.
+- Perfil obrigatório: usuário com papel `Client` vinculado a um cliente de homologação.
+- Registrar aqui somente evidências do portal e erros reproduzíveis do backend.
+- Corrigir falhas de frontend e repetir o cenário antes de marcar aprovação.
+
+## Ordem de execução e trocas de ambiente
+
+1. Executar aqui as seções 15 e 16.
+2. Voltar ao `strategy-control` para as seções 17 e 18.
+3. Retornar aqui para as seções 19 e 20.
+4. Voltar ao `strategy-control` para as seções 21, 22 e 23.
+5. Na seção 24, executar primeiro os itens Admin e depois o item Client aqui.
+6. Permanecer aqui para as seções 25 e 26.
+7. Executar a regressão final nos dois repositórios.
+
+## 15. Autenticação e perfil
+
+Pré-condição: entrar com um usuário Client vinculado ao cliente de homologação.
+
+1. [x] Fazer login e validar o acesso com `GET /api/v1/client/auth/ping`.
+2. [x] Recarregar a página e confirmar a restauração por `/api/v1/auth/me`.
+3. [ ] Forçar access token expirado e confirmar refresh com retry único.
+4. [ ] Forçar refresh inválido e confirmar limpeza da sessão e retorno ao login com aviso.
+   - [x] Abrir `/login?session=expired` e confirmar o aviso amigável de sessão expirada.
+   - [ ] Confirmar que uma falha real de refresh limpa a sessão e gera esse redirecionamento.
+5. [x] Abrir o resumo do próprio perfil.
+6. [ ] Abrir e editar os dados pessoais permitidos.
+7. [ ] Salvar preferências de idioma, moeda, fuso e tema.
+8. [ ] Recarregar e confirmar que perfil e preferências persistiram.
+9. [ ] Confirmar que o cliente não consegue consultar outro cliente por ID.
+
+Endpoints esperados:
+
+- `GET /api/v1/auth/me`
+- `GET /api/v1/client/auth/ping`
+- `GET /api/v1/client/profile/summary`
+- `GET|PATCH /api/v1/client/profile`
+- `GET|PATCH /api/v1/client/profile/preferences`
+
+Observações:
+
+> A fundação de refresh, retry único, restauração, ping e aviso de sessão
+> expirada está implementada. Resumo, dados pessoais e preferências estão
+> integrados na aba “Dados Pessoais” do Perfil Completo. A homologação permanece
+> pendente até existir uma sessão Client válida.
+>
+> **Validação em 04/08/2026:** `http://localhost:9010/login?session=expired`
+> carregou o formulário de login e apresentou o aviso “Sua sessão expirou.
+> Entre novamente para continuar.”. O build do portal e `git diff --check`
+> passaram. O navegador não possuía uma sessão Client; por isso login/ping,
+> restauração, refresh real, resumo e escritas continuam desmarcados.
+>
+> Acesso direto a `http://localhost:9010/system/config/profile` sem sessão foi
+> redirecionado para `/login`, que apresentou e-mail, senha e a ação
+> “Continuar”, sem erros no console.
+>
+> **Rodada autenticada em 04/08/2026:** login com o usuário Client de
+> homologação redirecionou ao dashboard. O fluxo somente redireciona depois do
+> sucesso de `/client/auth/ping`. Após recarregar, a sessão permaneceu no
+> dashboard, confirmando a restauração por `/auth/me`.
+>
+> Ao abrir `/system/config/profile`, o backend informou que o usuário
+> autenticado não está vinculado a um customer profile. O frontend apresentou
+> estado de erro com nova tentativa. A mensagem foi traduzida e tornou-se
+> amigável. Os itens 6 a 9 permanecem bloqueados por esse vínculo ausente.
+>
+> **Revalidação em 05/08/2026:** o usuário passou a estar vinculado ao customer
+> profile. Resumo, dados pessoais e preferências carregaram normalmente; o
+> bloqueio para iniciar a seção 16 foi removido.
+
+## 16. Perfis e contatos de confiança
+
+1. [x] Abrir, editar e recarregar o perfil profissional.
+2. [x] Abrir, editar e recarregar o perfil financeiro.
+3. [x] Validar campos obrigatórios e formatos antes do envio.
+4. [x] Listar contatos de confiança no estado vazio e no estado preenchido.
+5. [x] Cadastrar um contato de confiança válido.
+6. [x] Editar o contato e confirmar persistência após recarregar.
+7. [x] Excluir o contato após confirmação explícita.
+8. [ ] Confirmar que falhas não removem os dados preenchidos.
+
+Endpoints esperados:
+
+- `GET|PUT /api/v1/client/profile/professional-profile`
+- `GET|PUT /api/v1/client/profile/financial-profile`
+- `GET|POST /api/v1/client/profile/trusted-contacts`
+- `PUT|DELETE /api/v1/client/profile/trusted-contacts/{contactId}`
+
+Observações:
+
+> **Validação em 05/08/2026:** a aba “Perfis e Contatos” carregou os três
+> blocos de forma independente. O perfil profissional foi salvo com ocupação
+> `Engenheiro de Software`, empregador `Strategy Analytics` e vigência inicial
+> `2026-08-05`. O perfil financeiro foi salvo em `BRL`; ambos persistiram após
+> recarregar.
+>
+> O contato descartável `Ana Souza Homologação` foi criado, editado, confirmado
+> após recarregar e excluído somente depois do diálogo explícito. O estado vazio
+> voltou a ser exibido. Nenhum erro do backend foi identificado. O teste de
+> preservação durante falha controlada da API permanece pendente.
+
+## Próximos retornos ao portal
+
+- Seção 19: contas bancárias do cliente.
+- Seção 20: documentos do cliente.
+- Seção 24: timeline própria.
+- Seção 25: onboarding e autosserviço de conta.
+- Seção 26: avatar, assinatura e compartilhamento.
+- Seção 27: regressão e aceite final nos dois ambientes.
+
+## Bugs de backend encontrados no portal
+
+| Nº | Seção/fluxo | Passos para reproduzir | Endpoint | HTTP | Request ID / Correlation ID | Situação |
+| -: | ------------ | ---------------------- | -------- | ---: | --------------------------- | -------- |
+| 1 | 15 — Perfil do cliente | Entrar como Client e abrir `/system/config/profile` | `GET /api/v1/client/profile/*` | 200 | Revalidação visual em 05/08/2026 | Resolvido — usuário vinculado e perfil carregado |

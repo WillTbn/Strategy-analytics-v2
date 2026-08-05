@@ -39,7 +39,8 @@
 <script setup>
 import { defineComponent, ref } from "vue";
 import TitlePage from "src/system/components/TitlePage.vue";
-import PersonalSettingLayout from "src/system/layouts/config/PersonalSettingLayout.vue";
+import ClientProfileOverviewLayout from "src/system/layouts/config/ClientProfileOverviewLayout.vue";
+import ClientProfilesAndTrustedContactsLayout from "src/system/layouts/config/ClientProfilesAndTrustedContactsLayout.vue";
 import DocumentationSettingLayout from "src/system/layouts/config/DocumentationSettingLayout.vue";
 import AccountBankSettingLayout from "src/system/layouts/config/AccountBankSettingLayout.vue";
 import RegisterAssetsLayout from "src/system/layouts/config/RegisterAssetsLayout.vue";
@@ -47,7 +48,8 @@ import TermsContractLayouts from "src/system/layouts/config/TermsContractLayouts
 import { IconArrowLeft } from "@tabler/icons-vue";
 
 const componentsMap = {
-  PersonalSettingLayout,
+  ClientProfileOverviewLayout,
+  ClientProfilesAndTrustedContactsLayout,
   DocumentationSettingLayout,
   AccountBankSettingLayout,
   RegisterAssetsLayout,
@@ -63,7 +65,12 @@ const options = [
   {
     label: "Dados Pessoais",
     value: "personal",
-    component: "PersonalSettingLayout",
+    component: "ClientProfileOverviewLayout",
+  },
+  {
+    label: "Perfis e Contatos",
+    value: "profiles",
+    component: "ClientProfilesAndTrustedContactsLayout",
   },
   {
     label: "Documentação",

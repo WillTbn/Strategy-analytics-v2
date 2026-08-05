@@ -60,7 +60,15 @@ export async function logout(refreshToken) {
 export function getApiErrorMessage(error, fallback = "Não foi possível entrar. Verifique suas credenciais.") {
   const errors = error?.response?.data?.errors;
   if (Array.isArray(errors) && errors.length) {
-    return errors.map((e) => e.message).filter(Boolean).join(" ") || fallback;
+    const message = errors.map((e) => e.message).filter(Boolean).join(" ");
+    if (message.includes("not linked to a customer profile")) {
+      return "Seu usuário ainda não está vinculado a um perfil de cliente. Entre em contato com o suporte.";
+    }
+    return message || fallback;
   }
-  return error?.response?.data?.message || error?.message || fallback;
+  const message = error?.response?.data?.message || error?.message;
+  if (message?.includes("not linked to a customer profile")) {
+    return "Seu usuário ainda não está vinculado a um perfil de cliente. Entre em contato com o suporte.";
+  }
+  return message || fallback;
 }
