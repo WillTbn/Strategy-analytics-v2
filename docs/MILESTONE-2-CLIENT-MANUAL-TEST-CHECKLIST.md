@@ -105,9 +105,30 @@ Observações:
 > voltou a ser exibido. Nenhum erro do backend foi identificado. O teste de
 > preservação durante falha controlada da API permanece pendente.
 
+## 19. Contas bancárias do cliente
+
+1. [x] Carregar o catálogo de bancos ativos e o estado vazio.
+2. [x] Cadastrar a primeira conta e confirmar o mascaramento.
+3. [x] Editar a agência, salvar e confirmar persistência.
+4. [x] Cadastrar uma segunda conta e defini-la como principal.
+5. [x] Confirmar que apenas uma conta permanece principal.
+6. [ ] Arquivar a conta secundária e confirmar que ela deixa a listagem.
+7. [x] Confirmar que valores sensíveis integrais não aparecem na tela.
+8. [ ] Validar a orientação de onboarding para bloqueio pelo guard `Deposit`.
+
+Observações:
+
+> **Validação em 05/08/2026:** fluxo homologado no navegador com o usuário
+> Client. Criação, edição e troca de conta principal persistiram. As contas
+> `***6543` e `***4567` foram sempre apresentadas de forma mascarada.
+>
+> Ao arquivar a conta secundária, o backend respondeu com sucesso e o portal
+> exibiu “Conta arquivada”, mas a consulta seguinte continuou retornando a
+> conta, inclusive depois de recarregar. O cenário permanece pendente de
+> correção do backend. O guard `Deposit` não foi acionado para o usuário usado.
+
 ## Próximos retornos ao portal
 
-- Seção 19: contas bancárias do cliente.
 - Seção 20: documentos do cliente.
 - Seção 24: timeline própria.
 - Seção 25: onboarding e autosserviço de conta.
@@ -119,3 +140,4 @@ Observações:
 | Nº | Seção/fluxo | Passos para reproduzir | Endpoint | HTTP | Request ID / Correlation ID | Situação |
 | -: | ------------ | ---------------------- | -------- | ---: | --------------------------- | -------- |
 | 1 | 15 — Perfil do cliente | Entrar como Client e abrir `/system/config/profile` | `GET /api/v1/client/profile/*` | 200 | Revalidação visual em 05/08/2026 | Resolvido — usuário vinculado e perfil carregado |
+| 2 | 19 — Arquivamento de conta bancária | Arquivar uma conta secundária, aguardar o sucesso e recarregar a aba | `POST /api/v1/client/profile/bank-accounts/{bankAccountId}/archive`; `GET /api/v1/client/profile/bank-accounts` | 200 | Validação visual em 05/08/2026 | Pendente — o arquivamento informa sucesso, mas a listagem continua devolvendo a conta arquivada |
