@@ -58,6 +58,11 @@ export async function logout(refreshToken) {
  * @returns {string}
  */
 export function getApiErrorMessage(error, fallback = "Não foi possível entrar. Verifique suas credenciais.") {
+  const status = error?.response?.status;
+  const code = error?.response?.data?.code || error?.response?.data?.errors?.[0]?.code || "";
+  if (status === 409) return code.toLowerCase().includes("requirement") ? "O requisito documental mudou. Atualize a tela e tente novamente." : "Os dados foram alterados em outra operação. Atualize a tela e tente novamente.";
+  if (status === 422) return code.toLowerCase().includes("file") ? "O arquivo enviado não atende aos requisitos." : "Revise os dados informados e tente novamente.";
+  if (status === 503 || code.toLowerCase().includes("storage")) return "O armazenamento está temporariamente indisponível. Tente novamente mais tarde.";
   if (error?.response?.status === 403) {
     const payload = error.response?.data?.data ?? error.response?.data ?? {};
     const action = payload.requiredAction || payload.requiredStep || payload.onboardingStep;
