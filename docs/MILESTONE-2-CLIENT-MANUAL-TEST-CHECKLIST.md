@@ -155,10 +155,28 @@ Observações:
 > da URL sem fechar o modal. Nenhum erro foi registrado no console.
 > A homologação funcional será retomada quando o usuário satisfizer o guard.
 
+## 24. Timeline própria
+
+1. [ ] Abrir a aba “Timeline” no perfil autenticado.
+2. [ ] Conferir paginação e ordem cronológica dos eventos permitidos.
+3. [ ] Filtrar por tipo de evento e entidade.
+4. [x] Confirmar por revisão de implementação que flags, evidências e controles
+   administrativos de compliance não são renderizados.
+
+Observações:
+
+> **Implementação em 08/08/2026:** adicionada a aba “Timeline”, integrada
+> exclusivamente a `GET /api/v1/client/profile/timeline`, com loading, vazio,
+> erro, filtros e paginação próprios. Build e `git diff --check` passaram. O
+> lint permanece bloqueado pela configuração legada do ESLint 9 sem
+> `eslint.config.js`. A conexão com a aba Client autenticada expirou durante a
+> troca de ambiente, portanto os três primeiros cenários aguardam nova rodada
+> visual.
+
 ## Próximos retornos ao portal
 
 - Seção 20: documentos do cliente.
-- Seção 24: timeline própria.
+- Seção 24: homologação integrada da timeline própria.
 - Seção 25: onboarding e autosserviço de conta.
 - Seção 26: avatar, assinatura e compartilhamento.
 - Seção 27: regressão e aceite final nos dois ambientes.

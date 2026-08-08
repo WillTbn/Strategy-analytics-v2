@@ -32,3 +32,4 @@ export async function uploadClientDocument(formData) { return unwrap(await clien
 export async function replaceClientDocument(documentId, formData) { return unwrap(await clientApi.post(`/api/v1/client/profile/documents/${documentId}/replace`, formData)); }
 export async function downloadClientDocument(documentId) { return clientApi.get(`/api/v1/client/profile/documents/${documentId}/download`, { responseType: "blob" }); }
 export async function getClientDocumentTemporaryUrl(documentId, expiresInMinutes = 15) { return unwrap(await clientApi.get(`/api/v1/client/profile/documents/${documentId}/temporary-url`, { params: { expiresInMinutes } })); }
+export async function getClientTimeline(params = {}) { return unwrap(await clientApi.get("/api/v1/client/profile/timeline", { params })); }
