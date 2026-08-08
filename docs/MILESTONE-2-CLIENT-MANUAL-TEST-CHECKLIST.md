@@ -114,7 +114,7 @@ Observações:
 5. [x] Confirmar que apenas uma conta permanece principal.
 6. [ ] Arquivar a conta secundária e confirmar que ela deixa a listagem.
 7. [x] Confirmar que valores sensíveis integrais não aparecem na tela.
-8. [ ] Validar a orientação de onboarding para bloqueio pelo guard `Deposit`.
+8. [x] Validar a orientação de onboarding para bloqueio pelo guard `Deposit`.
 
 Observações:
 
@@ -126,6 +126,34 @@ Observações:
 > exibiu “Conta arquivada”, mas a consulta seguinte continuou retornando a
 > conta, inclusive depois de recarregar. O cenário permanece pendente de
 > correção do backend. O guard `Deposit` não foi acionado para o usuário usado.
+>
+> **Revalidação em 05/08/2026:** o guard foi acionado ao abrir a aba de
+> documentação. O portal apresentou a orientação em português e a ação direta
+> para o modal atual de depósito no dashboard, sem navegar para o fluxo legado.
+
+## 20. Documentos do cliente
+
+1. [ ] Conferir overview, progresso e requisitos pendentes.
+2. [ ] Conferir tipos e definição de dados por tipo/país.
+3. [ ] Validar PDF, JPEG e PNG até 25 MB e realizar upload multipart.
+4. [ ] Confirmar atualização dos indicadores após upload.
+5. [ ] Validar download direto e URL temporária.
+6. [ ] Substituir um documento rejeitado.
+7. [ ] Confirmar persistência após recarregar.
+
+Observações:
+
+> **Validação em 05/08/2026:** a integração foi aberta no navegador, mas todos
+> os recursos documentais foram bloqueados pelo guard `Deposit`. A tela oculta
+> corretamente o conteúdo indisponível e orienta o cliente a concluir a etapa
+> inicial de depósito, com as ações “Abrir depósito” e “Verificar novamente”.
+> A primeira ação retorna ao dashboard e aciona o mesmo modal do botão
+> “Depósito”; a página legada `/system/dashboard/deposit` não é utilizada.
+>
+> **Correção validada em 08/08/2026:** “Abrir depósito” retornou ao dashboard,
+> acionou o `CardDeposit` com QR Code/chave Pix e removeu o parâmetro transitório
+> da URL sem fechar o modal. Nenhum erro foi registrado no console.
+> A homologação funcional será retomada quando o usuário satisfizer o guard.
 
 ## Próximos retornos ao portal
 

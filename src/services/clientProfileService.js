@@ -23,3 +23,12 @@ export async function createClientBankAccount(account) { return unwrap(await cli
 export async function updateClientBankAccount(accountId, account) { return unwrap(await clientApi.patch(`/api/v1/client/profile/bank-accounts/${accountId}`, account)); }
 export async function setPrimaryClientBankAccount(accountId) { return unwrap(await clientApi.post(`/api/v1/client/profile/bank-accounts/${accountId}/primary`)); }
 export async function archiveClientBankAccount(accountId) { return unwrap(await clientApi.post(`/api/v1/client/profile/bank-accounts/${accountId}/archive`)); }
+export async function getClientDocumentOverview() { return unwrap(await clientApi.get("/api/v1/client/profile/documents/overview")); }
+export async function getClientDocumentProgress() { return unwrap(await clientApi.get("/api/v1/client/profile/documents/progress")); }
+export async function listClientDocuments(params = {}) { return unwrap(await clientApi.get("/api/v1/client/profile/documents", { params })); }
+export async function listClientDocumentTypes(params = {}) { return unwrap(await clientApi.get("/api/v1/client/profile/document-types", { params })); }
+export async function getClientDocumentDataDefinition(documentTypeId, countryId) { return unwrap(await clientApi.get(`/api/v1/client/profile/document-types/${documentTypeId}/countries/${countryId}/data-definition`)); }
+export async function uploadClientDocument(formData) { return unwrap(await clientApi.post("/api/v1/client/profile/documents", formData)); }
+export async function replaceClientDocument(documentId, formData) { return unwrap(await clientApi.post(`/api/v1/client/profile/documents/${documentId}/replace`, formData)); }
+export async function downloadClientDocument(documentId) { return clientApi.get(`/api/v1/client/profile/documents/${documentId}/download`, { responseType: "blob" }); }
+export async function getClientDocumentTemporaryUrl(documentId, expiresInMinutes = 15) { return unwrap(await clientApi.get(`/api/v1/client/profile/documents/${documentId}/temporary-url`, { params: { expiresInMinutes } })); }
