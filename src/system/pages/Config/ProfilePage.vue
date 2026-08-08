@@ -45,6 +45,7 @@ import DocumentationSettingLayout from "src/system/layouts/config/DocumentationS
 import AccountBankSettingLayout from "src/system/layouts/config/AccountBankSettingLayout.vue";
 import ClientTimelineLayout from "src/system/layouts/config/ClientTimelineLayout.vue";
 import ClientAccountSecurityLayout from "src/system/layouts/config/ClientAccountSecurityLayout.vue";
+import ClientMediaSharingLayout from "src/system/layouts/config/ClientMediaSharingLayout.vue";
 import RegisterAssetsLayout from "src/system/layouts/config/RegisterAssetsLayout.vue";
 import TermsContractLayouts from "src/system/layouts/config/TermsContractLayouts.vue";
 import { IconArrowLeft } from "@tabler/icons-vue";
@@ -56,6 +57,7 @@ const componentsMap = {
   AccountBankSettingLayout,
   ClientTimelineLayout,
   ClientAccountSecurityLayout,
+  ClientMediaSharingLayout,
   RegisterAssetsLayout,
   TermsContractLayouts,
 };
@@ -95,6 +97,11 @@ const options = [
     label: "Conta e segurança",
     value: "security",
     component: "ClientAccountSecurityLayout",
+  },
+  {
+    label: "Mídia e compartilhamento",
+    value: "sharing",
+    component: "ClientMediaSharingLayout",
   },
   {
     label: "Registro de Patrimônios",

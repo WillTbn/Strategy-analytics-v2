@@ -192,6 +192,33 @@ Observações:
 > Build e diff passaram. A homologação integrada aguarda nova sessão de revisão
 > e, para confirmações e mudança de senha, acesso aos códigos enviados.
 
+## 26. Avatar, assinatura e compartilhamento
+
+1. [ ] Enviar, recarregar, abrir e excluir um avatar válido.
+2. [ ] Enviar, recarregar, abrir e excluir uma assinatura válida.
+3. [x] Rejeitar no frontend arquivos diferentes de PNG/JPEG ou maiores que 5 MB.
+4. [ ] Criar um link com escopo, validade e limite de usos.
+5. [ ] Abrir o perfil público sem sessão e conferir somente dados autorizados.
+6. [ ] Revogar o link e confirmar que o token deixa de funcionar.
+7. [ ] Validar a mensagem para storage indisponível.
+
+Observações:
+
+> **Implementação em 08/08/2026:** criada a aba com estados independentes para
+> avatar, assinatura e compartilhamentos, além da rota pública
+> `/public/profile/:token`. A página pública elimina por chave tokens, segredos,
+> senhas e evidências antes de renderizar campos escalares. Build e diff
+> passaram. Uploads e criação de link não foram executados nesta rodada para não
+> gravar dados reais sem arquivos descartáveis definidos.
+
+## Próximos retornos ao portal
+
+- Seção 20: documentos do cliente, bloqueados pelo guard `Deposit`.
+- Seção 24: homologação integrada da timeline própria.
+- Seção 25: homologação dos canais e sessões.
+- Seção 26: homologação com arquivos e link descartáveis.
+- Seção 27: regressão e aceite final nos dois ambientes.
+
 ## Bugs de backend encontrados no portal
 
 | Nº | Seção/fluxo | Passos para reproduzir | Endpoint | HTTP | Request ID / Correlation ID | Situação |
