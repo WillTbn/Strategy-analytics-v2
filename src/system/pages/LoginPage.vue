@@ -39,7 +39,6 @@
       <forgotpassword-layout
         v-else-if="stateLogin == 'ForgotPassword'"
         @status-login="stateLogin = $event"
-        @status-email="emailSend = $event"
       />
       <resetpassword-layout
         v-else-if="stateLogin == 'resetPassword'"

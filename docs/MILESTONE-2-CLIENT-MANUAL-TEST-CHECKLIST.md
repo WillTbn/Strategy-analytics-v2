@@ -173,13 +173,24 @@ Observações:
 > troca de ambiente, portanto os três primeiros cenários aguardam nova rodada
 > visual.
 
-## Próximos retornos ao portal
+## 25. Onboarding e autosserviço de conta
 
-- Seção 20: documentos do cliente.
-- Seção 24: homologação integrada da timeline própria.
-- Seção 25: onboarding e autosserviço de conta.
-- Seção 26: avatar, assinatura e compartilhamento.
-- Seção 27: regressão e aceite final nos dois ambientes.
+1. [ ] Conferir etapa e pendências do onboarding.
+2. [ ] Confirmar a orientação específica ao receber um guard `403`.
+3. [ ] Solicitar, reenviar e confirmar o e-mail com código válido.
+4. [ ] Recuperar a senha pelo fluxo público e entrar com a nova senha.
+5. [ ] Alterar a senha autenticada e entrar novamente.
+6. [ ] Solicitar e confirmar o telefone.
+7. [ ] Listar sessões, revogar uma secundária e revogar as demais.
+8. [x] Confirmar por revisão que senhas, códigos e tokens não são registrados.
+
+Observações:
+
+> **Implementação em 08/08/2026:** os fluxos foram conectados à API v1 na aba
+> “Conta e segurança” e na recuperação pública. Códigos usam campos com
+> `autocomplete="one-time-code"`; senhas são ocultas e não há logs dos valores.
+> Build e diff passaram. A homologação integrada aguarda nova sessão de revisão
+> e, para confirmações e mudança de senha, acesso aos códigos enviados.
 
 ## Bugs de backend encontrados no portal
 

@@ -58,6 +58,12 @@ export async function logout(refreshToken) {
  * @returns {string}
  */
 export function getApiErrorMessage(error, fallback = "Não foi possível entrar. Verifique suas credenciais.") {
+  if (error?.response?.status === 403) {
+    const payload = error.response?.data?.data ?? error.response?.data ?? {};
+    const action = payload.requiredAction || payload.requiredStep || payload.onboardingStep;
+    const labels = { Deposit: "Faça o depósito inicial para continuar.", ConfirmEmail: "Confirme seu e-mail para continuar.", ConfirmPhone: "Confirme seu telefone para continuar.", CompleteProfile: "Complete seu perfil para continuar." };
+    if (action) return labels[action] || `Conclua a etapa de onboarding “${action}” para continuar.`;
+  }
   const errors = error?.response?.data?.errors;
   if (Array.isArray(errors) && errors.length) {
     const message = errors.map((e) => e.message).filter(Boolean).join(" ");

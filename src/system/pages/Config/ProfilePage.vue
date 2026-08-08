@@ -44,6 +44,7 @@ import ClientProfilesAndTrustedContactsLayout from "src/system/layouts/config/Cl
 import DocumentationSettingLayout from "src/system/layouts/config/DocumentationSettingLayout.vue";
 import AccountBankSettingLayout from "src/system/layouts/config/AccountBankSettingLayout.vue";
 import ClientTimelineLayout from "src/system/layouts/config/ClientTimelineLayout.vue";
+import ClientAccountSecurityLayout from "src/system/layouts/config/ClientAccountSecurityLayout.vue";
 import RegisterAssetsLayout from "src/system/layouts/config/RegisterAssetsLayout.vue";
 import TermsContractLayouts from "src/system/layouts/config/TermsContractLayouts.vue";
 import { IconArrowLeft } from "@tabler/icons-vue";
@@ -54,6 +55,7 @@ const componentsMap = {
   DocumentationSettingLayout,
   AccountBankSettingLayout,
   ClientTimelineLayout,
+  ClientAccountSecurityLayout,
   RegisterAssetsLayout,
   TermsContractLayouts,
 };
@@ -88,6 +90,11 @@ const options = [
     label: "Timeline",
     value: "timeline",
     component: "ClientTimelineLayout",
+  },
+  {
+    label: "Conta e segurança",
+    value: "security",
+    component: "ClientAccountSecurityLayout",
   },
   {
     label: "Registro de Patrimônios",
