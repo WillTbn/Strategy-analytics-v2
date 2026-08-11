@@ -157,9 +157,9 @@ Observações:
 
 ## 24. Timeline própria
 
-1. [ ] Abrir a aba “Timeline” no perfil autenticado.
-2. [ ] Conferir paginação e ordem cronológica dos eventos permitidos.
-3. [ ] Filtrar por tipo de evento e entidade.
+1. [x] Abrir a aba “Timeline” no perfil autenticado.
+2. [x] Conferir paginação e ordem cronológica dos eventos permitidos.
+3. [x] Filtrar por tipo de evento e entidade.
 4. [x] Confirmar por revisão de implementação que flags, evidências e controles
    administrativos de compliance não são renderizados.
 
@@ -172,17 +172,21 @@ Observações:
 > `eslint.config.js`. A conexão com a aba Client autenticada expirou durante a
 > troca de ambiente, portanto os três primeiros cenários aguardam nova rodada
 > visual.
+>
+> **Revalidação em 11/08/2026:** dez eventos próprios foram apresentados em
+> ordem decrescente. Os filtros passaram a usar opções derivadas da API;
+> `BankAccountChanged` filtrou seis registros sem erro de validação.
 
 ## 25. Onboarding e autosserviço de conta
 
-1. [ ] Conferir etapa e pendências do onboarding.
-2. [ ] Confirmar a orientação específica ao receber um guard `403`.
+1. [x] Conferir etapa e pendências do onboarding.
+2. [x] Confirmar a orientação específica ao receber um guard `403`.
 3. [ ] Solicitar, reenviar e confirmar o e-mail com código válido.
 4. [ ] Recuperar a senha pelo fluxo público e entrar com a nova senha.
 5. [ ] Alterar a senha autenticada e entrar novamente.
 6. [ ] Solicitar e confirmar o telefone.
 7. [ ] Listar sessões, revogar uma secundária e revogar as demais.
-8. [x] Confirmar por revisão que senhas, códigos e tokens não são registrados.
+8. [x] Confirmar que senhas, códigos, tokens e IPs integrais não são registrados ou exibidos.
 
 Observações:
 
@@ -191,6 +195,10 @@ Observações:
 > `autocomplete="one-time-code"`; senhas são ocultas e não há logs dos valores.
 > Build e diff passaram. A homologação integrada aguarda nova sessão de revisão
 > e, para confirmações e mudança de senha, acesso aos códigos enviados.
+>
+> **Revalidação em 11/08/2026:** onboarding e oito sessões carregaram. O
+> frontend foi corrigido para mascarar IPs. A confirmação com o código inválido
+> `000000` recebeu sucesso da API e foi registrada como falha de backend.
 
 ## 26. Avatar, assinatura e compartilhamento
 
@@ -210,6 +218,9 @@ Observações:
 > senhas e evidências antes de renderizar campos escalares. Build e diff
 > passaram. Uploads e criação de link não foram executados nesta rodada para não
 > gravar dados reais sem arquivos descartáveis definidos.
+>
+> A rota pública foi corrigida para funcionar sem `QLayout`; um token inválido
+> agora apresenta mensagem amigável em vez de tela vazia.
 
 ## Próximos retornos ao portal
 
@@ -225,3 +236,4 @@ Observações:
 | -: | ------------ | ---------------------- | -------- | ---: | --------------------------- | -------- |
 | 1 | 15 — Perfil do cliente | Entrar como Client e abrir `/system/config/profile` | `GET /api/v1/client/profile/*` | 200 | Revalidação visual em 05/08/2026 | Resolvido — usuário vinculado e perfil carregado |
 | 2 | 19 — Arquivamento de conta bancária | Arquivar uma conta secundária, aguardar o sucesso e recarregar a aba | `POST /api/v1/client/profile/bank-accounts/{bankAccountId}/archive`; `GET /api/v1/client/profile/bank-accounts` | 200 | Validação visual em 05/08/2026 | Pendente — o arquivamento informa sucesso, mas a listagem continua devolvendo a conta arquivada |
+| 3 | 25 — Confirmação de e-mail | Confirmar o e-mail autenticado com o código inválido `000000` | `POST /api/v1/auth/email-confirmation/confirm` | 200 | Validação visual em 11/08/2026 | Pendente — API informou sucesso; esclarecer regra para conta previamente confirmada |

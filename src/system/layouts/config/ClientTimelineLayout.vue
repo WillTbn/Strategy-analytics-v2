@@ -2,8 +2,8 @@
   <q-card class="tool timeline-card">
     <q-card-section class="row items-end q-col-gutter-md">
       <div class="col"><div class="text-subtitle1 text-weight-bold">Minha timeline</div><div class="text-caption text-grey-5">Histórico de eventos disponibilizados para sua conta.</div></div>
-      <q-input v-model.trim="eventType" dark dense outlined clearable label="Tipo de evento" class="col-12 col-sm-3" @keyup.enter="applyFilters" />
-      <q-input v-model.trim="entityType" dark dense outlined clearable label="Entidade" class="col-12 col-sm-3" @keyup.enter="applyFilters" />
+      <q-select v-model="eventType" :options="eventTypeOptions" emit-value map-options dark dense outlined clearable label="Tipo de evento" class="col-12 col-sm-3" />
+      <q-select v-model="entityType" :options="entityTypeOptions" emit-value map-options dark dense outlined clearable label="Entidade" class="col-12 col-sm-3" />
       <div class="col-auto"><q-btn flat dense color="primary" icon="search" label="Filtrar" no-caps @click="applyFilters" /></div>
     </q-card-section>
     <q-separator dark />
@@ -26,6 +26,8 @@ import { getClientTimeline } from "src/services/clientProfileService";
 const loading = ref(true), error = ref(""), response = ref({}), events = ref([]), page = ref(1), pageSize = ref(10), eventType = ref(""), entityType = ref("");
 const collection = (value) => Array.isArray(value) ? value : value?.events || value?.timeline || value?.items || value?.data || [];
 const totalItems = computed(() => Number(response.value?.totalItems ?? response.value?.totalCount ?? events.value.length));
+const uniqueOptions = (values) => [...new Set(values.filter(Boolean))].map((value) => ({ label: value, value }));
+const eventTypeOptions = computed(() => uniqueOptions(events.value.map(typeOf))), entityTypeOptions = computed(() => uniqueOptions(events.value.map((event) => event.entityType || event.entityName)));
 const totalPages = computed(() => Math.max(1, Number(response.value?.totalPages ?? Math.ceil(totalItems.value / pageSize.value))));
 const firstItem = computed(() => totalItems.value ? (page.value - 1) * pageSize.value + 1 : 0), lastItem = computed(() => Math.min(page.value * pageSize.value, totalItems.value));
 const typeOf = (event) => event.eventType || event.type || event.action || "Evento", dateOf = (event) => event.occurredAtUtc || event.createdAtUtc || event.timestampUtc || event.date;
