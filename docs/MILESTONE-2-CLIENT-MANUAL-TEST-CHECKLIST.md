@@ -199,15 +199,18 @@ Observações:
 > **Revalidação em 11/08/2026:** onboarding e oito sessões carregaram. O
 > frontend foi corrigido para mascarar IPs. A confirmação com o código inválido
 > `000000` recebeu sucesso da API e foi registrada como falha de backend.
+> A recuperação pública avançou até a etapa de código e aplicou cooldown de 60
+> segundos; nenhum código correspondente apareceu no sandbox de e-mail
+> disponível, impedindo a conclusão da redefinição.
 
 ## 26. Avatar, assinatura e compartilhamento
 
-1. [ ] Enviar, recarregar, abrir e excluir um avatar válido.
-2. [ ] Enviar, recarregar, abrir e excluir uma assinatura válida.
+1. [x] Enviar, recarregar, abrir e excluir um avatar válido.
+2. [x] Enviar, recarregar, abrir e excluir uma assinatura válida.
 3. [x] Rejeitar no frontend arquivos diferentes de PNG/JPEG ou maiores que 5 MB.
-4. [ ] Criar um link com escopo, validade e limite de usos.
-5. [ ] Abrir o perfil público sem sessão e conferir somente dados autorizados.
-6. [ ] Revogar o link e confirmar que o token deixa de funcionar.
+4. [x] Criar um link com escopo, validade e limite de usos.
+5. [x] Abrir o perfil público sem sessão e conferir somente dados autorizados.
+6. [x] Revogar o link e confirmar que o token deixa de funcionar.
 7. [ ] Validar a mensagem para storage indisponível.
 
 Observações:
@@ -221,6 +224,15 @@ Observações:
 >
 > A rota pública foi corrigida para funcionar sem `QLayout`; um token inválido
 > agora apresenta mensagem amigável em vez de tela vazia.
+>
+> Um link `Profile`, válido por 24 horas, foi criado, consumido uma vez e
+> revogado. Após a revogação, o mesmo link apresentou a mensagem de token
+> inválido/expirado/revogado. IDs internos também passaram a ser ocultados na
+> renderização pública.
+>
+> Avatar e assinatura foram enviados com `logo-small.png`, persistiram após
+> recarregar, carregaram seus previews por URL temporária e foram excluídos. Os
+> estados vazios retornaram ao final da homologação.
 
 ## Próximos retornos ao portal
 
