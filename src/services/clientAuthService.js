@@ -1,5 +1,13 @@
 import { clientApi } from "./clientApi";
 
+export async function register(payload, idempotencyKey) {
+  const { data } = await clientApi.post("/api/v1/auth/register", payload, {
+    headers: { "Idempotency-Key": idempotencyKey },
+    skipAuthRefresh: true,
+  });
+  return data?.data ?? data;
+}
+
 /**
  * Login do cliente na API (codebiz).
  * Endpoint: POST /api/v1/auth/login

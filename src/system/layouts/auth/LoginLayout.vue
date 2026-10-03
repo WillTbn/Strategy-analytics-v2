@@ -56,6 +56,7 @@
           >
             Esqueci minha senha.
           </p>
+          <q-btn flat no-caps color="primary" label="Ainda preciso confirmar meu e-mail" :to="{ name: 'confirm-email' }" class="q-mb-md" />
 
           <!-- <div class="row"> -->
           <q-btn

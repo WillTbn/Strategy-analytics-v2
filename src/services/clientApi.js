@@ -1,5 +1,6 @@
 import axios from "axios";
 import { Cookies } from "quasar";
+import { isPublicAuthRequest } from "./publicAuth";
 
 /**
  * Instância dedicada à API do cliente (Strategy Analytics - codebiz).
@@ -32,7 +33,11 @@ const generateIdempotencyKey = () => {
 // Anexa o Bearer token (cookie) e o Idempotency-Key obrigatório nas escritas.
 clientApi.interceptors.request.use((config) => {
   const token = Cookies.get(tokenName);
-  if (token) {
+  if (isPublicAuthRequest(config.url)) {
+    config.skipAuthRefresh = true;
+    config.timeout ||= 30000;
+    delete config.headers.Authorization;
+  } else if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 

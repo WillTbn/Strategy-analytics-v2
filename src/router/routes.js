@@ -73,6 +73,12 @@ const routes = [
     component: () => import("../system/pages/RegisterPage.vue"),
   },
   {
+    path: "/confirm-email",
+    alias: "/system/confirm-email",
+    name: "confirm-email",
+    component: () => import("../system/pages/ConfirmEmailPage.vue"),
+  },
+  {
     path: "/public/profile/:token",
     name: "public-profile",
     component: () => import("../system/pages/PublicProfilePage.vue"),
@@ -85,11 +91,6 @@ const routes = [
       auth: true,
     },
     children: [
-      {
-        path: "confirm-email",
-        name: "Confirma e-mail",
-        component: () => import('../system/pages/ConfirmEmailPage.vue')
-      },
       {
         path: "dashboard",
         component: () => import("../system/views/WalletView.vue"),

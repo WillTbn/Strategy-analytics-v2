@@ -25,8 +25,8 @@ Pré-condição: entrar com um usuário Client vinculado ao cliente de homologa�
 
 1. [x] Fazer login e validar o acesso com `GET /api/v1/client/auth/ping`.
 2. [x] Recarregar a página e confirmar a restauração por `/api/v1/auth/me`.
-3. [ ] Forçar access token expirado e confirmar refresh com retry único.
-4. [ ] Forçar refresh inválido e confirmar limpeza da sessão e retorno ao login com aviso.
+3. [x] Forçar access token expirado e confirmar refresh com retry único.
+4. [x] Forçar refresh inválido e confirmar limpeza da sessão e retorno ao login com aviso.
    - [x] Abrir `/login?session=expired` e confirmar o aviso amigável de sessão expirada.
    - [ ] Confirmar que uma falha real de refresh limpa a sessão e gera esse redirecionamento.
 5. [x] Abrir o resumo do próprio perfil.
@@ -161,7 +161,7 @@ Observações:
 2. [x] Conferir paginação e ordem cronológica dos eventos permitidos.
 3. [x] Filtrar por tipo de evento e entidade.
 4. [x] Confirmar por revisão de implementação que flags, evidências e controles
-   administrativos de compliance não são renderizados.
+       administrativos de compliance não são renderizados.
 
 Observações:
 
@@ -244,8 +244,8 @@ Observações:
 
 ## Bugs de backend encontrados no portal
 
-| Nº | Seção/fluxo | Passos para reproduzir | Endpoint | HTTP | Request ID / Correlation ID | Situação |
-| -: | ------------ | ---------------------- | -------- | ---: | --------------------------- | -------- |
-| 1 | 15 — Perfil do cliente | Entrar como Client e abrir `/system/config/profile` | `GET /api/v1/client/profile/*` | 200 | Revalidação visual em 05/08/2026 | Resolvido — usuário vinculado e perfil carregado |
-| 2 | 19 — Arquivamento de conta bancária | Arquivar uma conta secundária, aguardar o sucesso e recarregar a aba | `POST /api/v1/client/profile/bank-accounts/{bankAccountId}/archive`; `GET /api/v1/client/profile/bank-accounts` | 200 | Validação visual em 05/08/2026 | Pendente — o arquivamento informa sucesso, mas a listagem continua devolvendo a conta arquivada |
-| 3 | 25 — Confirmação de e-mail | Confirmar o e-mail autenticado com o código inválido `000000` | `POST /api/v1/auth/email-confirmation/confirm` | 200 | Validação visual em 11/08/2026 | Pendente — API informou sucesso; esclarecer regra para conta previamente confirmada |
+|  Nº | Seção/fluxo                         | Passos para reproduzir                                               | Endpoint                                                                                                        | HTTP | Request ID / Correlation ID      | Situação                                                                                        |
+| --: | ----------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---: | -------------------------------- | ----------------------------------------------------------------------------------------------- |
+|   1 | 15 — Perfil do cliente              | Entrar como Client e abrir `/system/config/profile`                  | `GET /api/v1/client/profile/*`                                                                                  |  200 | Revalidação visual em 05/08/2026 | Resolvido — usuário vinculado e perfil carregado                                                |
+|   2 | 19 — Arquivamento de conta bancária | Arquivar uma conta secundária, aguardar o sucesso e recarregar a aba | `POST /api/v1/client/profile/bank-accounts/{bankAccountId}/archive`; `GET /api/v1/client/profile/bank-accounts` |  200 | Validação visual em 05/08/2026   | Pendente — o arquivamento informa sucesso, mas a listagem continua devolvendo a conta arquivada |
+|   3 | 25 — Confirmação de e-mail          | Confirmar o e-mail autenticado com o código inválido `000000`        | `POST /api/v1/auth/email-confirmation/confirm`                                                                  |  200 | Validação visual em 11/08/2026   | Pendente — API informou sucesso; esclarecer regra para conta previamente confirmada             |
