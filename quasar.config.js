@@ -59,6 +59,7 @@ export default defineConfig((ctx) => {
       env:
         ctx.dev ? {
           VERSION_APP: 2.0,
+            CLIENT_API_URL: process.env.CLIENT_API_URL || 'https://strategyanalytics.codebiz.com.br',
           API_URL: "http://localhost:8085/api/",
           COOKIE_TOKEN_NAME: "SA_token",
           COOKIE_USER_DATA: "SA_user",
@@ -69,6 +70,7 @@ export default defineConfig((ctx) => {
 
         } : {
           VERSION_APP: 2.1,
+          CLIENT_API_URL: process.env.CLIENT_API_URL || 'https://strategyanalytics.codebiz.com.br',
           API_URL: "https://sources.strategyanalytics.com.br/api/",
           COOKIE_TOKEN_NAME: "SA_token",
           COOKIE_USER_DATA: "SA_user",
