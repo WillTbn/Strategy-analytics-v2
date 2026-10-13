@@ -1,4 +1,5 @@
 import { reactive } from "vue";
+import { onboardingBlockMessage } from "src/services/onboardingBlock";
 
 export function useFinanceResource() {
   let sequence = 0;
@@ -23,6 +24,7 @@ export function useFinanceResource() {
           429: "Muitas consultas em pouco tempo. Aguarde e tente novamente.",
         };
         state.error =
+          onboardingBlockMessage(error) ||
           messages[error?.response?.status] ||
           "Não foi possível carregar esta seção. Tente novamente.";
       }

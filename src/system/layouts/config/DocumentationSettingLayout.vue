@@ -1,8 +1,8 @@
 <template>
   <div class="documentation-setting-layout">
     <q-banner v-if="guardBlocked" rounded class="bg-blue-9 text-white q-mb-md">
-      Para liberar o envio de documentos, conclua primeiro a etapa inicial de depósito.
-      <template #action><q-btn flat color="white" label="Abrir depósito" :to="{ name: 'inicio', query: { modal: 'deposit' } }" /><q-btn flat color="white" label="Verificar novamente" @click="load" /></template>
+      {{ guardBlocked }}
+      <template #action><q-btn flat color="white" label="Verificar novamente" @click="load" /></template>
     </q-banner>
     <q-banner v-else-if="error" rounded class="bg-red-9 text-white q-mb-md">
       {{ error }}
@@ -43,13 +43,14 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { onboardingBlockMessage } from 'src/services/onboardingBlock'
 import LabelForm from 'src/system/components/form/LabelForm.vue'
 import useNotify from 'src/composables/useNotify'
 import { getApiErrorMessage } from 'src/services/clientAuthService'
 import { downloadClientDocument, getClientDocumentDataDefinition, getClientDocumentOverview, getClientDocumentProgress, getClientDocumentTemporaryUrl, listClientDocuments, listClientDocumentTypes, replaceClientDocument, uploadClientDocument } from 'src/services/clientProfileService'
 
 const { successNotify, errorNotify } = useNotify()
-const loading=ref(true),saving=ref(false),error=ref(''),guardBlocked=ref(false),dialog=ref(false),replacing=ref(null),formRef=ref(null),documents=ref([]),types=ref([]),overview=ref({}),progress=ref({}),definition=ref(null)
+const loading=ref(true),saving=ref(false),error=ref(''),guardBlocked=ref(''),dialog=ref(false),replacing=ref(null),formRef=ref(null),documents=ref([]),types=ref([]),overview=ref({}),progress=ref({}),definition=ref(null)
 const blank=()=>({documentTypeId:null,countryId:null,file:null,issuedOn:'',expiresOn:''}),form=reactive(blank())
 const collection=v=>Array.isArray(v)?v:v?.items||v?.data||[]
 const overviewValue=computed(()=>overview.value.totalDocuments??overview.value.total??documents.value.length)
@@ -64,7 +65,7 @@ const documentName=d=>d.documentTypeName||d.typeName||d.name||'Documento'
 const statusLabel=s=>({Pending:'Pendente',UnderReview:'Em análise',Approved:'Aprovado',Rejected:'Rejeitado'}[s]||s||'Enviado')
 const statusColor=s=>({Approved:'positive',Rejected:'negative',UnderReview:'warning',Pending:'grey'}[s]||'grey')
 const isRejected=s=>String(s).toLowerCase()==='rejected'
-const load=async()=>{loading.value=true;error.value='';guardBlocked.value=false;try{const [o,p,d,t]=await Promise.all([getClientDocumentOverview(),getClientDocumentProgress(),listClientDocuments({page:1,pageSize:100}),listClientDocumentTypes()]);overview.value=o||{};progress.value=p||{};documents.value=collection(d);types.value=collection(t)}catch(e){const message=getApiErrorMessage(e,'Não foi possível carregar seus documentos.');if(message.toLowerCase().includes('onboarding requirements'))guardBlocked.value=true;else error.value=message}finally{loading.value=false}}
+const load=async()=>{loading.value=true;error.value='';guardBlocked.value='';try{const [o,p,d,t]=await Promise.all([getClientDocumentOverview(),getClientDocumentProgress(),listClientDocuments({page:1,pageSize:100}),listClientDocumentTypes()]);overview.value=o||{};progress.value=p||{};documents.value=collection(d);types.value=collection(t)}catch(e){const message=getApiErrorMessage(e,'Não foi possível carregar seus documentos.');const block=onboardingBlockMessage(e);if(block)guardBlocked.value=block;else error.value=message}finally{loading.value=false}}
 const closeDialog=()=>{Object.assign(form,blank());replacing.value=null;definition.value=null;dialog.value=false;formRef.value?.resetValidation()}
 const openUpload=()=>{closeDialog();dialog.value=true}
 const openReplace=d=>{closeDialog();replacing.value=d;dialog.value=true}
