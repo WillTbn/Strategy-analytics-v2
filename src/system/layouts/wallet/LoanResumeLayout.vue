@@ -40,31 +40,30 @@ const { dashboard } = storeToRefs(storeLayout);
 const loans = [
   {
     title: "Empréstimos Vigentes",
+    balance: "—",
     cipher: false,
-    balance: "02 ativos",
+    description: "Indisponível",
   },
   {
     title: "Valor Total Vigente",
     icon: "IconReceipt",
-    balance: "482791.00",
-    cipher: "R$",
-    brCoin: true,
-    description: "(USD 85,196.39)",
+    balance: "—",
+    cipher: false,
+    description: "Indisponível",
   },
   {
     title: "Próxima Parcela",
     icon: "IconCalendarDollar",
-    balance: "2192.27",
-    cipher: "R$",
-    brCoin: true,
-    description: "Venc.: 05/11/25",
+    balance: "—",
+    cipher: false,
+    description: "Indisponível",
   },
   {
     title: "Quitação",
     icon: "IconChartPie",
-    balance: "66%",
+    balance: "—",
     cipher: false,
-    description: "Fim: 02/06/28",
+    description: "Indisponível",
   },
 ];
 </script>

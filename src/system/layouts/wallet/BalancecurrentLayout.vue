@@ -1,150 +1,77 @@
 <template>
   <q-card class="BalancecurrentLayout bg-transparent row q-mt-sm card-wallet">
     <q-card-section class="col-12 row q-mb-sm justify-between">
-      <wallet-total :currentWallet="setCurrentWallet" />
-      <chart-wallet />
+      <wallet-total
+        :amounts="totals"
+        :loading="home.loading"
+        :error="home.error"
+        @retry="$emit('retry-home')"
+      />
+      <chart-wallet
+        :loading="home.loading"
+        :chart="home.data?.chart"
+        :hidden="dashboard.view_wallet_value"
+      />
     </q-card-section>
   </q-card>
-  <!-- {{ setCurrentWallet }} -->
   <div class="row justify-center">
     <div
       class="col-12 col-lg-10 row q-gutter-md justify-center q-mt-xs-lg q-mt-md-none"
     >
       <balance-items
-        v-for="(item, index) in optionsBalance"
-        :key="index"
-        :loading="loading"
-        :icon="item.icon"
-        :title="item.name"
-        :brCoin="item.brCoin"
-        :objText="item.objText"
-        :colorItem="item.colorItem"
-        :balance="item.balance"
-        :btnBgColor="item.btnBgColor"
-        :bgBadgeBank="item.bgBadgeBank"
-        :tooltip="item.tooltip"
-        :viewValues="dashboard.view_wallet_value"
+        title="Investimentos"
+        color-item="bg-primary"
+        :amounts="investments"
+        :loading="home.loading"
+        :error="home.error"
+        @retry="$emit('retry-home')"
+        description="Capital alocado em contratos, separado por moeda. A posição atual ainda não está disponível."
+        :view-values="dashboard.view_wallet_value"
+      />
+      <balance-items
+        title="Saldo Investível"
+        color-item="bg-info"
+        description="A carteira de saldo investível ainda não foi identificada nos dados disponíveis."
+        :view-values="dashboard.view_wallet_value"
+      />
+      <balance-items
+        title="Banking"
+        color-item="bg-accent"
+        :amounts="banking"
+        :loading="wallets.loading"
+        :error="wallets.error"
+        @retry="$emit('retry-wallets')"
+        description="Saldo da carteira Livre que recebe os depósitos. Pode incluir valores reservados."
+        :view-values="dashboard.view_wallet_value"
       />
     </div>
   </div>
 </template>
-
-<script>
-import { computed, defineComponent, onMounted, ref } from "vue";
+<script setup>
+import { computed } from "vue";
 import { storeToRefs } from "pinia";
-import { useUserStore } from "src/stores/user";
 import { useStoreLayout } from "src/stores/layoutStore";
-import useDataUser from "src/composables/system/Requests/useDataUser";
-import CurrentBalance from "src/system/components/wallet/CurrentBalance.vue";
+import {
+  summaryAmounts,
+  freeWalletAmounts,
+} from "src/services/walletPresentation";
 import BalanceItems from "src/system/components/wallet/BalanceItems.vue";
-import TransictionsInvestments from "src/system/components/wallet/TransictionsInvestments.vue";
 import WalletTotal from "src/system/components/wallet/WalletTotal.vue";
 import ChartWallet from "src/system/components/ChartWallet.vue";
-
-export default defineComponent({
-  name: "BalancecurrentLayout",
-  components: {
-    CurrentBalance,
-    BalanceItems,
-    TransictionsInvestments,
-    WalletTotal,
-    ChartWallet,
-  },
-  setup() {
-    const getInve = computed(() => wallet.value.current_investment);
-
-    const teste = ref(true);
-    const userStore = useUserStore();
-    const { wallet, setCurrentWallet, getAvailableToInvest, getCurrentInvest } =
-      storeToRefs(userStore);
-    const { getWallet, loading } = useDataUser();
-    const storeLayout = useStoreLayout();
-    const { system, getColorTheme, dashboard } = storeToRefs(storeLayout);
-    const classBadge = computed(() => {
-      return `${system.value.theme}-invest`;
-    });
-    const colorItem = computed(() => {
-      return `${system.value.theme}-color-bank`;
-    });
-    const bgBtn = computed(() => {
-      return `${system.value.theme}-btn-bank`;
-    });
-    const bgBadgeBank = computed(() => {
-      return `${system.value.theme}-badge-bank`;
-    });
-    onMounted(async () => {
-      await getWallet();
-    });
-
-    const optionsLinks = [
-      {
-        name: "Retirada",
-        icon: "img:/system/icons/wallet-set.svg",
-        link: "#",
-        disabled: true,
-      },
-      {
-        name: "Câmbio",
-        // icon: "fa-solid fa-arrow-right-arrow-left",
-        icon: "img:/system/icons/wallet-cambio.svg",
-        link: "#",
-        disabled: true,
-      },
-      {
-        name: "Depósita",
-        icon: "img:/system/icons/wallet-get.svg",
-        link: "/deposit",
-        disabled: false,
-      },
-    ];
-    const optionsBalance = ref([
-      {
-        name: "Investimentos",
-        brCoin: true,
-        objText: false,
-        balance: "15.312,95",
-        colorItem: "bg-primary",
-        tooltip: "InvestmentTips",
-      },
-      {
-        name: "Saldo Investível",
-        brCoin: true,
-        objText: false,
-        balance: "34.454,15",
-        colorItem: "bg-info",
-        tooltip: "InvestableTips",
-      },
-      {
-        name: "Banking",
-        brCoin: true,
-        objText: false,
-        balance: "11.484,71",
-        colorItem: "bg-accent",
-        tooltip: "BaseBalance",
-      },
-    ]);
-    return {
-      getInve,
-      wallet,
-      loading,
-      teste,
-      optionsLinks,
-      optionsBalance,
-      classBadge,
-      colorItem,
-      bgBadgeBank,
-      bgBtn,
-      getColorTheme,
-      setCurrentWallet,
-      getAvailableToInvest,
-      getCurrentInvest,
-      dashboard,
-    };
-  },
-  // Outras configurações do componente aqui
+const props = defineProps({
+  home: { type: Object, required: true },
+  wallets: { type: Object, required: true },
 });
+defineEmits(["retry-home", "retry-wallets"]);
+const { dashboard } = storeToRefs(useStoreLayout());
+const totals = computed(() =>
+  summaryAmounts(props.home.data, "currentPosition"),
+);
+const investments = computed(() =>
+  summaryAmounts(props.home.data, "contractedCapital"),
+);
+const banking = computed(() => freeWalletAmounts(props.wallets.data));
 </script>
-
 <style scoped lang="sass">
 .span-trans:hover
   transform: scale(1.05)

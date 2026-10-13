@@ -1,128 +1,126 @@
 <template>
-  <div class="wallet-total col-md-auto col-xs-12">
+  <div class="wallet-total col-md-auto col-xs-12" :aria-busy="loading">
     <p class="text-h6 text-weight-light">Carteira Total</p>
     <div
       class="text-h3 text-weight-bolder"
-      style="line-height: 2rem; margin-top: 1.5rem; transition: all 2s"
-      :class="{ 'text-none': dashboard.view_wallet_value }"
+      style="line-height: 2rem; margin-top: 1.5rem"
     >
-      R$ {{ currentWallet }}
+      {{
+        loading
+          ? "…"
+          : dashboard.view_wallet_value
+            ? "••••"
+            : amountLabel(amounts[0])
+      }}
       <q-btn
         flat
-        @click.prevent="viewValues"
-        v-if="!dashboard.view_wallet_value"
+        :aria-label="
+          dashboard.view_wallet_value ? 'Mostrar valores' : 'Ocultar valores'
+        "
+        @click="viewValues"
       >
-        <IconEyeOff />
-      </q-btn>
-      <q-btn flat v-else @click.prevent="viewValues">
-        <IconEye />
+        <IconEye v-if="dashboard.view_wallet_value" /><IconEyeOff v-else />
       </q-btn>
       <br />
-      <b class="text-h6 text-weight-light">
-        USD {{ $filters.convertCoin(currentWallet) }}
-      </b>
+      <b
+        v-for="amount in amounts.slice(1).filter((item) => item.value !== null)"
+        :key="amount.currency"
+        class="text-h6 text-weight-light"
+        >{{ dashboard.view_wallet_value ? "••••" : amountLabel(amount) }}<br
+      /></b>
+      <b
+        v-if="!amounts.some((item) => item.value !== null)"
+        class="text-h6 text-weight-light"
+        >{{ loading ? "Carregando" : "Posição atual indisponível" }}</b
+      >
     </div>
     <div
       style="width: 84%; height: 0.4rem; display: flex; border-radius: 8px"
-      class="q-my-sm"
-    >
-      <div
-        class="bg-primary"
-        style="
-          flex: 1 1 20%;
-          border-top-left-radius: 8px;
-          border-bottom-left-radius: 8px;
-        "
-      ></div>
-      <div class="bg-info" style="flex: 1 1 45%"></div>
-      <div
-        class="bg-accent"
-        style="
-          flex: 1 1 15%;
-          border-top-right-radius: 8px;
-          border-bottom-right-radius: 8px;
-        "
-      ></div>
+      class="q-my-sm bg-grey-8"
+      aria-label="Distribuição por carteira indisponível"
+    ></div>
+    <div v-if="error" role="alert" class="text-caption">
+      {{ error }}
+      <q-btn
+        flat
+        dense
+        no-caps
+        label="Tentar novamente"
+        @click="$emit('retry')"
+      />
     </div>
     <div class="actions row q-gutter-md q-mt-sm">
-      <q-btn class="btn-pattern-transparent" no-caps @click.prevent="deposit">
-        <IconArrowDown
-          width="24"
-          height="24"
-          class="btn-pattern-transparent-icon"
-        />
-        Depósito
-      </q-btn>
       <q-btn
         class="btn-pattern-transparent"
         no-caps
-        @click.prevent="dialogTransfer = true"
+        @click="unavailable('Depósito')"
+        ><IconArrowDown
+          width="24"
+          height="24"
+          class="btn-pattern-transparent-icon"
+        />Depósito</q-btn
       >
-        <IconTransfer
+      <q-btn
+        class="btn-pattern-transparent"
+        no-caps
+        @click="unavailable('Transferência')"
+        ><IconTransfer
           width="24"
           height="24"
           class="btn-pattern-transparent-icon"
-        />
-        Transferência
-      </q-btn>
-      <q-btn class="btn-pattern-transparent" no-caps :to="{ name: 'Saque' }">
-        <IconArrowUp
+        />Transferência</q-btn
+      >
+      <q-btn class="btn-pattern-transparent" no-caps :to="{ name: 'Saque' }"
+        ><IconArrowUp
           width="24"
           height="24"
           class="btn-pattern-transparent-icon"
-        />
-        Saque
-      </q-btn>
+        />Saque</q-btn
+      >
     </div>
-
-    <q-dialog v-model="dialogDeposit" persistent>
-      <card-deposit />
-    </q-dialog>
-    <q-dialog v-model="dialogTransfer">
-      <card-transfer />
-    </q-dialog>
   </div>
 </template>
-
 <script setup>
-import { IconArrowDown, IconArrowUp, IconTransfer } from "@tabler/icons-vue";
-import { defineComponent, ref, watch } from "vue";
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconTransfer,
+  IconEye,
+  IconEyeOff,
+} from "@tabler/icons-vue";
+import { watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import CardDeposit from "src/system/layouts/deposit/CardDeposit.vue";
-import CardTransfer from "src/system/layouts/deposit/CardTransfer.vue";
-// import { useLayoutStore } from "src/stores/layout";
+import { useQuasar } from "quasar";
 import useStorage from "src/composables/system/useStorage";
 import { useStoreLayout } from "src/stores/layoutStore";
 import { storeToRefs } from "pinia";
+import { amountLabel } from "src/services/walletPresentation";
 const storeLayout = useStoreLayout();
 const { dashboard } = storeToRefs(storeLayout);
 const { setSystemViewValues } = useStorage();
-const route = useRoute();
-const router = useRouter();
-defineComponent({
-  name: "WalletTotal",
+const route = useRoute(),
+  router = useRouter(),
+  $q = useQuasar();
+defineProps({
+  amounts: { type: Array, default: () => [] },
+  loading: Boolean,
+  error: String,
 });
+defineEmits(["retry"]);
 const viewValues = async () => {
   storeLayout.setToggleViewWalletValues();
   await setSystemViewValues();
 };
-
-const props = defineProps({
-  currentWallet: {
-    type: [Number, String],
-  },
-});
-const dialogDeposit = ref(false);
-const dialogTransfer = ref(false);
-const deposit = () => {
-  dialogDeposit.value = true;
-};
-
+const unavailable = (action) =>
+  $q.notify({
+    message: `${action} ainda não está disponível pelo portal.`,
+    type: "info",
+  });
 watch(
   () => route.query.modal,
   async (modal) => {
     if (modal !== "deposit") return;
-    dialogDeposit.value = true;
+    unavailable("Depósito");
     const query = { ...route.query };
     delete query.modal;
     await router.replace({ query });
@@ -130,7 +128,6 @@ watch(
   { immediate: true },
 );
 </script>
-
 <style scoped lang="sass">
 /* Seus estilos aqui */
 .btn-pattern-transparent-icon

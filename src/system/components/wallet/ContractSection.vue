@@ -5,7 +5,7 @@
     :class="{ 'active-section': isActive }"
   >
     <div class="row justify-between" style="align-items: center">
-      <div class="col-8 row justify-between">
+      <div class="col-12 col-md-8 row justify-between">
         <div class="col-12">
           <q-avatar size="32px" flat>
             <component :is="icon" color="#00a3ff" />
@@ -14,33 +14,33 @@
             name
           }}</span>
         </div>
-        <div class="col-5 q-pa-md">
+        <div class="col-12 col-md-5 q-pa-md">
           <span class="text-grey"> Saldo Atual/entrada: </span>
           <span class="text-primary q-mx-xs">
-            {{ $filters.currentValue(currentBalance, true) }}
+            {{ display(currentBalance) }}
           </span>
           |
           <span class="q-mx-xs text-grey">
-            {{ $filters.currentValue(currentEntry, true) }}
+            {{ display(currentEntry) }}
           </span>
         </div>
         <div class="col-auto q-pa-md">
           <span class="text-grey"> Próxima distribuição de lucros: </span>
           <span class="text-primary q-mx-xs">
-            {{ $filters.currentValue(profitDistributionBalance, true) }}
+            {{ display(profitDistributionBalance) }}
           </span>
           |
           <span class="text-gray">
-            {{ $filters.dateFormatBr(distributionDate) }}
+            {{
+              dashboard.view_wallet_value ? "••••" : dateLabel(distributionDate)
+            }}
           </span>
         </div>
       </div>
       <div class="col-auto">
-        <img
-          src="/img/chart-axis.png"
-          srcset="/img/chart-axis.png"
-          style="height: 140px; width: 100%"
-        />
+        <div class="row items-center text-caption" style="min-height: 140px">
+          Evolução indisponível
+        </div>
       </div>
       <div class="col-auto" style="align-self: flex-end" v-show="!isActive">
         <q-btn
@@ -62,7 +62,13 @@
 
         <div class="row justify-between">
           <div class="col">
-            <q-btn flat no-caps class="text-primary text-bold" size="lg">
+            <q-btn
+              flat
+              no-caps
+              class="text-primary text-bold"
+              size="lg"
+              :to="id ? { name: 'contract', params: { id } } : undefined"
+            >
               Ver Contrato
               <IconArrowRight class="q-ml-xs" />
             </q-btn>
@@ -88,23 +94,27 @@
 </template>
 
 <script setup>
-import { is } from "quasar";
-import { defineComponent } from "vue";
-
-defineComponent({
-  name: "ContractSection",
-});
-defineProps({
-  name: { type: String },
-  currentBalance: { type: Number },
-  currentEntry: { type: Number },
-  profitDistributionBalance: { type: Number },
-  distributionDate: { type: String },
-  icon: { type: String },
+import { storeToRefs } from "pinia";
+import { useStoreLayout } from "src/stores/layoutStore";
+import { amountLabel } from "src/services/walletPresentation";
+import { dateLabel } from "src/services/financeService";
+const props = defineProps({
+  id: String,
+  name: String,
+  currency: String,
+  currentBalance: Number,
+  currentEntry: Number,
+  profitDistributionBalance: Number,
+  distributionDate: String,
+  icon: String,
   isActive: Boolean,
 });
+const { dashboard } = storeToRefs(useStoreLayout());
+const display = (value) =>
+  dashboard.value.view_wallet_value
+    ? "••••"
+    : amountLabel({ value, currency: props.currency });
 const emit = defineEmits(["select", "edit", "closed"]);
-// Seu código aqui
 </script>
 
 <style scoped lang="sass">

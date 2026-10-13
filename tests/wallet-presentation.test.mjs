@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { summaryAmounts, freeWalletAmounts, amountLabel } from '../src/services/walletPresentation.js';
+assert.deepEqual(summaryAmounts({summaries:[{currencyIsoCode:'BRL', currentPosition:{status:'NotAvailable',value:50000}}]},'currentPosition'), [{currency:'BRL',value:null}]);
+assert.deepEqual(summaryAmounts({summaries:[{currencyIsoCode:'BRL',contractedCapital:{status:'Available',value:0}},{currencyIsoCode:'USD',contractedCapital:{status:'Available',value:'250000'}}]},'contractedCapital'),[{currency:'BRL',value:0},{currency:'USD',value:250000}]);
+assert.deepEqual(freeWalletAmounts([{type:'Free',currencyIsoCode:'BRL',balance:50000,available:47500},{type:'Free',currencyIsoCode:'USD',balance:200},{type:'Investment',currencyIsoCode:'BRL',balance:5}]),[{currency:'BRL',value:50000},{currency:'USD',value:200}]);
+assert.equal(amountLabel({currency:'BRL',value:null}),'—');
+assert.equal(amountLabel({currency:'BRL',value:''}),'—');
+assert.equal(amountLabel({value:50000}),'—');
+assert.match(amountLabel({currency:'BRL',value:0}),/0,00/);
+console.log('Wallet mapping: currencies, unavailable values, zero and reserved balances passed.');

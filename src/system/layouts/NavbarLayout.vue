@@ -1,6 +1,6 @@
 <template>
   <q-header class="q-ma-md q-pa-sm bg-transparent">
-    <q-toolbar :class="nav">
+    <q-toolbar :class="nav" class="portal-navbar">
       <q-btn flat :to="{ name: 'inicio' }">
         <svg-logo />
       </q-btn>
@@ -122,6 +122,12 @@ export default defineComponent({
 
 .rounded {
   border-radius: 13px;
+}
+@media (max-width: 599px) {
+  .portal-navbar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 </style>
 
