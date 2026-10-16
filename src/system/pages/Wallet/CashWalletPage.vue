@@ -10,7 +10,7 @@
         <label class="text-weight-medium">Carteira de origem</label
         ><q-select
           v-model="wallet"
-          :options="wallets.state.data || []"
+          :options="freeWallets"
           :option-label="
             (w) => `${financeLabel(w.type)} · ${w.currencyIsoCode}`
           "
@@ -77,7 +77,7 @@
   ></q-page>
 </template>
 <script setup>
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useQuasar } from "quasar";
 import TitlePage from "../../components/TitlePage.vue";
 import ResourceState from "../../components/finance/ResourceState.vue";
@@ -97,8 +97,16 @@ const $q = useQuasar(),
   error = ref(""),
   busy = ref(false),
   success = ref(false);
-const loadWallets = () =>
-  wallets.load(async () => (await financeGet("client/wallets")).data);
+const freeWallets = computed(() =>
+  (wallets.state.data || []).filter((w) => w.type === "Free"),
+);
+const loadWallets = async () => {
+  const selectedCurrency = wallet.value?.currencyId;
+  await wallets.load(async () => (await financeGet("client/wallets")).data);
+  wallet.value = selectedCurrency
+    ? freeWallets.value.find((w) => w.currencyId === selectedCurrency) || null
+    : null;
+};
 const loadAccounts = () =>
   accounts.load(
     async () =>
@@ -107,21 +115,28 @@ const loadAccounts = () =>
       ).data?.filter((a) => a.status === "Active") || [],
   );
 function confirm() {
-  if (!wallet.value?.currencyId || !bankId.value || busy.value) return;
+  if (!wallet.value?.currencyId || wallet.value.type !== "Free" || !bankId.value || busy.value || success.value) return;
+  const requestedAmount = Number(amount.value);
+  if (!Number.isFinite(requestedAmount) || requestedAmount <= 0 || requestedAmount > Number(wallet.value.available)) {
+    error.value = "Informe um valor positivo dentro do saldo disponível.";
+    return;
+  }
+  const payload = {
+    currencyId: wallet.value.currencyId,
+    destinationBankAccountId: bankId.value,
+    amount: requestedAmount,
+  };
   $q.dialog({
     title: "Confirmar saque",
     message: `Solicitar ${money(amount.value, wallet.value.currencyIsoCode)} para a conta selecionada?`,
     cancel: true,
     persistent: true,
   }).onOk(async () => {
+    if (busy.value || success.value) return;
     busy.value = true;
     error.value = "";
     try {
-      await financeWrite("post", "client/transactions/withdrawals", {
-        currencyId: wallet.value.currencyId,
-        destinationBankAccountId: bankId.value,
-        amount: Number(amount.value),
-      });
+      await financeWrite("post", "client/transactions/withdrawals", payload);
       success.value = true;
       await loadWallets();
     } catch {

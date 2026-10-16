@@ -19,7 +19,7 @@ export function freeWalletAmounts(wallets) {
   const groups = new Map();
   for (const wallet of wallets || []) {
     if (wallet.type !== "Free" || !wallet.currencyIsoCode) continue;
-    const value = numericValue(wallet.balance);
+    const value = numericValue(wallet.available);
     const previous = groups.get(wallet.currencyIsoCode);
     groups.set(
       wallet.currencyIsoCode,

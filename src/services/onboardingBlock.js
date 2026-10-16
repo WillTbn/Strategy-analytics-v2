@@ -11,5 +11,13 @@ export function onboardingBlockMessage(error) {
       : "Seu nível documental ainda não atende ao exigido para esta consulta. Solicite a revisão do cadastro ao atendimento.";
   }
   if (code === "PreferencesRequired") return "Complete suas preferências de cadastro para acessar esta seção.";
+  const messages = {
+    EmailConfirmationRequired: "Confirme seu e-mail para acessar esta seção.",
+    PhoneVerificationRequired: "Verifique seu telefone para acessar esta seção.",
+    RequiredConsentsPending: "Revise os termos pendentes do seu cadastro para acessar esta seção.",
+    RequiredConsentsConfigurationInvalid: "Não foi possível consultar os termos necessários. Entre em contato com o atendimento.",
+    ProfileIncomplete: "Complete seus dados pessoais no perfil para acessar esta seção.",
+  };
+  if (Object.hasOwn(messages, code)) return messages[code];
   return "";
 }

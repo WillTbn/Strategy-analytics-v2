@@ -31,7 +31,11 @@
       <balance-items
         title="Saldo Investível"
         color-item="bg-info"
-        description="A carteira de saldo investível ainda não foi identificada nos dados disponíveis."
+        :amounts="investable"
+        :loading="home.loading"
+        :error="home.error"
+        @retry="$emit('retry-home')"
+        description="Saldo disponível das carteiras Livre e Aplicada, separado por moeda."
         :view-values="dashboard.view_wallet_value"
       />
       <balance-items
@@ -41,7 +45,7 @@
         :loading="wallets.loading"
         :error="wallets.error"
         @retry="$emit('retry-wallets')"
-        description="Saldo da carteira Livre que recebe os depósitos. Pode incluir valores reservados."
+        description="Saldo disponível da carteira Livre, descontados os valores reservados."
         :view-values="dashboard.view_wallet_value"
       />
     </div>
@@ -71,6 +75,9 @@ const investments = computed(() =>
   summaryAmounts(props.home.data, "contractedCapital"),
 );
 const banking = computed(() => freeWalletAmounts(props.wallets.data));
+const investable = computed(() =>
+  summaryAmounts(props.home.data, "availableBalance"),
+);
 </script>
 <style scoped lang="sass">
 .span-trans:hover

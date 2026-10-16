@@ -53,3 +53,26 @@ Comunicação e publicidade são componentes preexistentes, ainda com conteúdo
 demonstrativo; não foram homologados como conteúdo vindo do backend.
 As páginas de listagem/detalhe de contratos e saque não foram redesenhadas nesta
 correção da carteira. Seus dados e integrações anteriores foram preservados.
+
+## Atualização do encaixe — 15/10/2026
+
+A devolutiva do backend esclareceu os campos. Esta atualização substitui o
+mapeamento provisório de Banking e Saldo Investível registrado acima:
+
+- Banking: Free.available, com reservas já descontadas; não usar Free.balance.
+- Saldo Investível: summaries.availableBalance (Livre + Aplicada disponíveis),
+  somente quando Available e mantendo cada moeda separada.
+- Investimentos: mantém contractedCapital. Carteira Total mantém currentPosition.
+  Não foi aprovada troca de rótulo nem soma substituta enquanto o motor não existe.
+- Posição, resultado, evolução e rendimentos dependem do Marco 4. Conversão e
+  empréstimos continuam sem dados oficiais. Não há números simulados.
+- A API passou a entregar currencyId. O formulário de saque existente o utiliza
+  e restringe a origem a Free. Nenhum saque foi solicitado nesta rodada.
+
+Reteste real: Éric retorna Home 200, disponível BRL 47.500,00, capital BRL 0,00 e
+USD 250.000,00. Cláudio lista documentos (200), carteira BRL 25.000,00 com
+currencyId, mas a Home responde PreferencesRequired. Cadastro não foi alterado.
+
+O layout existente foi preservado. Nenhum dado adicional da API criou card,
+seção, aba ou ação. O conector Figma falhou novamente, sem certificação visual
+contra o arquivo; alterações se limitam ao encaixe dos valores e regras existentes.
