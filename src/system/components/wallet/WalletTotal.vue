@@ -1,6 +1,6 @@
 <template>
   <div class="wallet-total col-md-auto col-xs-12" :aria-busy="loading">
-    <p class="text-h6 text-weight-light">Carteira Total</p>
+    <p class="wallet-total-title">Carteira Total</p>
     <div
       class="text-h3 text-weight-bolder"
       style="line-height: 2rem; margin-top: 1.5rem"
@@ -22,8 +22,13 @@
         <IconEye v-if="dashboard.view_wallet_value" /><IconEyeOff v-else />
       </q-btn>
       <br />
+      <b v-if="empty" class="empty-usd"
+        >{{ dashboard.view_wallet_value ? "••••" : "USD 0.00" }}<br
+      /></b>
       <b
-        v-for="amount in amounts.slice(1).filter((item) => item.value !== null)"
+        v-for="amount in empty
+          ? []
+          : amounts.slice(1).filter((item) => item.value !== null)"
         :key="amount.currency"
         class="text-h6 text-weight-light"
         >{{ dashboard.view_wallet_value ? "••••" : amountLabel(amount) }}<br
@@ -37,7 +42,9 @@
     <div
       style="width: 84%; height: 0.4rem; display: flex; border-radius: 8px"
       class="q-my-sm bg-grey-8"
-      aria-label="Distribuição por carteira indisponível"
+      :aria-label="
+        empty ? 'Carteira sem saldo' : 'Distribuição por carteira indisponível'
+      "
     ></div>
     <div v-if="error" role="alert" class="text-caption">
       {{ error }}
@@ -105,6 +112,7 @@ defineProps({
   amounts: { type: Array, default: () => [] },
   loading: Boolean,
   error: String,
+  empty: Boolean,
 });
 defineEmits(["retry"]);
 const viewValues = async () => {
@@ -129,6 +137,11 @@ watch(
 );
 </script>
 <style scoped lang="sass">
+.wallet-total-title
+  font: 400 32px/1.4 Roboto, sans-serif
+  color: #dcdcdc
+.empty-usd
+  font: 500 24px/1.1 Roboto, sans-serif
 /* Seus estilos aqui */
 .btn-pattern-transparent-icon
   background: linear-gradient(202.99deg, rgba(0, 0, 0, 0.24) 0.52%, rgba(0, 0, 0, 0.08) 51.12%, rgba(0, 0, 0, 0.04) 99.48%);

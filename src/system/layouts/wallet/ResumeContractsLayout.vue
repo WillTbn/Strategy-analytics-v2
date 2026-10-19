@@ -1,8 +1,11 @@
 <template>
   <div class="resume-contracts-layout row justify-between q-my-md">
     <q-card
-      class="bg-transparent q-pa-md"
-      :class="dashboard.publicity_contract ? 'col-12 col-md-9' : 'col-12'"
+      class="bg-transparent"
+      :class="[
+        contractsAreEmpty(state) ? 'tool' : 'q-pa-md',
+        dashboard.publicity_contract ? 'col-12 col-md-9' : 'col-12',
+      ]"
     >
       <div class="col-12">
         <h2 class="text-h7">
@@ -21,8 +24,12 @@
           >
             Contratos indisponíveis no momento.
           </p>
-          <p v-else-if="!state.data?.contracts?.items?.length" class="q-pa-md">
-            Nenhum contrato disponível.
+          <home-empty-state
+            v-else-if="contractsAreEmpty(state)"
+            kind="contracts"
+          />
+          <p v-else-if="!state.data.contracts.items?.length" class="q-pa-md">
+            Não foi possível confirmar a lista de contratos.
           </p>
           <contract-section
             v-for="contract in state.data?.contracts?.status === 'Available'
@@ -70,6 +77,8 @@ import PublicityCard from "src/system/components/PublicityCard.vue";
 import ResourceState from "src/system/components/finance/ResourceState.vue";
 import { useStoreLayout } from "src/stores/layoutStore";
 import { storeToRefs } from "pinia";
+import HomeEmptyState from "src/system/components/wallet/HomeEmptyState.vue";
+import { contractsAreEmpty } from "src/services/homePresentation";
 defineProps({ state: { type: Object, required: true } });
 defineEmits(["retry"]);
 const { dashboard } = storeToRefs(useStoreLayout());

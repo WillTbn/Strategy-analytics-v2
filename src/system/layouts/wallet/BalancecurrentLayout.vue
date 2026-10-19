@@ -3,14 +3,25 @@
     <q-card-section class="col-12 row q-mb-sm justify-between">
       <wallet-total
         :amounts="totals"
-        :loading="home.loading"
-        :error="home.error"
+        :empty="empty"
+        :loading="
+          home.loading ||
+          (deposits.loading && totals.every((amount) => amount.value === null))
+        "
+        :error="home.error || deposits.error"
         @retry="$emit('retry-home')"
       />
       <chart-wallet
-        :loading="home.loading"
+        :loading="home.loading || deposits.loading"
         :chart="home.data?.chart"
         :hidden="dashboard.view_wallet_value"
+        :empty="empty"
+        :customer-since="profile.data?.customerSinceUtc"
+        :has-completed-deposit="deposits.data?.hasCompletedDeposit"
+        :first-deposit-at-utc="deposits.data?.firstDepositAtUtc"
+        :time-zone="
+          profile.data?.preferences?.timeZoneId || 'America/Sao_Paulo'
+        "
       />
     </q-card-section>
   </q-card>
@@ -19,8 +30,10 @@
       class="col-12 col-lg-10 row q-gutter-md justify-center q-mt-xs-lg q-mt-md-none"
     >
       <balance-items
-        title="Investimentos"
-        color-item="bg-primary"
+        title="Saldo Investido"
+        color-item="invested-color"
+        :empty="empty"
+        :show-comparison="showComparison"
         :amounts="investments"
         :loading="home.loading"
         :error="home.error"
@@ -30,7 +43,9 @@
       />
       <balance-items
         title="Saldo Investível"
-        color-item="bg-info"
+        color-item="investable-color"
+        :empty="empty"
+        :show-comparison="showComparison"
         :amounts="investable"
         :loading="home.loading"
         :error="home.error"
@@ -39,8 +54,10 @@
         :view-values="dashboard.view_wallet_value"
       />
       <balance-items
-        title="Banking"
-        color-item="bg-accent"
+        title="Saldo Base"
+        color-item="base-color"
+        :empty="empty"
+        :show-comparison="showComparison"
         :amounts="banking"
         :loading="wallets.loading"
         :error="wallets.error"
@@ -62,26 +79,65 @@ import {
 import BalanceItems from "src/system/components/wallet/BalanceItems.vue";
 import WalletTotal from "src/system/components/wallet/WalletTotal.vue";
 import ChartWallet from "src/system/components/ChartWallet.vue";
+import {
+  portfolioIsEmpty,
+  emptyAmounts,
+  comparisonIsVisible,
+} from "src/services/homePresentation";
 const props = defineProps({
   home: { type: Object, required: true },
   wallets: { type: Object, required: true },
+  deposits: {
+    type: Object,
+    default: () => ({ data: null, loading: false, error: "" }),
+  },
+  profile: {
+    type: Object,
+    default: () => ({ data: null, loading: false, error: "" }),
+  },
 });
 defineEmits(["retry-home", "retry-wallets"]);
 const { dashboard } = storeToRefs(useStoreLayout());
+const empty = computed(() =>
+  portfolioIsEmpty(props.home, props.wallets, props.deposits),
+);
+const showComparison = computed(
+  () =>
+    !props.profile.loading &&
+    comparisonIsVisible(
+      props.profile.data?.customerSinceUtc,
+      undefined,
+      props.profile.data?.preferences?.timeZoneId,
+    ),
+);
 const totals = computed(() =>
-  summaryAmounts(props.home.data, "currentPosition"),
+  empty.value
+    ? emptyAmounts()
+    : summaryAmounts(props.home.data, "currentPosition"),
 );
 const investments = computed(() =>
-  summaryAmounts(props.home.data, "contractedCapital"),
+  empty.value
+    ? emptyAmounts()
+    : summaryAmounts(props.home.data, "contractedCapital"),
 );
-const banking = computed(() => freeWalletAmounts(props.wallets.data));
+const banking = computed(() =>
+  empty.value ? emptyAmounts() : freeWalletAmounts(props.wallets.data),
+);
 const investable = computed(() =>
-  summaryAmounts(props.home.data, "availableBalance"),
+  empty.value
+    ? emptyAmounts()
+    : summaryAmounts(props.home.data, "availableBalance"),
 );
 </script>
 <style scoped lang="sass">
 .span-trans:hover
   transform: scale(1.05)
+:deep(.invested-color)
+  background: #00f5d9
+:deep(.investable-color)
+  background: #4ca8ff
+:deep(.base-color)
+  background: #7438ff
 .card-wallet
   opacity: 1
   border-radius: 8px

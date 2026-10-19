@@ -5,6 +5,8 @@
         <balancecurrent-layout
           :home="home.state"
           :wallets="wallets.state"
+          :deposits="deposits.state"
+          :profile="profile.state"
           @retry-home="loadHome"
           @retry-wallets="loadWallets"
         />
@@ -13,7 +15,7 @@
           v-if="!dashboard.communication_left"
           @left="dashboard.communication_left = true"
         />
-        <loan-resume-layout />
+        <!-- O resumo de empréstimos aguarda uma fonte de dívida na API do cliente. -->
       </div>
       <div :class="dashboard.communication_left ? 'col-12 col-lg' : 'hidden'">
         <communication-preview-left-layout
@@ -27,23 +29,60 @@
 <script setup>
 import BalancecurrentLayout from "../layouts/wallet/BalancecurrentLayout.vue";
 import ResumeContractsLayout from "../layouts/wallet/ResumeContractsLayout.vue";
-import LoanResumeLayout from "../layouts/wallet/LoanResumeLayout.vue";
 import CommunicationPreviewLayout from "../layouts/communication/CommunicationPreviewLayout.vue";
 import CommunicationPreviewLeftLayout from "../layouts/communication/CommunicationPreviewLeftLayout.vue";
 import { storeToRefs } from "pinia";
 import { useStoreLayout } from "src/stores/layoutStore";
 import { useFinanceResource } from "src/composables/useFinanceResource";
 import { financeGet } from "src/services/financeService";
+import { onScopeDispose } from "vue";
+import { getClientProfileSummary } from "src/services/clientProfileService";
+import { readHomeDepositHistory } from "src/services/homeDepositHistory";
+import {
+  captureClientSession,
+  assertClientSessionCurrent,
+} from "src/services/clientApi";
 const storeLayout = useStoreLayout();
 const { dashboard } = storeToRefs(storeLayout);
 const home = useFinanceResource();
 const wallets = useFinanceResource();
-const loadHome = () =>
-  home.load(async () => (await financeGet("client/home")).data);
+const deposits = useFinanceResource();
+const profile = useFinanceResource();
+let active = true;
+const loadHome = () => {
+  const session = captureClientSession();
+  const homeRead = home.load(
+    async () => (await financeGet("client/home")).data,
+  );
+  return Promise.all([
+    homeRead,
+    profile.load(getClientProfileSummary),
+    deposits.load(async () => {
+      const snapshot = await homeRead;
+      assertClientSessionCurrent(session);
+      if (!active || !snapshot) return null;
+      return readHomeDepositHistory({
+        executionDatesNeeded: snapshot.chart?.status === "Available",
+        list: (params) => financeGet("client/transactions", params),
+        detail: async (id) =>
+          (await financeGet("client/transactions/" + encodeURIComponent(id)))
+            .data,
+        assertCurrent: () => {
+          assertClientSessionCurrent(session);
+          if (!active) throw new Error("A consulta foi encerrada.");
+        },
+      });
+    }),
+  ]);
+};
 const loadWallets = () =>
   wallets.load(async () => (await financeGet("client/wallets")).data);
 loadHome();
 loadWallets();
+onScopeDispose(() => {
+  active = false;
+  [home, wallets, deposits, profile].forEach((resource) => resource.reset());
+});
 </script>
 
 <style scoped lang="sass">
