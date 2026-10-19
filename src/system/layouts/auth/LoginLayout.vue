@@ -14,7 +14,7 @@
                   class="text-hover text-weight-bolder forgot text-white"
                   @click="goRegister"
                 >
-                  Crie sua conta aqui!.
+                  Crie sua conta aqui!
                 </b>
               </span>
             </div>
@@ -38,7 +38,7 @@
             :type="isPwd ? 'password' : 'text'"
             :rules="[(val) => !!val || 'Campo obrigatório']"
             ref="passwordRef"
-            placeholder="Confirme sua senha"
+            placeholder="Senha"
           >
             <template v-slot:append>
               <q-icon

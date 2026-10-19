@@ -22,7 +22,7 @@
     <div class="col-auto q-mt-xl">
       <div class="row">
         <div class="col-12">
-          Contrato em alto: Redimentos de Até 16% ao ano!
+          Contrato em alta: Rendimentos de até 16% ao ano!
         </div>
         <div class="col-12 text-muted q-mt-xl">
           Mais seguro que ações. Mais rentável que a poupança. Descubra o

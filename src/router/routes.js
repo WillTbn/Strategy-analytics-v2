@@ -91,6 +91,7 @@ const routes = [
       auth: true,
     },
     children: [
+      { path: "", redirect: { name: "inicio" } },
       {
         path: "dashboard",
         component: () => import("../system/views/WalletView.vue"),

@@ -11,6 +11,11 @@ import { useRouter } from "vue-router";
 import useNotify from "../useNotify";
 import { ref } from "vue";
 import useCookies from "../useCookies";
+import {
+  resetClientSession, clientSessionVersion, isClientSessionVersion,
+  captureClientSession, isClientSessionCurrent, assertClientSessionCurrent,
+} from "src/services/clientApi";
+import { assertLoginIdentity } from "src/services/sessionIsolation";
 
 // Cookie para o refresh token da API do cliente
 const refreshName = process.env.COOKIE_REFRESH ?? "SA_refresh";
@@ -50,23 +55,38 @@ export default function useAuth() {
    * Login do cliente na API (codebiz). `value.person` carrega o e-mail.
    */
   const auth = async (value) => {
+    if (loading.value) return;
+    const credentials = { email: String(value.person || "").trim(), password: value.password };
+    const operation = resetClientSession();
+    useStore.$reset();
+    useStore.login.person = credentials.email;
+    let identitySession = null;
     loading.value = true;
     try {
-      const payload = await clientLogin({
-        email: value.person,
-        password: value.password,
-      });
+      const payload = await clientLogin(credentials);
+      if (!isClientSessionVersion(operation)) return;
+      if (!payload?.accessToken) throw new Error("O login não retornou uma sessão válida.");
 
       setTokenCookie({ token: payload.accessToken });
+      if (Cookies.get(tokenName) !== payload.accessToken) throw new Error("Não foi possível salvar a sessão. Confira as permissões de cookies do navegador.");
       if (payload.refreshToken) {
         Cookies.set(refreshName, payload.refreshToken, refreshOptions);
       }
-      setUserCookie(normalizeUser(payload.user));
+      identitySession = captureClientSession();
+      const me = await getCurrentUser();
+      assertLoginIdentity(credentials.email, payload, me);
       await clientPing();
-      router.replace({ path: "/system/" });
+      if (!isClientSessionVersion(operation)) return;
+      assertClientSessionCurrent(identitySession);
+      setUserCookie(normalizeUser(me));
+      await router.replace({ name: "inicio" });
     } catch (e) {
+      if (!isClientSessionVersion(operation)) return;
+      if (identitySession && !isClientSessionCurrent(identitySession)) { useStore.$reset(); return; }
+      resetClientSession();
       deleteTokenCookie();
       Cookies.remove(refreshName, refreshOptions);
+      useStore.$reset();
       errorNotify(getApiErrorMessage(e));
       errors.value = e?.response?.data?.errors ?? errors.value;
     } finally {
@@ -76,7 +96,7 @@ export default function useAuth() {
 
   const verifyLogged = async () => {
     const token = Cookies.get(tokenName);
-    if (!token) return false;
+    if (!token) { useStore.$reset(); return false; }
     return validatetoken();
   };
 
@@ -84,16 +104,26 @@ export default function useAuth() {
    * Valida a sessão do cliente contra GET /api/v1/auth/me.
    */
   const validatetoken = async () => {
+    const operation = clientSessionVersion();
+    const identitySession = captureClientSession();
+    const previousUserId = useStore.data?.id;
     loading.value = true;
     try {
       const me = await getCurrentUser();
       await clientPing();
+      if (!isClientSessionVersion(operation)) return false;
+      assertClientSessionCurrent(identitySession);
+      if (previousUserId && me.id !== previousUserId) throw new Error("A identidade da sessão mudou. Entre novamente.");
       setUserCookie(normalizeUser(me));
       return true;
     } catch (e) {
+      if (!isClientSessionVersion(operation)) return false;
+      if (!isClientSessionCurrent(identitySession)) { useStore.$reset(); return false; }
+      resetClientSession();
       infoNotify("Faça login!");
       deleteTokenCookie();
       Cookies.remove(refreshName, refreshOptions);
+      useStore.$reset();
       return false;
     } finally {
       loading.value = false;
@@ -101,18 +131,24 @@ export default function useAuth() {
   };
 
   const setLogout = async () => {
+    const operation = clientSessionVersion();
+    const identitySession = captureClientSession();
     loading.value = true;
     const refreshToken = Cookies.get(refreshName);
     try {
       await clientLogout(refreshToken);
     } catch (e) {
-      console.log(e);
+      // Local cleanup still runs when the server cannot revoke the session.
     } finally {
-      deleteTokenCookie();
-      Cookies.remove(refreshName, refreshOptions);
-      useStore.setClear();
+      if (isClientSessionVersion(operation)) {
+        if (isClientSessionCurrent(identitySession)) {
+          deleteTokenCookie();
+          resetClientSession();
+        }
+        useStore.$reset();
+        router.replace({ path: "/login" });
+      }
       loading.value = false;
-      router.replace({ path: "/login" });
     }
   };
 

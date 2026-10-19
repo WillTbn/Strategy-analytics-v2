@@ -52,7 +52,7 @@ export default route(function (/* { store, ssrContext } */) {
 
     //verificando se o usuário esta logado evitar logar duplicado
     if (to.name == "login") {
-      if (Cookies.has(tokenName)) return { name: 'config' };
+      if (Cookies.has(tokenName) && await verifyLogged()) return { name: 'inicio' };
     }
     return true;
   });

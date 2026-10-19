@@ -57,9 +57,10 @@ export default function useCookies() {
    * Deletnando cookies local, isso vai deslogar usuário
    */
   const deleteTokenCookie = () => {
+    const currentToken = Cookies.get(tokenName);
     Cookies.remove(tokenName, setOptionsCookie);
     Cookies.remove(userCookie, setOptionsCookie);
-    LocalStorage.remove(tokenCookie)
+    if (currentToken) LocalStorage.remove(currentToken)
   }
   /**
    * Deletando cookie com os dados do usuário
@@ -80,8 +81,9 @@ export default function useCookies() {
    * @param {object|string} value dados do usuário
    */
   const setUserCookie = (value) => {
+    Cookies.remove(userCookie, setOptionsCookie);
     setCookie(userCookie, value)
-    storeUser.setUserData(getValue(userCookie))
+    storeUser.setUserData(value)
   }
   const updateCookieAccount = async (newAccount) => {
     let user = getValue(userCookie)
