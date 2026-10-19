@@ -1,96 +1,69 @@
 <template>
-  <q-btn-toggle
-    v-model="system.theme"
-    toggle-color="transparent"
-    push
-    :options="[{ value: 'bg-simulator', slot: 'one' }]"
-    @click.prevent="setSystemTheme"
-    :class="{ 'border-active': system.theme == 'bg-simulator' }"
-    dense
-    class="col"
-  >
-    <IconCheck
-      class="absolute-center"
-      name="fa-regular fa-circle-check"
-      size="2.5rem"
-      v-if="system.theme == 'bg-simulator'"
-    />
-    <template v-slot:one>
-      <div
-        style="width: 216.67px; height: 100%; top: 0; left: 0"
-        class="bg-simulator"
-      ></div>
-    </template>
-  </q-btn-toggle>
-  <q-btn-toggle
-    v-model="system.theme"
-    toggle-color="transparent"
-    push
-    :options="[{ value: 'bg-theme-2', slot: 'two' }]"
-    @click.prevent="setSystemTheme"
-    :class="{ 'border-active': system.theme == 'bg-theme-2' }"
-    dense
-    class="col"
-  >
-    <IconCheck
-      class="absolute-center"
-      name="fa-regular fa-circle-check"
-      size="2.5rem"
-      v-if="system.theme == 'bg-theme-2'"
-    />
-    <template v-slot:two>
-      <div
-        style="width: 216.67px; height: 100%; top: 0; left: 0"
-        class="bg-theme-2"
-      ></div>
-      <!-- </q-avatar> -->
-    </template>
-  </q-btn-toggle>
-
-  <q-btn-toggle
-    v-model="system.theme"
-    toggle-color="transparent"
-    push
-    :options="[{ value: 'bg-theme-3', slot: 'three' }]"
-    @click.prevent="setSystemTheme"
-    :class="{ 'border-active': system.theme == 'bg-theme-3' }"
-    dense
-    class="col"
-  >
-    <IconCheck
-      class="absolute-center"
-      name="fa-regular fa-circle-check"
-      size="2.5rem"
-      v-if="system.theme == 'bg-theme-3'"
-    />
-    <template v-slot:three>
-      <div
-        style="width: 216.67px; height: 100px; top: 0; left: 0"
-        class="bg-theme-3"
-      ></div>
-    </template>
-  </q-btn-toggle>
+  <div class="theme-options" role="group" aria-label="Tema">
+    <button
+      v-for="option in options"
+      :key="option.value"
+      type="button"
+      class="theme-option"
+      :class="[
+        option.value,
+        { 'border-active': system.theme === option.value },
+      ]"
+      :aria-label="option.label"
+      :aria-pressed="system.theme === option.value"
+      @click="selectTheme(option.value)"
+    >
+      <img
+        v-if="system.theme === option.value"
+        src="/img/preferences/check.svg"
+        alt=""
+      />
+    </button>
+  </div>
 </template>
-<script>
-import { defineComponent, ref } from "vue";
+<script setup>
 import { storeToRefs } from "pinia";
 import { useStoreLayout } from "src/stores/layoutStore";
 import useStorage from "src/composables/system/useStorage";
-export default defineComponent({
-  name: "ThemeOptions",
-  setup() {
-    const storeLayout = useStoreLayout();
-    const { system } = storeToRefs(storeLayout);
-    const { setSystemTheme } = useStorage();
-
-    return { system, setSystemTheme };
-  },
-  props: {
-    toggleClass: { type: String, default: "col-6" },
-  },
-});
+const { system } = storeToRefs(useStoreLayout());
+const { setSystemTheme } = useStorage();
+const options = [
+  { value: "bg-simulator", label: "Azul e vermelho" },
+  { value: "bg-theme-2", label: "Cinza e preto" },
+  { value: "bg-theme-3", label: "Aurora" },
+];
+const selectTheme = (value) => {
+  system.value.theme = value;
+  setSystemTheme();
+};
 </script>
-<style lang="sass">
-.border-active
-  border: 2px solid var(--active, #00A3FF)
+<style scoped>
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.theme-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  min-width: 0;
+  border: 1px solid #464646;
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
+}
+.theme-option.border-active {
+  border: 2px solid var(--active, #00a3ff);
+}
+.theme-option:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+@media (max-width: 599px) {
+  .theme-options {
+    gap: 12px;
+  }
+}
 </style>

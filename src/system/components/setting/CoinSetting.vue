@@ -1,96 +1,124 @@
 <template>
-  <div class="coin-setting q-mt-lg">
-    <p class="text-weight-bold">Moedas de Exibição no Sistema</p>
-    <div class="row q-gutter-md justify-between">
-      <div class="col">
-        <label-form textLabel="Moeda Primária">
+  <div class="coin-setting">
+    <div v-for="group in groups" :key="group.title" class="preference-group">
+      <p class="preference-group-title">{{ group.title }}</p>
+      <div class="preference-fields">
+        <label-form
+          v-for="field in group.fields"
+          :key="field.key"
+          :text-label="field.label"
+        >
           <q-select
-            style="min-width: 17rem !important"
-            v-model="system.coin_primary"
-            :options="optionsCoin"
-            class="q-mb-md"
+            :model-value="values[field.key] ?? null"
+            :options="preferenceOptions(catalog, field.key)"
+            :aria-label="field.label"
+            :disable="disabled"
+            class="preference-select"
             outlined
             dense
             dark
-            placeholder="Selecione um tipo"
-            dropdown-icon="keyboard_arrow_down"
-            transition-show="flip-up"
-            transition-hide="flip-down"
-          />
-        </label-form>
-      </div>
-      <div class="col">
-        <label-form textLabel="Moeda Secundária">
-          <q-select
-            style="min-width: 17rem !important"
-            v-model="system.coin_secondary"
-            :options="optionsCoin"
-            class="q-mb-md"
-            outlined
-            dense
-            dark
-            placeholder="Selecione um tipo"
-            dropdown-icon="keyboard_arrow_down"
-            transition-show="flip-up"
-            transition-hide="flip-down"
-          />
-        </label-form>
-      </div>
-    </div>
-    <p class="text-weight-bold q-my-lg">Idioma e Fuso Horário</p>
-    <div class="row q-gutter-md justify-between">
-      <div class="col">
-        <label-form textLabel="Idioma do Sistema">
-          <q-select
-            style="min-width: 17rem !important"
-            v-model="system.language"
-            :options="optionsLanguage"
-            class="q-mb-md"
-            outlined
-            dense
-            dark
-            placeholder="Selecione um tipo"
-            dropdown-icon="keyboard_arrow_down"
-            transition-show="flip-up"
-            transition-hide="flip-down"
-          />
-        </label-form>
-      </div>
-      <div class="col">
-        <label-form textLabel="Fuso Horário do Sistema">
-          <q-select
-            style="min-width: 17rem !important"
-            v-model="system.time_zone"
-            :options="['Brasilia, D.F (GMT-3)', 'Nova Iorque, EUA']"
-            class="q-mb-md"
-            outlined
-            dense
-            dark
-            placeholder="Selecione um tipo"
-            dropdown-icon="keyboard_arrow_down"
-            transition-show="flip-up"
-            transition-hide="flip-down"
+            emit-value
             map-options
-          />
+            hide-dropdown-icon
+            options-dense
+            @update:model-value="emit('change', field.key, $event)"
+          >
+            <template #append
+              ><img src="/img/preferences/chevron-down.svg" alt=""
+            /></template>
+          </q-select>
         </label-form>
       </div>
     </div>
   </div>
 </template>
-
 <script setup>
-import { defineComponent } from "vue";
-import { useStoreLayout } from "src/stores/layoutStore";
-import { storeToRefs } from "pinia";
 import LabelForm from "src/system/components/form/LabelForm.vue";
-
-defineComponent({
-  name: "CoinSetting",
+import { preferenceOptions } from "src/services/preferenceEditor";
+defineProps({
+  values: { type: Object, required: true },
+  catalog: { type: Object, required: true },
+  disabled: Boolean,
 });
-
-const storeLayout = useStoreLayout();
-const { system, optionsCoin, optionsLanguage, optionsTimeZone } =
-  storeToRefs(storeLayout);
+const emit = defineEmits(["change"]);
+const groups = [
+  {
+    title: "Moedas de Exibição no Sistema",
+    fields: [
+      { key: "primaryCurrencyCode", label: "Moeda Primária" },
+      { key: "secondaryCurrencyCode", label: "Moeda Secundária" },
+    ],
+  },
+  {
+    title: "Idioma e Fuso Horário",
+    fields: [
+      { key: "languageCode", label: "Idioma do Sistema" },
+      { key: "timeZoneId", label: "Fuso Horário do Sistema" },
+    ],
+  },
+];
 </script>
-
-<style scoped></style>
+<style scoped>
+.coin-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  min-width: 0;
+}
+.preference-group {
+  min-width: 0;
+}
+.preference-group-title {
+  margin: 0 0 12px;
+  font:
+    700 14px/1.35 Inter,
+    sans-serif;
+}
+.preference-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.preference-fields > * {
+  min-width: 0;
+}
+.preference-select {
+  min-width: 0;
+}
+.preference-select :deep(.q-field__control) {
+  min-height: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: linear-gradient(
+    182deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.01)
+  );
+}
+.preference-select :deep(.q-field__native),
+.preference-select :deep(.q-field__marginal) {
+  min-height: 32px;
+  height: 32px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 14px;
+}
+.preference-select :deep(.q-field__native) {
+  min-width: 0;
+  flex-wrap: nowrap;
+  color: #989898;
+}
+.preference-select :deep(.q-field__control:before) {
+  border-color: rgba(239, 239, 239, 0.16);
+}
+.preference-select :deep(.q-field__native > span) {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+@media (max-width: 599px) {
+  .preference-fields {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

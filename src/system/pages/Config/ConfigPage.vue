@@ -2,11 +2,11 @@
   <div class="config-page">
     <title-page title="" subtitle="Área Perfil" />
     <div class="row justify-between" style="min-height: 100cvh">
-      <div class="col-md-7 col-sm-12 q-pa-md-lg">
+      <div class="col-12 col-md-7 q-pa-md-lg profile-column">
         <personalsetup-layout />
       </div>
 
-      <div class="col-md-5 col-sm-12 q-pa-md-lg">
+      <div class="col-12 col-md-5 q-pa-md-lg profile-column">
         <dashsetup-layout />
         <login-setting />
       </div>
@@ -26,3 +26,9 @@ defineComponent({
   name: "ConfigPage",
 });
 </script>
+<style scoped>
+.config-page,
+.profile-column {
+  min-width: 0;
+}
+</style>

@@ -1,46 +1,25 @@
 <template>
-  <div class="row">
-    <div class="col-12 q-mb-md">
-      <textarea-title text="Ajustes" />
-    </div>
-    <!-- <div class="col-12">
-      <q-toggle
-        v-model="navbar.theme"
-        label="Ícone selecionar tema."
-        @click.prevent="setNavTheme"
-      />
-    </div> -->
-    <div class="col-12">
-      <q-toggle
-        v-model="navbar.clock"
-        label="Relógio na barra de menu."
-        @click.prevent="setClock"
-      />
-    </div>
-  </div>
+  <q-toggle
+    v-model="navbar.clock"
+    dense
+    color="primary"
+    label="Exibir Relógio no Cabeçalho do Sistema"
+    class="clock-preference"
+    @update:model-value="setClock"
+  />
 </template>
-<script>
-import { defineComponent, ref } from "vue";
+<script setup>
 import { storeToRefs } from "pinia";
 import { useStoreLayout } from "src/stores/layoutStore";
-
-import TextareaTitle from "src/system/components/TextareaTitle.vue";
 import useStorage from "src/composables/system/useStorage";
-export default defineComponent({
-  name: "NavbarSetting",
-  components: { TextareaTitle },
-  setup() {
-    const storeLayout = useStoreLayout();
-    const { navbar } = storeToRefs(storeLayout);
-    const { setNavTheme, setClock } = useStorage();
-
-    return {
-      setNavTheme,
-      setClock,
-      navbar,
-    };
-  },
-});
+const { navbar } = storeToRefs(useStoreLayout());
+const { setClock } = useStorage();
 </script>
-<style lang="sass"></style>
-<style lang=""></style>
+<style scoped>
+.clock-preference {
+  min-height: 40px;
+  font:
+    500 14px/1.35 Inter,
+    sans-serif;
+}
+</style>
