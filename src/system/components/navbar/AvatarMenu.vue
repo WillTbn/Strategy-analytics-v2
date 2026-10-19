@@ -2,9 +2,7 @@
   <div class="AvatarMenu row items-center no-wrap">
     <!-- <q-item clickable v-ripple :to="{ name: 'config' }"> -->
     <q-btn round :to="{ name: 'config' }" size="16px" unelevated>
-      <q-avatar class="q-my-sm avatar-custom">
-        <img :src="avatar" />
-      </q-avatar>
+      <client-avatar class="q-my-sm avatar-custom" />
     </q-btn>
     <q-btn
       round
@@ -46,9 +44,11 @@
 <script>
 import { defineComponent } from "vue";
 import useAuth from "src/composables/system/useAuth";
+import ClientAvatar from "src/system/components/setting/ClientAvatar.vue";
 
 export default defineComponent({
   name: "AvatarMenu",
+  components: { ClientAvatar },
   props: {
     avatar: { type: String },
   },

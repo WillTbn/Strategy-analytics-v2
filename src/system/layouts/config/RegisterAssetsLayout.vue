@@ -1,57 +1,30 @@
 <template>
   <div class="register-assets-layout">
-    <badge-lvl-assets />
-    <div class="tool q-mt-md" v-for="(item, index) in listAssets" :key="index">
-      <div class="row items-center">
-        <component :is="item.icon" class="text-primary" />
-        <span class="q-mt-sm q-ml-sm">{{ item.name }}</span>
+    <q-card
+      v-for="section in sections"
+      :key="section.name"
+      class="tool q-mb-lg"
+    >
+      <div class="row items-center q-gutter-sm text-weight-bold">
+        <q-icon :name="section.icon" color="primary" size="24px" /><span>{{
+          section.name
+        }}</span>
       </div>
-      <component :is="componentsMaps[item.componentPanel]" />
-    </div>
+      <p class="text-grey q-mt-lg">Consulta de patrimônio indisponível.</p>
+      <span
+        ><q-btn flat no-caps icon="add" label="Adicionar" disable /><q-tooltip
+          >O cadastro e a consulta de patrimônio do cliente ainda não estão
+          disponíveis na API.</q-tooltip
+        ></span
+      >
+    </q-card>
   </div>
 </template>
-
 <script setup>
-import { defineComponent, ref } from "vue";
-import BadgeLvlAssets from "src/system/components/setting/Documents/BadgeLvlAssets.vue";
-import ImoveisSettingLayout from "./assets/ImoveisSettingLayout.vue";
-import VehiclesSettingLayout from "./assets/VehiclesSettingLayout.vue";
-import InvestmentsSettingLayout from "./assets/InvestmentsSettingLayout.vue";
-import ConsortiumSettingLayout from "./assets/ConsortiumSettingLayout.vue";
-defineComponent({
-  name: "RegisterAssetsLayout",
-});
-const componentsMaps = {
-  ImoveisSettingLayout,
-  VehiclesSettingLayout,
-  InvestmentsSettingLayout,
-  ConsortiumSettingLayout,
-};
-const listAssets = ref([
-  {
-    name: "Imóveis",
-    icon: "IconHome",
-    componentPanel: "ImoveisSettingLayout",
-  },
-  {
-    name: "Veículos",
-    icon: "IconCar",
-    componentPanel: "VehiclesSettingLayout",
-  },
-  {
-    name: "Investimentos",
-    icon: "IconFileDollar",
-    componentPanel: "InvestmentsSettingLayout",
-  },
-  {
-    name: "Consórcio",
-    icon: "IconPigMoney",
-    componentPanel: "ConsortiumSettingLayout",
-  },
-]);
-// {name:"", component:"ImoveisSettingLayout"},
+const sections = [
+  { name: "Imóveis", icon: "home" },
+  { name: "Veículos", icon: "directions_car" },
+  { name: "Investimentos", icon: "description" },
+  { name: "Consórcio", icon: "savings" },
+];
 </script>
-
-<style scoped>
-/* Seus estilos aqui */
-</style>

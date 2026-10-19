@@ -1,68 +1,93 @@
 <template>
   <div class="change-photo tool">
-    <p class="text-weight-bolder">Perfil Resumo</p>
-    <q-card class="change-photo-card" :class="`${themeSystem}-photo-card`" flat>
-      <q-card-section horizontal>
-        <avatar-new class="q-my-md" />
-        <q-card-section class="q-pa-lg">
-          <div class="row items-center align-center">
-            <span class="text-grey q-mr-sm">ID Strategy: #ABC123</span>
-            <q-badge outline class="border-primary">Nivel 2</q-badge>
-          </div>
-          <div class="q-my-md">
-            <b
-              class="text-inter-29-700 text-weight-bold"
-              style="text-transform: capitalize"
+    <p class="text-weight-bolder text-h6">Perfil Resumido</p>
+    <profile-resource-state :resource="resource" />
+    <q-card
+      v-if="resource.state.value"
+      class="change-photo-card"
+      :class="`${themeSystem}-photo-card`"
+      flat
+    >
+      <div class="profile-bio">
+        <client-avatar size="132px" icon-size="72px" />
+        <div class="bio-info">
+          <div class="row items-center q-gutter-sm">
+            <span class="text-grey strategy-id"
+              >ID Strategy:
+              {{ resource.state.value.customerId || "Não informado" }}</span
             >
-              {{ abbreviateName(name) }}
-            </b>
+            <q-badge
+              v-if="resource.state.value.documentLevel != null"
+              outline
+              color="primary"
+              >Nível {{ resource.state.value.documentLevel }}</q-badge
+            >
           </div>
-          <div class="row items-center align-center">
-            <IconCalendar color="grey" class="q-mr-sm" />
+          <div class="profile-name text-weight-bold">
+            {{ resource.state.value.displayName || "Não informado" }}
+          </div>
+          <div class="row items-center">
+            <IconCalendar class="q-mr-sm text-grey" :size="24" />
             <span class="text-grey q-mr-sm">Cliente desde:</span>
-            <span class="text-weight-bold">01/01/2020</span>
-          </div>
-        </q-card-section>
-        <div class="q-pa-md col row justify-end self-end items-end">
-          <div class="col-auto">
-            <q-btn no-caps outline>
-              <IconShare color="white" class="q-mr-xs" />
-              Compartilhar Perfil
-            </q-btn>
+            <b>{{ profileDate(resource.state.value.customerSinceUtc) }}</b>
           </div>
         </div>
-      </q-card-section>
+        <span class="share-control">
+          <q-btn no-caps outline disable
+            ><IconShare :size="20" class="q-mr-xs" />Compartilhar Perfil</q-btn
+          >
+          <q-tooltip
+            >Compartilhamento do perfil aguarda a definição do fluxo.</q-tooltip
+          >
+        </span>
+      </div>
     </q-card>
   </div>
 </template>
-<script>
-import { defineComponent } from "vue";
-import AvatarNew from "../upload/AvatarNew.vue";
+<script setup>
 import { IconCalendar, IconShare } from "@tabler/icons-vue";
-export default defineComponent({
-  name: "ChangePhoto",
-  components: { AvatarNew },
-  props: {
-    name: { type: String },
-    phone: { type: String },
-    mail: { type: String },
-    address: { type: String },
-    typeInvest: { type: String, default: "Investidor Obsidian" },
-    themeSystem: { type: String },
-  },
-  methods: {
-    abbreviateName(fullName) {
-      if (!fullName) return "";
-      const parts = fullName.trim().split(" ");
-      if (parts.length <= 2) return fullName;
-      // Mantém o primeiro e último nome, abrevia os do meio
-      return [
-        parts[0],
-        ...parts.slice(1, -1).map((p) => p[0]),
-        parts[parts.length - 1],
-      ].join(" ");
-    },
-  },
+import { profileDate } from "src/services/profilePresentation";
+import ProfileResourceState from "./ProfileResourceState.vue";
+import ClientAvatar from "./ClientAvatar.vue";
+defineProps({
+  resource: { type: Object, required: true },
+  themeSystem: { type: String, default: "" },
 });
 </script>
-<style lang="sass"></style>
+<style scoped>
+.profile-bio {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+  flex-wrap: wrap;
+}
+.bio-info {
+  flex: 1;
+  min-width: 0;
+}
+.strategy-id {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.profile-name {
+  font-size: 29px;
+  line-height: 1.5;
+  margin: 12px 0 24px;
+  overflow-wrap: anywhere;
+}
+.share-control {
+  align-self: flex-end;
+}
+@media (max-width: 600px) {
+  .profile-bio {
+    padding: 16px;
+  }
+  .bio-info {
+    flex-basis: 100%;
+  }
+  .profile-name {
+    font-size: 24px;
+  }
+}
+</style>

@@ -127,6 +127,12 @@ export default defineComponent({
   .portal-navbar {
     flex-wrap: wrap;
     justify-content: center;
+    height: auto;
+    gap: 8px;
+    padding: 12px 8px;
+  }
+  .portal-navbar > .q-btn:first-child {
+    flex-basis: 100%;
   }
 }
 </style>
