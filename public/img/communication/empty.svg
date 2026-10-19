@@ -1,0 +1,13 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="icon/comunica&#195;&#167;&#195;&#163;o" clip-path="url(#clip0_0_851)">
+<path id="Vector" d="M39.6667 0.583334H16.3333C7.63485 0.583334 0.583334 7.63485 0.583334 16.3333V39.6667C0.583334 48.3651 7.63485 55.4167 16.3333 55.4167H39.6667C48.3651 55.4167 55.4167 48.3651 55.4167 39.6667V16.3333C55.4167 7.63485 48.3651 0.583334 39.6667 0.583334Z" fill="white" fill-opacity="0.04" stroke-width="1.16667" stroke="white" stroke-opacity="0.2"/>
+<path id="Vector_2" d="M17.5 24.5V31.5C17.5 32.1417 18.025 32.6667 18.6667 32.6667H22.1667L31.5 37.3333V18.6667L22.1667 23.3333H18.6667C18.025 23.3333 17.5 23.8583 17.5 24.5Z" stroke-width="2.33333" stroke-linejoin="round" stroke="#00A3FF"/>
+<path id="Vector_3" d="M36.1667 23.9167C37.5667 24.9667 38.5 26.3667 38.5 28C38.5 29.6333 37.5667 31.0333 36.1667 32.0833" stroke-width="2.33333" stroke-linecap="round" stroke="#00A3FF"/>
+<path id="Vector_4" d="M23.3333 32.6667L25.0833 38.5" stroke-width="2.33333" stroke-linecap="round" stroke="#00A3FF"/>
+</g>
+<defs>
+<clipPath id="clip0_0_851">
+<rect width="56" height="56" fill="white"/>
+</clipPath>
+</defs>
+</svg>
