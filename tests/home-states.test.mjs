@@ -40,6 +40,27 @@ test("a complete, accessible and zero portfolio with no executed deposits is emp
   input.home.data.summaries = [];
   assert.equal(isEmpty(input), true);
 });
+test("the real uninitialized account response is empty only with independent confirmation", () => {
+  const input = emptyData();
+  input.home.data.summaries = [];
+  input.home.data.composition = { status: "NotAvailable", currencies: [] };
+  assert.equal(isEmpty(input), true);
+  for (const mutate of [
+    (value) => (value.wallets.error = "Read failed"),
+    (value) => (value.deposits.data.hasCompletedDeposit = true),
+    (value) => (value.home.data.contracts.totalItems = 1),
+    (value) =>
+      value.home.data.composition.currencies.push({ total: 1, items: [] }),
+    (value) => (value.home.data.composition.currencies = null),
+    (value) =>
+      value.wallets.data.push({ balance: 0, reserved: 0, available: 0 }),
+  ]) {
+    const changed = structuredClone(input);
+    mutate(changed);
+    assert.equal(isEmpty(changed), false);
+  }
+});
+
 test("loading, denied, failed or missing reads never become zero balances", () => {
   for (const key of ["home", "wallets", "deposits"])
     for (const change of [

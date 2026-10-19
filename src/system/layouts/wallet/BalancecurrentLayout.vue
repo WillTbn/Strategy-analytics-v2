@@ -103,6 +103,7 @@ const empty = computed(() =>
 );
 const showComparison = computed(
   () =>
+    !empty.value &&
     !props.profile.loading &&
     comparisonIsVisible(
       props.profile.data?.customerSinceUtc,

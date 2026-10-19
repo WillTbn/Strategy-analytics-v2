@@ -56,15 +56,25 @@ export function portfolioIsEmpty(home, wallets, deposits) {
   )
     return false;
   const composition = data.composition;
+  // A new account has no currency rows until its first ledger entry. The API
+  // returns NotAvailable for composition in that case; independent successful
+  // wallet, deposit and contract reads still confirm that there is no balance.
+  const uninitializedComposition =
+    composition?.status === "NotAvailable" &&
+    Array.isArray(composition.currencies) &&
+    composition.currencies.length === 0 &&
+    data.summaries.length === 0 &&
+    wallets.data.length === 0;
   if (
-    composition?.status !== "Available" ||
-    !Array.isArray(composition.currencies) ||
-    !composition.currencies.every(
-      (currency) =>
-        zero(currency.total) &&
-        Array.isArray(currency.items) &&
-        currency.items.every((item) => zero(item.value)),
-    )
+    !uninitializedComposition &&
+    (composition?.status !== "Available" ||
+      !Array.isArray(composition.currencies) ||
+      !composition.currencies.every(
+        (currency) =>
+          zero(currency.total) &&
+          Array.isArray(currency.items) &&
+          currency.items.every((item) => zero(item.value)),
+      ))
   )
     return false;
   if (
