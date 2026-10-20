@@ -331,4 +331,12 @@ const routes = [
   },
 ];
 
+// Isolated UI review only. Never expose an unintegrated registration flow in a production build.
+if (process.env.DEV) {
+  routes.splice(routes.length - 1, 0, {
+    path: "/dev/cadastro/etapa-1",
+    component: () => import("../system/pages/dev/RegistrationPreviewPage.vue"),
+  });
+}
+
 export default routes;
