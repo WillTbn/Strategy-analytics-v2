@@ -27,7 +27,7 @@
     <q-input
       ref="control"
       v-else
-      :model-value="modelValue || ''"
+      :model-value="modelValue ?? ''"
       v-bind="style"
       :aria-label="field.label"
       :placeholder="field.placeholder"
@@ -38,7 +38,13 @@
             : '##/##/####'
           : undefined
       "
-      :inputmode="field.kind === 'date' ? 'numeric' : 'text'"
+      :inputmode="
+        field.kind === 'date'
+          ? 'numeric'
+          : field.kind === 'money'
+            ? 'decimal'
+            : 'text'
+      "
       autocomplete="off"
       @blur="field.hint && emit('lookup')"
       :disable="disabled"

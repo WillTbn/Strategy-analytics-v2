@@ -334,6 +334,10 @@ const routes = [
 // Registration screens available in homologation; legacy URLs remain compatible.
 routes.splice(routes.length - 1, 0,
   {
+    path: "/cadastro/etapa-5",
+    component: () => import("../system/pages/registration/RegistrationEmploymentPage.vue"),
+  },
+  {
     path: "/cadastro/etapa-4/:variant?",
     component: () => import("../system/pages/registration/RegistrationDocumentPage.vue"),
   },
