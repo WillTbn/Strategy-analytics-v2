@@ -1,14 +1,14 @@
 <template>
   <div>
     <aside class="preview-note" role="status">
-      Prévia local da Etapa 2 — e-mail demonstrativo, sem envio ou validação no
+      Homologação da Etapa 2 — e-mail demonstrativo, sem envio ou validação no
       servidor. {{ notice }}
     </aside>
     <registration-shell :step="2" title="Confirmar e-mail"
       ><registration-email-step
         email="preview@example.invalid"
         :transport="transport"
-        @back="router.push('/dev/cadastro/etapa-1')"
+        @back="router.push('/cadastro/etapa-1')"
     /></registration-shell>
   </div>
 </template>

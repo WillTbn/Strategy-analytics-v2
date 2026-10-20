@@ -1,7 +1,10 @@
 <template>
   <q-layout
     class="registration-shell"
-    :class="{ 'registration-shell--confirmation': step === 2 }"
+    :class="{
+      'registration-shell--confirmation': step === 2,
+      'registration-shell--personal': step === 3,
+    }"
   >
     <q-page-container
       ><main class="registration-shell__main">
@@ -96,6 +99,10 @@ defineProps({
 .registration-shell--confirmation {
   --registration-background-angle: 209.1858deg;
   --registration-card-angle: 208.6985deg;
+}
+.registration-shell--personal {
+  --registration-background-angle: 209.1858deg;
+  --registration-card-angle: 214.954deg;
 }
 .registration-shell__header p {
   margin: 0;

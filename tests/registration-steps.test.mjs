@@ -70,7 +70,7 @@ test("validation does not mutate input, leak values in errors, or share form sta
   first.name = "Edited";
   assert.equal(second.name, "");
 });
-test("the registration review route exists only in development", async () => {
+test("registration screens ship in homologation builds and preserve the existing registration", async () => {
   const source = await readFile(
     new URL("../src/router/routes.js", import.meta.url),
     "utf8",
@@ -83,10 +83,14 @@ test("the registration review route exists only in development", async () => {
     });
     await module.evaluate();
     const routes = module.namespace.default;
-    for (const step of [1, 2])
+    for (const step of [1, 2, 3])
       assert.equal(
-        routes.some((route) => route.path === `/dev/cadastro/etapa-${step}`),
-        dev,
+        routes.some(
+          (route) =>
+            route.path === `/cadastro/etapa-${step}` &&
+            route.alias === `/dev/cadastro/etapa-${step}`,
+        ),
+        true,
       );
     assert.ok(routes.some((route) => route.name === "register"));
     assert.equal(routes.at(-1).path, "/:catchAll(.*)*");

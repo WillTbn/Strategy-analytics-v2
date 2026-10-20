@@ -332,15 +332,22 @@ const routes = [
 ];
 
 // Isolated UI review only. Never expose an unintegrated registration flow in a production build.
-if (process.env.DEV) {
-  routes.splice(routes.length - 1, 0, {
-    path: "/dev/cadastro/etapa-1",
-    component: () => import("../system/pages/dev/RegistrationPreviewPage.vue"),
-  });
-  routes.splice(routes.length - 1, 0, {
-    path: "/dev/cadastro/etapa-2",
-    component: () => import("../system/pages/dev/RegistrationEmailPreviewPage.vue"),
-  });
-}
-
+// Registration screens available in homologation; legacy URLs remain compatible.
+routes.splice(routes.length - 1, 0,
+  {
+    path: "/cadastro/etapa-1",
+    alias: "/dev/cadastro/etapa-1",
+    component: () => import("../system/pages/registration/RegistrationPreviewPage.vue"),
+  },
+  {
+    path: "/cadastro/etapa-2",
+    alias: "/dev/cadastro/etapa-2",
+    component: () => import("../system/pages/registration/RegistrationEmailPreviewPage.vue"),
+  },
+  {
+    path: "/cadastro/etapa-3",
+    alias: "/dev/cadastro/etapa-3",
+    component: () => import("../system/pages/registration/RegistrationPersonalPreviewPage.vue"),
+  },
+);
 export default routes;

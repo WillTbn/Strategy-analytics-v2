@@ -1,8 +1,8 @@
 <template>
   <div>
     <aside class="preview-note" role="status">
-      Prévia local da Etapa 1 — sem gravação, criação de conta ou aceite
-      enviado. {{ notice }}
+      Homologação da Etapa 1 — sem gravação, criação de conta ou aceite enviado.
+      {{ notice }}
     </aside>
     <registration-shell :step="1" title="Criar conta"
       ><registration-account-step
