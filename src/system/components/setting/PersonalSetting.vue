@@ -20,7 +20,10 @@
     <profile-resource-state :resource="profile.financial" />
     <profile-fields
       v-if="
-        !profile.professional.state.loading && !profile.financial.state.loading
+        !profile.professional.state.loading &&
+        !profile.financial.state.loading &&
+        !profile.professional.state.error &&
+        !profile.financial.state.error
       "
       :fields="profile.fields.value.summaryJob"
       :columns="3"

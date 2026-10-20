@@ -283,3 +283,23 @@ test("invalid object contacts or ambiguous primary contacts cannot clear a saved
   );
   assert.equal(profile.contacts[0].value, "client@example.com");
 });
+
+
+test("basic profile rejects future and impossible birthdays before producing a write payload", () => {
+  const draft = basicProfileDraft(profile);
+  const before = structuredClone(profile);
+  const today = new Date(2026, 9, 20, 12);
+  for (const birthDate of ["2026-10-21", "2999-01-01", "2025-02-29", "2026-04-31", "1990-13-01", "not-a-date", "0000-01-01"])
+    assert.throws(() => basicProfilePatch(profile, { ...draft, birthDate }, { today }), /data de nascimento válida/);
+  assert.deepEqual(profile, before);
+  const valid = basicProfilePatch(profile, { ...draft, birthDate: "2000-02-29" }, { today });
+  assert.equal(valid.birthDate, "2000-02-29");
+  assert.deepEqual(valid.contacts, profile.contacts);
+  assert.deepEqual(valid.addresses, profile.addresses);
+});
+test("birthday validation uses the local calendar day and does not invent requiredness", () => {
+  const draft = basicProfileDraft(profile);
+  const today = new Date(2026, 9, 20, 0, 1);
+  assert.equal(basicProfilePatch(profile, { ...draft, birthDate: "2026-10-20" }, { today }).birthDate, "2026-10-20");
+  assert.equal(basicProfilePatch(profile, { ...draft, birthDate: "" }, { today }).birthDate, null);
+});

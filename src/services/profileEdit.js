@@ -1,3 +1,4 @@
+import { validBirthDate } from "./registrationPersonal.js";
 const nullable = (value) =>
   typeof value === "string" && value.trim() ? value.trim() : null;
 const pick = (value, keys) =>
@@ -73,7 +74,13 @@ export function basicProfileDraft(profile, summary = {}) {
     fatherName: p.fatherName || "",
   };
 }
-export function basicProfilePatch(profile, draft) {
+export function basicProfilePatch(profile, draft, { today = new Date() } = {}) {
+  const birthDate = nullable(draft.birthDate);
+  if (birthDate) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthDate);
+    if (!match || !validBirthDate(match[3] + "/" + match[2] + "/" + match[1], today))
+      throw new Error("Informe uma data de nascimento válida, sem ser no futuro.");
+  }
   const primaryNames = profile.names?.filter((name) => name.isPrimary) || [];
   const primaryName = primaryNames.length === 1 ? primaryNames[0] : null;
   if (!primaryName || !nullable(draft.name))
@@ -122,7 +129,7 @@ export function basicProfilePatch(profile, draft) {
   personalDetails.birthState = nullable(birthPlace.slice(1).join(", "));
   return {
     ...currentProfilePatch(profile),
-    birthDate: nullable(draft.birthDate),
+    birthDate,
     names,
     contacts,
     personalDetails,
