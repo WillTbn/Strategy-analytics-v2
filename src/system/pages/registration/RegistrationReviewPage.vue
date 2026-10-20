@@ -47,6 +47,7 @@ import {
 const { busy, ready, save } = useRegistrationFlow(7);
 const router = useRouter();
 const snapshot = computed(() => ({
+  readErrors: registrationContext.readErrors,
   personal: personalPreviewDraft.value,
   catalog: registrationContext.catalog,
   documentSummary:

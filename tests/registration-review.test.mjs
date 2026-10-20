@@ -126,3 +126,16 @@ test("local issue aggregation catches invalid dates, money and missing document 
   assert.ok(issues.includes("Atividade trabalhista"));
   assert.equal(new Set(issues).size, issues.length);
 });
+
+test("failed reads are unavailable rather than not informed, while preserving draft values and Figma sections", () => {
+  const snapshot = empty();
+  snapshot.readErrors = { financial: true, contacts: true };
+  snapshot.employment.declaredNetWorth = "0";
+  const sections = registrationReviewSections(snapshot);
+  assert.equal(sections.length, 5);
+  assert.match(sections[3].text, /bens R\$ 0,00.*Consulta indisponível/);
+  assert.equal(sections[3].missing, true);
+  assert.match(sections[4].text, /Consulta indisponível/);
+  assert.notEqual(sections[4].text, "Não informado");
+  assert.equal(sections[0].text, "Não informado");
+});

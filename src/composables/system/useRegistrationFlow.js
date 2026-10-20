@@ -50,6 +50,7 @@ export const registrationContext = reactive({
   profile: null,
   status: null,
   notices: {},
+  readErrors: {},
 });
 export const registrationCredentials = { password: "" };
 let owner = null;
@@ -122,6 +123,7 @@ export function useRegistrationFlow(step) {
       for (const key of Object.keys(documentDrafts)) delete documentDrafts[key];
       activeDocumentVariant.value = null;
       registrationContext.notices = {};
+      registrationContext.readErrors = {};
     }
     registrationContext.profile = profile;
     const email = profile.contacts?.find(
@@ -185,63 +187,61 @@ export function useRegistrationFlow(step) {
       };
       catalog.value.regions = documentCatalog.value.region;
     }
+    const readErrors = {};
     if (step === 5 || step === 7) {
-      const financialResult = results[3];
-      if (!hydrated.has(5)) {
-        if (
-          results[2].status !== "fulfilled" ||
-          financialResult.status !== "fulfilled"
-        ) {
-          if (step !== 7)
-            throw new Error(
-              "Não foi possível consultar o perfil profissional ou financeiro. Recarregue para tentar novamente.",
-            );
-          notify(
-            "Não foi possível consultar os dados profissionais/financeiros. As demais seções continuam disponíveis.",
-          );
+      const professionalResult = results[2],
+        financialResult = results[3];
+      // Hydrate independent reads only on success. A failed read must never
+      // erase a draft or turn unavailable server data into an empty profile.
+      if (professionalResult.status === "fulfilled") {
+        if (!hydrated.has("professional")) {
+          employmentDraft.value.occupation = professional?.occupation ?? null;
+          hydrated.add("professional");
         }
-        const f = financialResult.value;
-        employmentDraft.value = newRegistrationEmployment({
-          occupation: professional?.occupation,
-          ...Object.fromEntries(
-            [
-              "individualMonthlyIncome",
-              "householdMonthlyIncome",
-              "declaredNetWorth",
-            ].map((k) => [k, displayRegistrationAmount(f?.[k])]),
-          ),
-        });
-        if (
-          results[2].status === "fulfilled" &&
-          financialResult.status === "fulfilled"
-        )
-          hydrated.add(5);
-      }
+      } else readErrors.professional = true;
+      if (financialResult.status === "fulfilled") {
+        if (!hydrated.has("financial")) {
+          const f = financialResult.value;
+          for (const key of [
+            "individualMonthlyIncome",
+            "householdMonthlyIncome",
+            "declaredNetWorth",
+          ]) employmentDraft.value[key] = displayRegistrationAmount(f?.[key]);
+          hydrated.add("financial");
+        }
+      } else readErrors.financial = true;
     }
-    if ((step === 6 || step === 7) && !hydrated.has(6)) {
+    if (step === 6 || step === 7) {
       const result = results.at(-1);
-      if (result.status !== "fulfilled") {
-        if (step !== 7)
-          throw new Error(
-            "Não foi possível consultar os contatos. Recarregue para tentar novamente.",
-          );
-        notify(
-          "Não foi possível consultar os contatos. As demais seções continuam disponíveis.",
-        );
-      }
-      const contacts = result.status === "fulfilled" ? result.value || [] : [];
-      trustedContactsDraft.value = {
-        noContact: false,
-        contacts: contacts.length
-          ? contacts.map((c) => ({
-              id: c.id,
-              name: c.name,
-              phoneNumber: c.phoneNumber,
-            }))
-          : [{ name: "", phoneNumber: "" }],
-      };
-      if (result.status === "fulfilled") hydrated.add(6);
+      if (result.status === "fulfilled") {
+        if (!hydrated.has(6)) {
+          const contacts = result.value || [];
+          trustedContactsDraft.value = {
+            noContact: false,
+            contacts: contacts.length
+              ? contacts.map((c) => ({
+                  id: c.id,
+                  name: c.name,
+                  phoneNumber: c.phoneNumber,
+                }))
+              : [{ name: "", phoneNumber: "" }],
+          };
+          hydrated.add(6);
+        }
+      } else readErrors.contacts = true;
     }
+    const hadReadErrors = Object.keys(registrationContext.readErrors).length > 0;
+    registrationContext.readErrors = readErrors;
+    const failures = [
+      readErrors.professional && "atividade trabalhista",
+      readErrors.financial && "dados financeiros",
+      readErrors.contacts && "contatos de confiança",
+    ].filter(Boolean);
+    if (failures.length) {
+      const text = `Não foi possível consultar: ${failures.join(", ")}. Os rascunhos foram mantidos. Recarregue para tentar novamente.`;
+      if (step !== 7) throw new Error(text);
+      notify(text);
+    } else if (hadReadErrors) notify("");
     ready.value = true;
     revision.value++;
   };

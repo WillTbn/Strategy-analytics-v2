@@ -132,13 +132,21 @@ export function registrationReviewSections(snapshot) {
       "/cadastro/etapa-5",
     ],
     ["contacts", "Contatos de confiança", contactsText, "/cadastro/etapa-6"],
-  ].map(([key, title, value, path]) => ({
-    key,
-    title,
-    text: value || "Não informado",
-    path,
-    missing: !value,
-  }));
+  ].map(([key, title, value, path]) => {
+    const unavailable =
+      (key === "employment" &&
+        (snapshot.readErrors?.professional || snapshot.readErrors?.financial)) ||
+      (key === "contacts" && snapshot.readErrors?.contacts);
+    return {
+      key,
+      title,
+      text: unavailable
+        ? join([value, "Consulta indisponível; recarregue para tentar novamente"])
+        : value || "Não informado",
+      path,
+      missing: unavailable || !value,
+    };
+  });
 }
 export function registrationReviewIssues(snapshot) {
   const issues = registrationReviewSections(snapshot)
