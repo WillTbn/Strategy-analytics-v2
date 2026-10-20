@@ -17,6 +17,7 @@
       :columns="columns"
       row-key="sessionId"
       :loading="loading"
+      :hide-bottom="loading || (Boolean(error) && rows.length === 0)"
       :rows-per-page-options="[5, 10, 20]"
       class="q-mt-md bg-transparent"
       flat

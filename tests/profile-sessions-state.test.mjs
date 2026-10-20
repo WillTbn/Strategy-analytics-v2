@@ -102,10 +102,11 @@ const renderState = (state) => renderToString(Vue.createSSRApp({
     QCard: { render() { return Vue.h("section", this.$slots.default?.()); } },
     QBtn: { props: ["label"], render() { return Vue.h("button", this.label); } },
     QTable: {
-      props: ["rows", "noDataLabel"],
+      props: ["rows", "noDataLabel", "hideBottom"],
       render() {
-        return Vue.h("div", this.rows.length ? this.rows.map((row) => Vue.h("span", row.equipment)) :
-          this.$slots["no-data"] ? this.$slots["no-data"]() : this.noDataLabel);
+        const body = this.rows.length ? this.rows.map((row) => Vue.h("span", row.equipment)) :
+          this.$slots["no-data"] ? this.$slots["no-data"]() : this.noDataLabel;
+        return Vue.h("div", [body, this.hideBottom ? null : Vue.h("footer", "0-0 de 0")]);
       },
     },
   },
@@ -115,9 +116,9 @@ test("loading and failure never claim the account has no sessions", async () => 
   const failed = await renderState({ error: "Consulta indisponível" });
   assert.match(failed, /Consulta indisponível/);
   assert.match(failed, /<button[^>]*>Tentar novamente<\/button>/);
-  assert.doesNotMatch(failed, /Nenhuma sessão disponível/);
+  assert.doesNotMatch(failed, /Nenhuma sessão disponível|0-0 de 0/);
   const loading = await renderState({ loading: true });
-  assert.doesNotMatch(loading, /Nenhuma sessão disponível/);
+  assert.doesNotMatch(loading, /Nenhuma sessão disponível|0-0 de 0/);
 });
 test("a successful empty response keeps the existing empty text and actual sessions remain visible", async () => {
   assert.match(await renderState({}), /Nenhuma sessão disponível/);
