@@ -13,6 +13,7 @@ export function createRegistrationPostalLookup({
   let completed = null;
   const invalidate = () => {
     revision++;
+    completed = null;
     state.loading = false;
     state.error = "";
   };

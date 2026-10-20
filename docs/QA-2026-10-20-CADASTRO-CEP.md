@@ -12,7 +12,7 @@ Respostas antigas são ignoradas após mudar CEP ou sair da etapa; campos editad
 
 ## Validação
 
-- 134 testes aprovados, incluindo oito cenários de validação, preenchimento, ausência de logradouro/bairro, falha/retry, concorrência, descarte após saída, resposta inválida e transporte sem autenticação.
+- 135 testes aprovados, incluindo nove cenários de validação, preenchimento, ausência de logradouro/bairro, falha/retry, concorrência, descarte após saída, resposta inválida e transporte sem autenticação.
 - Lint/build e diff do lote aprovados.
 - Endpoint existente respondeu 200 para CEP público 01001000 e preflight permitiu localhost:9010 e hml.strategyanalytics.com.br.
 - Local 9010 no navegador: CEP 01001-000 preencheu Praça da Sé, Sé, São Paulo/Estado São Paulo; Número 100 e Complemento preservados. CEP 99999-999 mostrou Não encontrado sem apagar endereço; voltar ao CEP válido removeu o erro.

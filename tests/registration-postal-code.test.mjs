@@ -190,3 +190,16 @@ test("shared legacy lookup sends only CEP without authenticated credentials and 
   assert.deepEqual(Object.keys(calls[0].body), ["cep"]);
   assert.equal(calls[0].body.cep, "01001000");
 });
+
+test("returning to a previously queried CEP after changing it performs a fresh lookup", async () => {
+  const h = harness();
+  await h.lookup();
+  h.values.postalCode = "99999-999";
+  h.invalidate();
+  h.values.postalCode = "01001-000";
+  h.invalidate();
+  h.values.street = "Endereço de outro CEP";
+  await h.lookup();
+  assert.equal(h.calls.length, 2);
+  assert.equal(h.values.street, "Praça da Sé");
+});
