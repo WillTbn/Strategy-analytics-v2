@@ -7,7 +7,7 @@
       :display-value="modelValue == null ? 'Selecione' : undefined"
       v-bind="style"
       :class="{ empty: modelValue == null }"
-      :aria-label="field.label"
+      :aria-label="field.ariaLabel || field.label"
       :options="options"
       emit-value
       map-options
@@ -29,8 +29,9 @@
       v-else
       :model-value="modelValue ?? ''"
       v-bind="style"
-      :aria-label="field.label"
+      :aria-label="field.ariaLabel || field.label"
       :placeholder="field.placeholder"
+      :type="field.kind === 'phone' ? 'tel' : 'text'"
       :mask="
         field.kind === 'date'
           ? field.format === 'aaaa/mm/dd'
@@ -41,9 +42,11 @@
       :inputmode="
         field.kind === 'date'
           ? 'numeric'
-          : field.kind === 'money'
-            ? 'decimal'
-            : 'text'
+          : field.kind === 'phone'
+            ? 'tel'
+            : field.kind === 'money'
+              ? 'decimal'
+              : 'text'
       "
       autocomplete="off"
       @blur="field.hint && emit('lookup')"
