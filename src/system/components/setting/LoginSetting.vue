@@ -22,6 +22,9 @@
       flat
       no-data-label="Nenhuma sessão disponível."
     >
+      <template #no-data>
+        <span v-if="!loading && !error">Nenhuma sessão disponível.</span>
+      </template>
       <template #body-cell-actions="props">
         <q-td :props="props"
           ><q-btn
@@ -84,7 +87,7 @@ async function load() {
     if (active && version === operation && isClientSessionCurrent(session))
       rows.value = sessionRows(collection(result));
   } catch (e) {
-    if (active && isClientSessionCurrent(session))
+    if (active && version === operation && isClientSessionCurrent(session))
       error.value = getApiErrorMessage(
         e,
         "Não foi possível consultar as sessões.",
