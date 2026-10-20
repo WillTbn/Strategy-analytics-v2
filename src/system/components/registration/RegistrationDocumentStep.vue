@@ -164,7 +164,7 @@ const props = defineProps({
   fileRules: { type: Object, default: () => ({}) },
   busy: Boolean,
 });
-const emit = defineEmits(["update:modelValue", "back"]);
+const emit = defineEmits(["update:modelValue", "back", "validated"]);
 const config = computed(() => documentVariants[props.variant]);
 const form = reactive(copyRegistrationDocuments(props.modelValue));
 const controls = ref({});
@@ -205,8 +205,8 @@ const submit = async () => {
     controls.value[Object.keys(errors.value)[0]]?.focus();
     return;
   }
-  notice.value =
-    "Dados mantidos nesta etapa. Gravação, envio dos documentos e avanço aguardam integração.";
+  notice.value = "";
+  emit("validated");
 };
 </script>
 <style scoped>

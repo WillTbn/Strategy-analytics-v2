@@ -82,6 +82,15 @@ export function registrationReviewSections(snapshot) {
       ? `${document?.type}: ${maskRegistrationIdentifier(details.documentNumber)}`
       : "",
     fileText,
+    ...(!fileText
+      ? (snapshot.documentSummary || []).map((d) =>
+          join([
+            d.documentCode,
+            d.numberMasked ? maskRegistrationIdentifier(d.numberMasked) : "",
+            d.status,
+          ]),
+        )
+      : []),
   ]);
   const employmentText = join([
     choice(employment.occupation, catalog.occupations),

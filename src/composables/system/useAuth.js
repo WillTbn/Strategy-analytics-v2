@@ -7,13 +7,17 @@ import {
 } from "src/services/clientAuthService";
 import { useUserStore } from "src/stores/user";
 import { Cookies } from "quasar";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import useNotify from "../useNotify";
 import { ref } from "vue";
 import useCookies from "../useCookies";
 import {
-  resetClientSession, clientSessionVersion, isClientSessionVersion,
-  captureClientSession, isClientSessionCurrent, assertClientSessionCurrent,
+  resetClientSession,
+  clientSessionVersion,
+  isClientSessionVersion,
+  captureClientSession,
+  isClientSessionCurrent,
+  assertClientSessionCurrent,
 } from "src/services/clientApi";
 import { assertLoginIdentity } from "src/services/sessionIsolation";
 
@@ -23,14 +27,11 @@ const refreshOptions = { path: "/", secure: true, sameSite: "None" };
 
 export default function useAuth() {
   const useStore = useUserStore();
-  const {
-    setTokenCookie,
-    deleteTokenCookie,
-    setUserCookie,
-    tokenName,
-  } = useCookies();
+  const { setTokenCookie, deleteTokenCookie, setUserCookie, tokenName } =
+    useCookies();
 
   const router = useRouter();
+  const route = useRoute();
   const { errorNotify, infoNotify } = useNotify();
   const loading = ref(false);
   const errors = ref({
@@ -46,7 +47,9 @@ export default function useAuth() {
     return {
       ...u,
       roles,
-      role_id: roles.some((item) => ["Cliente", "Client"].includes(item)) ? 3 : 1,
+      role_id: roles.some((item) => ["Cliente", "Client"].includes(item))
+        ? 3
+        : 1,
       account: u.account ?? {},
     };
   };
@@ -54,9 +57,12 @@ export default function useAuth() {
   /**
    * Login do cliente na API (codebiz). `value.person` carrega o e-mail.
    */
-  const auth = async (value) => {
+  const auth = async (value, destination = null) => {
     if (loading.value) return;
-    const credentials = { email: String(value.person || "").trim(), password: value.password };
+    const credentials = {
+      email: String(value.person || "").trim(),
+      password: value.password,
+    };
     const operation = resetClientSession();
     useStore.$reset();
     useStore.login.person = credentials.email;
@@ -65,10 +71,14 @@ export default function useAuth() {
     try {
       const payload = await clientLogin(credentials);
       if (!isClientSessionVersion(operation)) return;
-      if (!payload?.accessToken) throw new Error("O login não retornou uma sessão válida.");
+      if (!payload?.accessToken)
+        throw new Error("O login não retornou uma sessão válida.");
 
       setTokenCookie({ token: payload.accessToken });
-      if (Cookies.get(tokenName) !== payload.accessToken) throw new Error("Não foi possível salvar a sessão. Confira as permissões de cookies do navegador.");
+      if (Cookies.get(tokenName) !== payload.accessToken)
+        throw new Error(
+          "Não foi possível salvar a sessão. Confira as permissões de cookies do navegador.",
+        );
       if (payload.refreshToken) {
         Cookies.set(refreshName, payload.refreshToken, refreshOptions);
       }
@@ -79,10 +89,19 @@ export default function useAuth() {
       if (!isClientSessionVersion(operation)) return;
       assertClientSessionCurrent(identitySession);
       setUserCookie(normalizeUser(me));
-      await router.replace({ name: "inicio" });
+      const next = /^\/cadastro\/etapa-[3-7](?:\/[a-z-]+)?$/.test(
+        String(route.query.next || ""),
+      )
+        ? { path: route.query.next }
+        : { name: "inicio" };
+      await router.replace(destination || next);
+      return true;
     } catch (e) {
       if (!isClientSessionVersion(operation)) return;
-      if (identitySession && !isClientSessionCurrent(identitySession)) { useStore.$reset(); return; }
+      if (identitySession && !isClientSessionCurrent(identitySession)) {
+        useStore.$reset();
+        return;
+      }
       resetClientSession();
       deleteTokenCookie();
       Cookies.remove(refreshName, refreshOptions);
@@ -96,7 +115,10 @@ export default function useAuth() {
 
   const verifyLogged = async () => {
     const token = Cookies.get(tokenName);
-    if (!token) { useStore.$reset(); return false; }
+    if (!token) {
+      useStore.$reset();
+      return false;
+    }
     return validatetoken();
   };
 
@@ -113,12 +135,16 @@ export default function useAuth() {
       await clientPing();
       if (!isClientSessionVersion(operation)) return false;
       assertClientSessionCurrent(identitySession);
-      if (previousUserId && me.id !== previousUserId) throw new Error("A identidade da sessão mudou. Entre novamente.");
+      if (previousUserId && me.id !== previousUserId)
+        throw new Error("A identidade da sessão mudou. Entre novamente.");
       setUserCookie(normalizeUser(me));
       return true;
     } catch (e) {
       if (!isClientSessionVersion(operation)) return false;
-      if (!isClientSessionCurrent(identitySession)) { useStore.$reset(); return false; }
+      if (!isClientSessionCurrent(identitySession)) {
+        useStore.$reset();
+        return false;
+      }
       resetClientSession();
       infoNotify("Faça login!");
       deleteTokenCookie();

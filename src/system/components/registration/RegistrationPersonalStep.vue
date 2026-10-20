@@ -177,6 +177,7 @@ const props = defineProps({
   catalog: { type: Object, default: () => ({}) },
   requiredFields: { type: Array, default: () => [] },
   busy: Boolean,
+  integrated: Boolean,
 });
 const emit = defineEmits(["update:modelValue", "back", "validated"]);
 const form = reactive(newRegistrationPersonal(props.modelValue));
@@ -223,7 +224,7 @@ const submit = async () => {
     if (errors.value.birthDate) birthInput.value?.focus();
     return;
   }
-  if (!personalCatalogReady(props.catalog)) {
+  if (!props.integrated && !personalCatalogReady(props.catalog)) {
     notice.value =
       "As opções de cadastro ainda estão indisponíveis. Seus dados permanecem nesta etapa.";
     return;

@@ -1,8 +1,11 @@
 <template>
   <div>
-    <aside class="preview-note" role="status">
-      Homologação da Etapa 7 — revisão dos rascunhos em memória. Envio final e
-      estado de análise aguardam integração.
+    <aside
+      v-if="registrationContext.notices[7]"
+      class="preview-note"
+      role="status"
+    >
+      {{ registrationContext.notices[7] }}
     </aside>
     <registration-shell
       :step="7"
@@ -13,6 +16,10 @@
       "
       ><registration-review-step
         :snapshot="snapshot"
+        :busy="busy"
+        integrated
+        @validated="save"
+        v-if="ready"
         @back="router.push('/cadastro/etapa-6')"
         @edit="
           (section) =>
@@ -33,9 +40,17 @@ import {
 } from "./registrationDocumentState";
 import { employmentDraft } from "./registrationEmploymentState";
 import { trustedContactsDraft } from "./registrationTrustedContactsState";
+import {
+  useRegistrationFlow,
+  registrationContext,
+} from "src/composables/system/useRegistrationFlow";
+const { busy, ready, save } = useRegistrationFlow(7);
 const router = useRouter();
 const snapshot = computed(() => ({
   personal: personalPreviewDraft.value,
+  catalog: registrationContext.catalog,
+  documentSummary:
+    registrationContext.profile?.identificationDocuments?.documents,
   variant: activeDocumentVariant.value,
   document: documentDrafts[activeDocumentVariant.value] || null,
   employment: employmentDraft.value,

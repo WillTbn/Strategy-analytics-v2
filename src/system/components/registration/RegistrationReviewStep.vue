@@ -80,8 +80,9 @@ import {
 const props = defineProps({
   snapshot: { type: Object, required: true },
   busy: Boolean,
+  integrated: Boolean,
 });
-const emit = defineEmits(["edit", "back"]);
+const emit = defineEmits(["edit", "back", "validated"]);
 const sections = computed(() => registrationReviewSections(props.snapshot));
 const confirmed = ref(false),
   confirmationError = ref(""),
@@ -104,6 +105,10 @@ const submit = async () => {
     confirmationError.value = "Confirme as informações antes de enviar.";
     await nextTick();
     confirmationInput.value?.focus();
+    return;
+  }
+  if (props.integrated) {
+    emit("validated");
     return;
   }
   const issues = registrationReviewIssues(props.snapshot);

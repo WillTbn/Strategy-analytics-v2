@@ -64,7 +64,7 @@ const props = defineProps({
   requiredFields: { type: Array, default: () => [] },
   busy: Boolean,
 });
-const emit = defineEmits(["update:modelValue", "back"]);
+const emit = defineEmits(["update:modelValue", "back", "validated"]);
 const form = reactive(newRegistrationEmployment(props.modelValue));
 const controls = ref({}),
   errors = ref({}),
@@ -86,9 +86,8 @@ const submit = async () => {
     controls.value[Object.keys(errors.value)[0]]?.focus();
     return;
   }
-  notice.value = props.occupations.length
-    ? "Dados mantidos nesta etapa. Gravação e avanço aguardam integração."
-    : "As opções de atividade ainda estão indisponíveis. Seus dados permanecem nesta etapa.";
+  notice.value = "";
+  emit("validated");
 };
 </script>
 <style scoped>

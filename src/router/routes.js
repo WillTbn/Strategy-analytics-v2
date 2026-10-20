@@ -70,7 +70,7 @@ const routes = [
   {
     path: "/register",
     name: "register",
-    component: () => import("../system/pages/RegisterPage.vue"),
+    redirect: "/cadastro/etapa-1",
   },
   {
     path: "/confirm-email",
@@ -335,6 +335,7 @@ const routes = [
 routes.splice(routes.length - 1, 0,
   {
     path: "/cadastro/etapa-7",
+    meta: { auth: true },
     component: () => import("../system/pages/registration/RegistrationReviewPage.vue"),
   },
   {
@@ -343,14 +344,17 @@ routes.splice(routes.length - 1, 0,
   },
   {
     path: "/cadastro/etapa-6",
+    meta: { auth: true },
     component: () => import("../system/pages/registration/RegistrationTrustedContactsPage.vue"),
   },
   {
     path: "/cadastro/etapa-5",
+    meta: { auth: true },
     component: () => import("../system/pages/registration/RegistrationEmploymentPage.vue"),
   },
   {
     path: "/cadastro/etapa-4/:variant?",
+    meta: { auth: true },
     component: () => import("../system/pages/registration/RegistrationDocumentPage.vue"),
   },
   {
@@ -365,6 +369,7 @@ routes.splice(routes.length - 1, 0,
   },
   {
     path: "/cadastro/etapa-3",
+    meta: { auth: true },
     alias: "/dev/cadastro/etapa-3",
     component: () => import("../system/pages/registration/RegistrationPersonalPreviewPage.vue"),
   },

@@ -1,15 +1,21 @@
 <template>
   <div>
-    <aside class="preview-note" role="status">
-      Homologação da Etapa 4 — variante do Figma para conferência; dados e
-      arquivos ficam somente em memória, sem envio ou gravação.
+    <aside
+      v-if="registrationContext.notices[4]"
+      class="preview-note"
+      role="status"
+    >
+      {{ registrationContext.notices[4] }}
     </aside>
     <registration-shell :step="4" title="Documento e endereço" :style="angles"
       ><registration-document-step
-        v-if="config"
-        :key="variant"
+        v-if="config && ready"
+        :key="`${variant}-${revision}`"
         v-model="draft"
         :variant="variant"
+        :busy="busy"
+        :catalog="documentCatalog"
+        @validated="save"
         @back="
           router.push(
             route.query.review === '1'
@@ -19,7 +25,11 @@
         "
       />
       <p v-else role="alert">
-        Variação de residência indisponível.
+        {{
+          busy
+            ? "Carregando seus dados…"
+            : "Não foi possível carregar esta variação. Confira o país de residência da conta."
+        }}
       </p></registration-shell
     >
   </div>
@@ -37,9 +47,16 @@ import {
   documentDrafts,
   activeDocumentVariant,
 } from "./registrationDocumentState";
+import {
+  useRegistrationFlow,
+  registrationContext,
+} from "src/composables/system/useRegistrationFlow";
+const { busy, ready, revision, documentCatalog, save } = useRegistrationFlow(4);
 const route = useRoute(),
   router = useRouter();
-const variant = computed(() => route.params.variant || "br");
+const variant = computed(
+  () => route.params.variant || activeDocumentVariant.value || "br",
+);
 const config = computed(() =>
   Object.hasOwn(documentVariants, variant.value)
     ? documentVariants[variant.value]

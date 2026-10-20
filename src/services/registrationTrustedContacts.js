@@ -4,6 +4,7 @@ export function newRegistrationTrustedContacts(value = {}) {
     noContact: value.noContact === true,
     contacts: value.contacts?.length
       ? value.contacts.map((contact) => ({
+          ...(contact.id ? { id: contact.id } : {}),
           name: String(contact.name ?? ""),
           phoneNumber: String(contact.phoneNumber ?? ""),
         }))

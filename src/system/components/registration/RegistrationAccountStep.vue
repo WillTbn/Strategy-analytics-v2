@@ -183,7 +183,7 @@ const fieldStyle = {
 const submit = async () => {
   if (props.busy) return;
   errors.value = validateRegistrationAccount(form);
-  if (!Object.keys(errors.value).length) emit("validated");
+  if (!Object.keys(errors.value).length) emit("validated", { ...form });
   else {
     await nextTick();
     const invalid = formRef.value?.$el.querySelector(

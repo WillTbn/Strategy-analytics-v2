@@ -36,7 +36,7 @@ export default route(function (/* { store, ssrContext } */) {
   });
   Router.beforeEach(async (to) => {
     const { verifyLogged } = useAuth();
-    const { tokenName } = useCookies()
+    const { tokenName } = useCookies();
     let home =
       to.name == "home"
         ? "Gestão de Investimentos e Serviços Financeiros"
@@ -47,15 +47,37 @@ export default route(function (/* { store, ssrContext } */) {
         : "Strategy Analytics";
     if (to.meta?.auth) {
       const authenticated = await verifyLogged();
-      if (!authenticated) return { name: 'login' };
+      if (!authenticated)
+        return {
+          name: "login",
+          query: to.path.startsWith("/cadastro/") ? { next: to.path } : {},
+        };
     }
 
     //verificando se o usuário esta logado evitar logar duplicado
     if (to.name == "login") {
-      if (Cookies.has(tokenName) && await verifyLogged()) return { name: 'inicio' };
+      if (Cookies.has(tokenName) && (await verifyLogged()))
+        return /^\/cadastro\/etapa-[3-7](?:\/[a-z-]+)?$/.test(
+          String(to.query.next || ""),
+        )
+          ? { path: to.query.next }
+          : { name: "inicio" };
     }
     return true;
   });
 
+  Router.afterEach((to, from) => {
+    if (
+      (from.path.startsWith("/cadastro/") ||
+        from.path.startsWith("/dev/cadastro/")) &&
+      !/\/cadastro\/etapa-[12]$/.test(to.path)
+    ) {
+      import("src/composables/system/useRegistrationFlow").then(
+        ({ registrationCredentials }) => {
+          registrationCredentials.password = "";
+        },
+      );
+    }
+  });
   return Router;
 });

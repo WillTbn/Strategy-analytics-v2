@@ -2,7 +2,7 @@ const nullable = (value) =>
   typeof value === "string" && value.trim() ? value.trim() : null;
 const pick = (value, keys) =>
   Object.fromEntries(keys.map((key) => [key, value[key] ?? null]));
-const currentPatch = (profile) => ({
+export const currentProfilePatch = (profile) => ({
   birthDate: profile.birthDate,
   names: (profile.names || []).map((value) =>
     pick(value, [
@@ -86,7 +86,7 @@ export function basicProfilePatch(profile, draft) {
   personalDetails.birthCity = nullable(birthPlace[0]);
   personalDetails.birthState = nullable(birthPlace.slice(1).join(", "));
   return {
-    ...currentPatch(profile),
+    ...currentProfilePatch(profile),
     birthDate: nullable(draft.birthDate),
     names,
     contacts,
@@ -137,5 +137,5 @@ export function locationProfilePatch(profile, draft) {
       return address;
     },
   );
-  return { ...currentPatch(profile), addresses };
+  return { ...currentProfilePatch(profile), addresses };
 }

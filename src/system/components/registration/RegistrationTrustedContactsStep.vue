@@ -95,7 +95,7 @@ const props = defineProps({
   modelValue: { type: Object, default: () => newRegistrationTrustedContacts() },
   busy: Boolean,
 });
-const emit = defineEmits(["update:modelValue", "back"]);
+const emit = defineEmits(["update:modelValue", "back", "validated"]);
 const form = reactive(newRegistrationTrustedContacts(props.modelValue));
 const controls = ref({}),
   errors = ref({}),
@@ -136,9 +136,8 @@ const submit = async () => {
     await focusError();
     return;
   }
-  notice.value = form.noContact
-    ? "Opção mantida nesta etapa. Registro da ausência e avanço aguardam integração."
-    : "Contatos mantidos nesta etapa. Gravação e avanço aguardam integração.";
+  notice.value = "";
+  emit("validated");
 };
 </script>
 <style scoped>

@@ -1,6 +1,6 @@
 import { clientApi } from "./clientApi";
 
-const unwrap = (response) => response.data?.data ?? response.data;
+const unwrap = (response) => response.data && Object.hasOwn(response.data, "data") ? response.data.data : response.data;
 
 export async function getClientProfileSummary() { return unwrap(await clientApi.get("/api/v1/client/profile/summary")); }
 export async function getClientProfile() { return unwrap(await clientApi.get("/api/v1/client/profile")); }

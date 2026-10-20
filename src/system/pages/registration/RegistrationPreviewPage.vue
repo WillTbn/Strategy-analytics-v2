@@ -1,33 +1,79 @@
 <template>
   <div>
-    <aside class="preview-note" role="status">
-      Homologação da Etapa 1 — sem gravação, criação de conta ou aceite enviado.
-      {{ notice }}
-    </aside>
+    <aside v-if="notice" class="preview-note" role="status">{{ notice }}</aside>
     <registration-shell :step="1" title="Criar conta"
       ><registration-account-step
-        @validated="
-          notice = 'Validações locais concluídas; integração pendente.'
-        "
+        :busy="busy"
+        @validated="submit"
         @review-terms="
-          notice = 'Texto e versão dos Termos de Uso ainda pendentes.'
+          notice =
+            'O backend ainda não disponibilizou o texto e a versão dos Termos de Uso para este cadastro.'
         "
         @review-privacy="
-          notice = 'Texto e versão da Política de Privacidade ainda pendentes.'
+          notice =
+            'O backend ainda não disponibilizou o texto e a versão da Política de Privacidade para este cadastro.'
         "
     /></registration-shell>
   </div>
 </template>
 <script setup>
-import { ref } from "vue";
+import { ref, onBeforeUnmount } from "vue";
+import { useRouter } from "vue-router";
 import RegistrationShell from "src/system/components/registration/RegistrationShell.vue";
 import RegistrationAccountStep from "src/system/components/registration/RegistrationAccountStep.vue";
-const notice = ref("");
+import { register } from "src/services/clientAuthService";
+import {
+  registrationPayload,
+  identityErrorMessage,
+} from "src/services/publicAuth";
+import {
+  registrationContext,
+  registrationCredentials,
+} from "src/composables/system/useRegistrationFlow";
+import { pendingEmail } from "src/composables/system/usePendingEmail";
+const router = useRouter(),
+  busy = ref(false),
+  notice = ref("");
+let attempt = null,
+  active = true;
+const submit = async (form) => {
+  if (busy.value) return;
+  busy.value = true;
+  notice.value = "";
+  const payload = registrationPayload(form),
+    signature = JSON.stringify(payload);
+  if (!attempt || attempt.signature !== signature)
+    attempt = { signature, key: crypto.randomUUID() };
+  try {
+    const result = await register(payload, attempt.key);
+    if (!active) return;
+    if (!result?.accepted) throw new Error("Cadastro não aceito.");
+    registrationContext.email = payload.email;
+    registrationContext.accountEmail = payload.email;
+    registrationContext.residence = form.residence;
+    pendingEmail.value = payload.email;
+    registrationCredentials.password = form.password;
+    attempt = null;
+    await router.push("/cadastro/etapa-2");
+  } catch (error) {
+    if (!active) return;
+    if (error.response?.status >= 400 && error.response.status < 500)
+      attempt = null;
+    notice.value = identityErrorMessage(
+      error,
+      "Não foi possível criar a conta. Confira os dados e tente novamente.",
+    );
+  } finally {
+    busy.value = false;
+  }
+};
+onBeforeUnmount(() => {
+  active = false;
+  attempt = null;
+});
 </script>
 <style scoped>
 .preview-note {
-  position: relative;
-  z-index: 1;
   padding: 12px 16px;
   background: #1d1d1d;
   color: white;
