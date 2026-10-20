@@ -92,6 +92,9 @@ test("registration screens ship in homologation builds and preserve the existing
         ),
         true,
       );
+    assert.ok(
+      routes.some((route) => route.path === "/cadastro/etapa-4/:variant?"),
+    );
     assert.ok(routes.some((route) => route.name === "register"));
     assert.equal(routes.at(-1).path, "/:catchAll(.*)*");
   }

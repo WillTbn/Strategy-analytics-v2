@@ -331,9 +331,12 @@ const routes = [
   },
 ];
 
-// Isolated UI review only. Never expose an unintegrated registration flow in a production build.
 // Registration screens available in homologation; legacy URLs remain compatible.
 routes.splice(routes.length - 1, 0,
+  {
+    path: "/cadastro/etapa-4/:variant?",
+    component: () => import("../system/pages/registration/RegistrationDocumentPage.vue"),
+  },
   {
     path: "/cadastro/etapa-1",
     alias: "/dev/cadastro/etapa-1",
