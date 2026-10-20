@@ -8,4 +8,10 @@ Linhas sem separador/sufixo reconhecível permanecem intactas; números em nomes
 
 121 testes aprovados, lint, build e diff do lote sem erros. Casos de regressão: leitura/gravação sem duplicar o número, ID/endereço secundário/complemento preservados, vírgulas no nome, número zero/sufixos/s/n, linhas sem número e variantes sem campo separado.
 
-A conferência em homologação com a conta do usuário será registrada no checklist do Admin após a publicação. Sua aba com dados/arquivos não enviados deve ser preservada; usar outra aba com a mesma sessão para conferir a retomada sem gravar o formulário. CPF, documentos e arquivos pessoais não serão usados na validação dessa correção.
+A conferência em homologação com a conta do usuário está registrada abaixo e no checklist do Admin. Sua aba com dados/arquivos não enviados foi preservada; a validação usou outra aba da mesma sessão sem gravar o formulário. CPF, documentos e arquivos pessoais não foram usados na validação dessa correção.
+
+## Publicação e validação da conta do usuário
+
+Portal fdb07ab; pipeline 39449807714 com upload/ativação aprovados. Teste em nova aba da mesma sessão em homologação confirmou Logradouro Rua Fictícia de Homologação e Número 100 separados; Voltar à revisão, Editar Endereço e recarga conferidos. A aba original tinha dados/arquivos ainda não enviados e foi preservada sem recarga.
+
+Não houve Continuar nem escrita do formulário/documentos. Leituras administrativas antes/depois confirmaram endereço salvo idêntico. O teste de regravação sem duplicar o número é automatizado. Captura de evidência limitada aos campos necessários para evitar documentos/dados pessoais integrais. Checklist do Admin atualizado; 403 documental e demais dependências continuam abertas.
