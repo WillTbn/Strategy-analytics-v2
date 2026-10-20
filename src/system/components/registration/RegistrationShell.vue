@@ -1,5 +1,8 @@
 <template>
-  <q-layout class="registration-shell">
+  <q-layout
+    class="registration-shell"
+    :class="{ 'registration-shell--confirmation': step === 2 }"
+  >
     <q-page-container
       ><main class="registration-shell__main">
         <div class="registration-shell__logo">
@@ -35,7 +38,7 @@ defineProps({
 .registration-shell {
   color: white;
   background: linear-gradient(
-    215.1213deg,
+    var(--registration-background-angle, 215.1213deg),
     #791823 0.17422%,
     #330a0f 9.0927%,
     #090c15 39.128%,
@@ -76,7 +79,7 @@ defineProps({
   box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(20px);
   background: linear-gradient(
-    234.1691deg,
+    var(--registration-card-angle, 234.1691deg),
     rgba(121, 24, 35, 0.4) 0.17422%,
     rgba(51, 10, 15, 0.4) 9.0927%,
     rgba(9, 12, 21, 0.4) 39.128%,
@@ -89,6 +92,10 @@ defineProps({
   flex-direction: column;
   gap: 10px;
   margin-bottom: 24px;
+}
+.registration-shell--confirmation {
+  --registration-background-angle: 209.1858deg;
+  --registration-card-angle: 208.6985deg;
 }
 .registration-shell__header p {
   margin: 0;

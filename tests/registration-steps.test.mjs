@@ -83,10 +83,11 @@ test("the registration review route exists only in development", async () => {
     });
     await module.evaluate();
     const routes = module.namespace.default;
-    assert.equal(
-      routes.some((route) => route.path === "/dev/cadastro/etapa-1"),
-      dev,
-    );
+    for (const step of [1, 2])
+      assert.equal(
+        routes.some((route) => route.path === `/dev/cadastro/etapa-${step}`),
+        dev,
+      );
     assert.ok(routes.some((route) => route.name === "register"));
     assert.equal(routes.at(-1).path, "/:catchAll(.*)*");
   }

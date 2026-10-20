@@ -337,6 +337,10 @@ if (process.env.DEV) {
     path: "/dev/cadastro/etapa-1",
     component: () => import("../system/pages/dev/RegistrationPreviewPage.vue"),
   });
+  routes.splice(routes.length - 1, 0, {
+    path: "/dev/cadastro/etapa-2",
+    component: () => import("../system/pages/dev/RegistrationEmailPreviewPage.vue"),
+  });
 }
 
 export default routes;
