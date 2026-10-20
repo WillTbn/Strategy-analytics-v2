@@ -95,8 +95,8 @@ test("editing a document preserves its selected variant and review does not muta
   snapshot.personal.birthCity = "Cidade de teste";
   const before = structuredClone(snapshot),
     sections = registrationReviewSections(snapshot);
-  assert.equal(sections[1].path, "/cadastro/etapa-4/jp");
-  assert.equal(sections[2].path, "/cadastro/etapa-4/jp");
+  assert.equal(sections[1].path, "/cadastro/etapa-5/jp");
+  assert.equal(sections[2].path, "/cadastro/etapa-5/jp");
   assert.deepEqual(snapshot, before);
 });
 test("absence summarizes the explicit choice and ignores inactive contact drafts", () => {
@@ -138,4 +138,27 @@ test("failed reads are unavailable rather than not informed, while preserving dr
   assert.match(sections[4].text, /Consulta indisponível/);
   assert.notEqual(sections[4].text, "Não informado");
   assert.equal(sections[0].text, "Não informado");
+});
+
+test("review presents authorized professional additions and links to the new business order", () => {
+  const snapshot = empty();
+  snapshot.employment = {
+    occupation: "Analista",
+    employerName: "Empresa QA",
+    primaryCurrencyCode: "BRL",
+    secondaryCurrencyCode: "USD",
+  };
+  snapshot.catalog = {
+    currencies: [
+      { value: "BRL", label: "Real" },
+      { value: "USD", label: "Dólar" },
+    ],
+  };
+  const sections = registrationReviewSections(snapshot);
+  assert.equal(sections[3].path, "/cadastro/etapa-4");
+  assert.equal(sections[1].path, "/cadastro/etapa-5");
+  assert.match(
+    sections[3].text,
+    /Analista.*Empresa QA.*moeda principal Real.*moeda secundária Dólar/,
+  );
 });

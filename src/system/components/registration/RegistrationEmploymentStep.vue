@@ -1,16 +1,19 @@
 <template>
   <q-form class="registration-employment" novalidate @submit="submit">
-    <registration-field
-      :ref="(el) => (controls.occupation = el)"
-      v-model="form.occupation"
-      :field="employmentFields[0]"
-      :options="occupations"
-      :disabled="busy"
-      :error="errors.occupation"
-    />
     <div class="income-row">
       <registration-field
-        v-for="field in employmentFields.slice(1, 3)"
+        v-for="field in employmentFields.slice(0, 2)"
+        :key="field.key"
+        :ref="(el) => (controls[field.key] = el)"
+        v-model="form[field.key]"
+        :field="field"
+        :disabled="busy"
+        :error="errors[field.key]"
+      />
+    </div>
+    <div class="income-row">
+      <registration-field
+        v-for="field in employmentFields.slice(2, 4)"
         :key="field.key"
         :ref="(el) => (controls[field.key] = el)"
         v-model="form[field.key]"
@@ -23,10 +26,22 @@
       :ref="(el) => (controls.declaredNetWorth = el)"
       v-model="form.declaredNetWorth"
       class="assets"
-      :field="employmentFields[3]"
+      :field="employmentFields[4]"
       :disabled="busy"
       :error="errors.declaredNetWorth"
     />
+    <div class="income-row">
+      <registration-field
+        v-for="field in employmentFields.slice(5)"
+        :key="field.key"
+        :ref="(el) => (controls[field.key] = el)"
+        v-model="form[field.key]"
+        :field="field"
+        :options="currencies"
+        :disabled="busy"
+        :error="errors[field.key]"
+      />
+    </div>
     <p v-if="notice" class="notice" role="status">{{ notice }}</p>
     <footer>
       <q-btn
@@ -60,8 +75,15 @@ import {
 } from "src/services/registrationEmployment";
 const props = defineProps({
   modelValue: { type: Object, default: () => newRegistrationEmployment() },
-  occupations: { type: Array, default: () => [] },
-  requiredFields: { type: Array, default: () => [] },
+  currencies: { type: Array, default: () => [] },
+  requiredFields: {
+    type: Array,
+    default: () => [
+      "occupation",
+      "primaryCurrencyCode",
+      "secondaryCurrencyCode",
+    ],
+  },
   busy: Boolean,
 });
 const emit = defineEmits(["update:modelValue", "back", "validated"]);
@@ -77,7 +99,7 @@ const submit = async () => {
   if (props.busy) return;
   errors.value = validateRegistrationEmployment(
     form,
-    props.occupations,
+    props.currencies,
     props.requiredFields,
   );
   if (Object.keys(errors.value).length) {

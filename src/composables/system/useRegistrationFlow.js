@@ -25,6 +25,7 @@ import {
   addressRegistrationPatch,
   registrationAddressValues,
   professionalRegistrationPayload,
+  registrationPreferencesPayload,
   financialRegistrationPayload,
   contactRegistrationPayload,
   registrationCatalog,
@@ -90,6 +91,7 @@ export function useRegistrationFlow(step) {
     catalog = ref({}),
     documentCatalog = ref({});
   let active = true;
+  const completedProfessionalWrites = new Map();
   onBeforeUnmount(() => {
     active = false;
   });
@@ -134,7 +136,7 @@ export function useRegistrationFlow(step) {
     )?.value;
     if (email) registrationContext.email = email;
     const requests = [getPreferenceCatalog(), getOnboardingStatus()];
-    if (step === 5 || step === 7)
+    if (step === 4 || step === 5 || step === 7)
       requests.push(
         optionalProfile(getClientProfessionalProfile),
         optionalProfile(getClientFinancialProfile),
@@ -148,7 +150,8 @@ export function useRegistrationFlow(step) {
     registrationContext.status =
       results[1].status === "fulfilled" ? results[1].value : null;
     const professional =
-      (step === 5 || step === 7) && results[2]?.status === "fulfilled"
+      (step === 4 || step === 5 || step === 7) &&
+      results[2]?.status === "fulfilled"
         ? results[2].value
         : null;
     catalog.value = registrationCatalog(base, profile, professional);
@@ -190,15 +193,21 @@ export function useRegistrationFlow(step) {
       };
       catalog.value.regions = documentCatalog.value.region;
     }
+    if (!hydrated.has("registration-preferences")) {
+      for (const key of ["primaryCurrencyCode", "secondaryCurrencyCode"])
+        employmentDraft.value[key] = profile.preferences?.[key] ?? null;
+      hydrated.add("registration-preferences");
+    }
     const readErrors = {};
-    if (step === 5 || step === 7) {
+    if (step === 4 || step === 5 || step === 7) {
       const professionalResult = results[2],
         financialResult = results[3];
       // Hydrate independent reads only on success. A failed read must never
       // erase a draft or turn unavailable server data into an empty profile.
       if (professionalResult.status === "fulfilled") {
         if (!hydrated.has("professional")) {
-          employmentDraft.value.occupation = professional?.occupation ?? null;
+          employmentDraft.value.occupation = professional?.occupation ?? "";
+          employmentDraft.value.employerName = professional?.employerName ?? "";
           hydrated.add("professional");
         }
       } else readErrors.professional = true;
@@ -209,7 +218,8 @@ export function useRegistrationFlow(step) {
             "individualMonthlyIncome",
             "householdMonthlyIncome",
             "declaredNetWorth",
-          ]) employmentDraft.value[key] = displayRegistrationAmount(f?.[key]);
+          ])
+            employmentDraft.value[key] = displayRegistrationAmount(f?.[key]);
           hydrated.add("financial");
         }
       } else readErrors.financial = true;
@@ -233,7 +243,8 @@ export function useRegistrationFlow(step) {
         }
       } else readErrors.contacts = true;
     }
-    const hadReadErrors = Object.keys(registrationContext.readErrors).length > 0;
+    const hadReadErrors =
+      Object.keys(registrationContext.readErrors).length > 0;
     registrationContext.readErrors = readErrors;
     const failures = [
       readErrors.professional && "atividade trabalhista",
@@ -245,6 +256,16 @@ export function useRegistrationFlow(step) {
       if (step !== 7) throw new Error(text);
       notify(text);
     } else if (hadReadErrors) notify("");
+    if (
+      step === 5 &&
+      (!professional ||
+        !results[3]?.value ||
+        !profile.preferences?.primaryCurrencyCode ||
+        !profile.preferences?.secondaryCurrencyCode)
+    ) {
+      await router.replace("/cadastro/etapa-4");
+      return;
+    }
     ready.value = true;
     revision.value++;
   };
@@ -312,7 +333,7 @@ export function useRegistrationFlow(step) {
           registrationContext.notices[7] =
             "País de nascimento e nacionalidades adicionais ainda não têm campos de gravação no contrato do perfil. Permanecem somente neste rascunho.";
       }
-      if (step === 4) {
+      if (step === 5) {
         const variant = activeDocumentVariant.value,
           draft = documentDrafts[variant];
         const iso = profile.preferences?.countryIsoCode,
@@ -419,7 +440,7 @@ export function useRegistrationFlow(step) {
           registrationContext.notices[7] =
             "Endereço/documentos salvos; o bairro não possui campo separado no contrato e permanece no rascunho.";
       }
-      if (step === 5) {
+      if (step === 4) {
         const [professional, financial] = await Promise.all([
           optionalProfile(getClientProfessionalProfile),
           optionalProfile(getClientFinancialProfile),
@@ -427,21 +448,31 @@ export function useRegistrationFlow(step) {
         const today = new Date().toISOString().slice(0, 10),
           draft = employmentDraft.value;
         const p = professionalRegistrationPayload(professional, draft, today),
-          f = financialRegistrationPayload(financial, draft, today);
-        if (p)
-          await write("put", "/api/v1/client/profile/professional-profile", p);
-        if (
-          [
-            "individualMonthlyIncome",
-            "householdMonthlyIncome",
-            "declaredNetWorth",
-          ].some((k) => draft[k] !== "")
-        )
-          await write("put", "/api/v1/client/profile/financial-profile", f);
-        if (!p)
-          registrationContext.notices[7] =
-            "Valores financeiros salvos quando informados. A atividade ainda depende das opções do catálogo; não foi inventada uma opção.";
+          f = financialRegistrationPayload(financial, draft, today),
+          preferences = registrationPreferencesPayload(
+            profile,
+            draft,
+            catalog.value,
+          );
+        const savePart = async (method, path, body) => {
+          const signature = JSON.stringify([
+            session.version,
+            profile.customerId,
+            body,
+          ]);
+          if (completedProfessionalWrites.get(path) === signature) return;
+          await write(method, path, body);
+          completedProfessionalWrites.set(path, signature);
+        };
+        await savePart("put", "/api/v1/client/profile/professional-profile", p);
+        await savePart("put", "/api/v1/client/profile/financial-profile", f);
+        await savePart(
+          "patch",
+          "/api/v1/client/profile/preferences",
+          preferences,
+        );
       }
+
       if (step === 6) {
         const current = await getClientTrustedContacts(),
           draft = trustedContactsDraft.value;

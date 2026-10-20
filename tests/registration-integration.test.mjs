@@ -4,6 +4,7 @@ import {
   personalRegistrationPatch,
   addressRegistrationPatch,
   registrationAddressValues,
+  registrationPreferencesPayload,
   financialRegistrationPayload,
   professionalRegistrationPayload,
   contactRegistrationPayload,
@@ -107,9 +108,10 @@ test("financial save preserves zero absence precision and temporal metadata, rej
   );
 });
 test("professional save preserves metadata and does not invent an occupation", () => {
-  assert.equal(
-    professionalRegistrationPayload(null, { occupation: null }, "2026-10-20"),
-    null,
+  assert.throws(
+    () =>
+      professionalRegistrationPayload(null, { occupation: null }, "2026-10-20"),
+    /ocupação/,
   );
   assert.deepEqual(
     professionalRegistrationPayload(
@@ -356,4 +358,49 @@ test("only variants with a separate number field split the API address", () => {
     assert.equal(v.complement, "Unit");
     assert.equal(v.city, "City");
   }
+});
+
+test("professional employer is explicitly editable and preferences preserve all existing metadata", () => {
+  const draft = {
+    occupation: " Analista ",
+    employerName: "",
+    primaryCurrencyCode: "BRL",
+    secondaryCurrencyCode: "USD",
+  };
+  const p = professionalRegistrationPayload(
+    {
+      employerName: "Previous",
+      validFrom: "2020-01-01",
+      validTo: null,
+      isCurrent: true,
+    },
+    draft,
+    "2026-10-20",
+  );
+  assert.equal(p.occupation, "Analista");
+  assert.equal(p.employerName, null);
+  assert.equal(p.validFrom, "2020-01-01");
+  const current = {
+    preferences: {
+      languageCode: "pt-BR",
+      timeZoneId: "America/Sao_Paulo",
+      theme: "Dark",
+      countryId: "BR",
+    },
+  };
+  const catalog = { currencies: [{ value: "BRL" }, { value: "USD" }] };
+  assert.deepEqual(registrationPreferencesPayload(current, draft, catalog), {
+    ...current.preferences,
+    primaryCurrencyCode: "BRL",
+    secondaryCurrencyCode: "USD",
+  });
+  assert.throws(
+    () =>
+      registrationPreferencesPayload(
+        current,
+        { ...draft, secondaryCurrencyCode: null },
+        catalog,
+      ),
+    /duas moedas/,
+  );
 });

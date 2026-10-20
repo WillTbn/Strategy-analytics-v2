@@ -113,10 +113,11 @@ const routes = [
           {
             path: "cash",
             name: "Saque",
-            component: () => import("../system/pages/Wallet/CashWalletPage.vue"),
+            component: () =>
+              import("../system/pages/Wallet/CashWalletPage.vue"),
             props: true,
-          }
-        ]
+          },
+        ],
       },
       {
         path: "contracts",
@@ -125,16 +126,17 @@ const routes = [
           {
             path: "",
             name: "Contratos",
-            component: () => import("../system/pages/contract/ContractsPage.vue"),
+            component: () =>
+              import("../system/pages/contract/ContractsPage.vue"),
             props: true,
           },
           {
             path: ":id",
             name: "contract",
-            component: () => import('../system/pages/contract/ContractPage.vue')
-
-          }
-        ]
+            component: () =>
+              import("../system/pages/contract/ContractPage.vue"),
+          },
+        ],
       },
       {
         path: "communication",
@@ -144,15 +146,15 @@ const routes = [
             name: "Comunicação",
             path: "",
             component: () => import("../system/pages/CommunicationPage.vue"),
-            props: true
+            props: true,
           },
           {
             name: "Comunicação Insight",
             path: ":hash",
             component: () => import("../system/pages/InsightPage.vue"),
             props: true,
-          }
-        ]
+          },
+        ],
       },
       {
         path: "perfomance",
@@ -166,14 +168,16 @@ const routes = [
           {
             path: "",
             name: "Alavancagem",
-            component: () => import("../system/pages/leverage/LeveragePage.vue"),
+            component: () =>
+              import("../system/pages/leverage/LeveragePage.vue"),
           },
           {
             path: "MyLeverages",
             name: "Minhas Alavacagens",
-            component: () => import("../system/pages/leverage/MyLeveragesPage.vue")
-          }
-        ]
+            component: () =>
+              import("../system/pages/leverage/MyLeveragesPage.vue"),
+          },
+        ],
       },
       // {
       //   path: "loan",
@@ -197,20 +201,22 @@ const routes = [
               {
                 path: "",
                 name: "Empréstimo com Garantia",
-                component: () => import("../system/pages/loan/SecuredLoanPage.vue")
+                component: () =>
+                  import("../system/pages/loan/SecuredLoanPage.vue"),
               },
               {
                 path: "simulation",
                 name: "Simulação de Crédito pré-aprovado",
-                component: () => import("../system/pages/loan/SimulationLoanPage.vue")
+                component: () =>
+                  import("../system/pages/loan/SimulationLoanPage.vue"),
               },
               {
                 path: "offers_final",
                 name: "Orfetas Finais",
-                component: () => import("../system/pages/loan/OffersFinalLoanPage.vue")
-              }
-            ]
-
+                component: () =>
+                  import("../system/pages/loan/OffersFinalLoanPage.vue"),
+              },
+            ],
           },
           {
             path: "consortiumLoan",
@@ -219,24 +225,24 @@ const routes = [
               {
                 path: "",
                 name: "Consórcio",
-                component: () => import("../system/pages/loan/ConsortiumLoanPage.vue")
+                component: () =>
+                  import("../system/pages/loan/ConsortiumLoanPage.vue"),
               },
               {
                 path: "offers",
                 name: "Orfetas Finais Consórcio",
-                component: () => import("../system/pages/loan/ConsortiumOffersLoanPage.vue")
-              }
-            ]
-
+                component: () =>
+                  import("../system/pages/loan/ConsortiumOffersLoanPage.vue"),
+              },
+            ],
           },
           {
             path: "collateralLoan",
             name: "Emprestimo Colateral",
-            component: () => import("../system/pages/loan/CollateraLoanPage.vue")
-
+            component: () =>
+              import("../system/pages/loan/CollateraLoanPage.vue"),
           },
-
-        ]
+        ],
       },
       {
         path: "config",
@@ -253,7 +259,7 @@ const routes = [
             name: "profile",
             component: () => import("../system/pages/Config/ProfilePage.vue"),
             props: true,
-          }
+          },
         ],
       },
       {
@@ -293,11 +299,11 @@ const routes = [
           {
             path: "",
             name: "controlDeposit",
-            component: () => import("../system/pages/control/ControlDepositPage.vue"),
+            component: () =>
+              import("../system/pages/control/ControlDepositPage.vue"),
             props: true,
           },
-
-        ]
+        ],
       },
       {
         path: "controlReports",
@@ -314,12 +320,13 @@ const routes = [
           {
             path: ":id",
             name: "relatorio",
-            component: () => import("../system/layouts/control/reports/ReadreportLayout.vue"),
+            component: () =>
+              import("../system/layouts/control/reports/ReadreportLayout.vue"),
             meta: { admin: true },
-            props: true
-          }
-        ]
-      }
+            props: true,
+          },
+        ],
+      },
     ],
   },
 
@@ -332,46 +339,68 @@ const routes = [
 ];
 
 // Registration screens available in homologation; legacy URLs remain compatible.
-routes.splice(routes.length - 1, 0,
+routes.splice(
+  routes.length - 1,
+  0,
+  {
+    path: "/cadastro/etapa-4/:variant",
+    meta: { auth: true },
+    redirect: (to) => ({
+      path: `/cadastro/etapa-5/${to.params.variant}`,
+      query: to.query,
+    }),
+  },
   {
     path: "/cadastro/etapa-7",
     meta: { auth: true },
-    component: () => import("../system/pages/registration/RegistrationReviewPage.vue"),
+    component: () =>
+      import("../system/pages/registration/RegistrationReviewPage.vue"),
   },
   {
     path: "/cadastro/enviado",
-    component: () => import("../system/pages/registration/RegistrationSubmittedPage.vue"),
+    component: () =>
+      import("../system/pages/registration/RegistrationSubmittedPage.vue"),
   },
   {
     path: "/cadastro/etapa-6",
     meta: { auth: true },
-    component: () => import("../system/pages/registration/RegistrationTrustedContactsPage.vue"),
+    component: () =>
+      import(
+        "../system/pages/registration/RegistrationTrustedContactsPage.vue"
+      ),
   },
   {
-    path: "/cadastro/etapa-5",
+    path: "/cadastro/etapa-4",
     meta: { auth: true },
-    component: () => import("../system/pages/registration/RegistrationEmploymentPage.vue"),
+    component: () =>
+      import("../system/pages/registration/RegistrationEmploymentPage.vue"),
   },
   {
-    path: "/cadastro/etapa-4/:variant?",
+    path: "/cadastro/etapa-5/:variant?",
     meta: { auth: true },
-    component: () => import("../system/pages/registration/RegistrationDocumentPage.vue"),
+    component: () =>
+      import("../system/pages/registration/RegistrationDocumentPage.vue"),
   },
   {
     path: "/cadastro/etapa-1",
     alias: "/dev/cadastro/etapa-1",
-    component: () => import("../system/pages/registration/RegistrationPreviewPage.vue"),
+    component: () =>
+      import("../system/pages/registration/RegistrationPreviewPage.vue"),
   },
   {
     path: "/cadastro/etapa-2",
     alias: "/dev/cadastro/etapa-2",
-    component: () => import("../system/pages/registration/RegistrationEmailPreviewPage.vue"),
+    component: () =>
+      import("../system/pages/registration/RegistrationEmailPreviewPage.vue"),
   },
   {
     path: "/cadastro/etapa-3",
     meta: { auth: true },
     alias: "/dev/cadastro/etapa-3",
-    component: () => import("../system/pages/registration/RegistrationPersonalPreviewPage.vue"),
+    component: () =>
+      import(
+        "../system/pages/registration/RegistrationPersonalPreviewPage.vue"
+      ),
   },
 );
 export default routes;

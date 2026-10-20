@@ -1,13 +1,13 @@
 <template>
   <div>
     <aside
-      v-if="registrationContext.notices[4]"
+      v-if="registrationContext.notices[5]"
       class="preview-note"
       role="status"
     >
-      {{ registrationContext.notices[4] }}
+      {{ registrationContext.notices[5] }}
     </aside>
-    <registration-shell :step="4" title="Documento e endereço" :style="angles"
+    <registration-shell :step="5" title="Documento e endereço" :style="angles"
       ><registration-document-step
         v-if="config && ready"
         :key="`${variant}-${revision}`"
@@ -20,7 +20,7 @@
           router.push(
             route.query.review === '1'
               ? '/cadastro/etapa-7'
-              : '/cadastro/etapa-3',
+              : '/cadastro/etapa-4',
           )
         "
       />
@@ -51,7 +51,7 @@ import {
   useRegistrationFlow,
   registrationContext,
 } from "src/composables/system/useRegistrationFlow";
-const { busy, ready, revision, documentCatalog, save } = useRegistrationFlow(4);
+const { busy, ready, revision, documentCatalog, save } = useRegistrationFlow(5);
 const route = useRoute(),
   router = useRouter();
 const variant = computed(

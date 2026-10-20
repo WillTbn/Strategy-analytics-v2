@@ -93,7 +93,8 @@ export function registrationReviewSections(snapshot) {
       : []),
   ]);
   const employmentText = join([
-    choice(employment.occupation, catalog.occupations),
+    text(employment.occupation),
+    text(employment.employerName),
     ...[
       ["individualMonthlyIncome", "renda"],
       ["householdMonthlyIncome", "família"],
@@ -102,6 +103,12 @@ export function registrationReviewSections(snapshot) {
       const value = reviewMoney(employment[key]);
       return value ? `${label} ${value}` : "";
     }),
+    employment.primaryCurrencyCode
+      ? `moeda principal ${choice(employment.primaryCurrencyCode, catalog.currencies)}`
+      : "",
+    employment.secondaryCurrencyCode
+      ? `moeda secundária ${choice(employment.secondaryCurrencyCode, catalog.currencies)}`
+      : "",
   ]);
   const contactsText =
     contacts.noContact === true
@@ -119,8 +126,8 @@ export function registrationReviewSections(snapshot) {
             ),
         );
   const documentPath = config
-    ? `/cadastro/etapa-4/${variant}`
-    : "/cadastro/etapa-4";
+    ? `/cadastro/etapa-5/${variant}`
+    : "/cadastro/etapa-5";
   return [
     ["personal", "Dados pessoais", personalText, "/cadastro/etapa-3"],
     ["address", "Endereço", addressText, documentPath],
@@ -129,19 +136,23 @@ export function registrationReviewSections(snapshot) {
       "employment",
       "Atividade trabalhista",
       employmentText,
-      "/cadastro/etapa-5",
+      "/cadastro/etapa-4",
     ],
     ["contacts", "Contatos de confiança", contactsText, "/cadastro/etapa-6"],
   ].map(([key, title, value, path]) => {
     const unavailable =
       (key === "employment" &&
-        (snapshot.readErrors?.professional || snapshot.readErrors?.financial)) ||
+        (snapshot.readErrors?.professional ||
+          snapshot.readErrors?.financial)) ||
       (key === "contacts" && snapshot.readErrors?.contacts);
     return {
       key,
       title,
       text: unavailable
-        ? join([value, "Consulta indisponível; recarregue para tentar novamente"])
+        ? join([
+            value,
+            "Consulta indisponível; recarregue para tentar novamente",
+          ])
         : value || "Não informado",
       path,
       missing: unavailable || !value,
@@ -173,7 +184,7 @@ export function registrationReviewIssues(snapshot) {
     Object.keys(
       validateRegistrationEmployment(
         snapshot.employment || {},
-        snapshot.catalog?.occupations || [],
+        snapshot.catalog?.currencies || [],
       ),
     ).length
   )

@@ -93,9 +93,9 @@ test("registration screens ship in homologation builds and preserve the existing
         true,
       );
     assert.ok(
-      routes.some((route) => route.path === "/cadastro/etapa-4/:variant?"),
+      routes.some((route) => route.path === "/cadastro/etapa-5/:variant?"),
     );
-    assert.ok(routes.some((route) => route.path === "/cadastro/etapa-5"));
+    assert.ok(routes.some((route) => route.path === "/cadastro/etapa-4"));
     assert.ok(routes.some((route) => route.path === "/cadastro/etapa-6"));
     assert.ok(routes.some((route) => route.path === "/cadastro/etapa-7"));
     assert.ok(routes.some((route) => route.path === "/cadastro/enviado"));

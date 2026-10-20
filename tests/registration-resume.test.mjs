@@ -21,8 +21,8 @@ const memory = () => {
 test("resume accepts only existing authenticated registration screens without arbitrary destinations", () => {
   for (const path of [
     "/cadastro/etapa-3",
-    "/cadastro/etapa-4/br",
-    "/cadastro/etapa-4/europe",
+    "/cadastro/etapa-5/br",
+    "/cadastro/etapa-5/europe",
     "/cadastro/etapa-7",
   ])
     assert.equal(registrationResumePath(path), path);
@@ -30,8 +30,8 @@ test("resume accepts only existing authenticated registration screens without ar
     "/cadastro/enviado",
     "/cadastro/etapa-1",
     "/cadastro/etapa-2",
-    "/cadastro/etapa-5/br",
-    "/cadastro/etapa-4/unknown",
+    "/cadastro/etapa-4/br",
+    "/cadastro/etapa-5/unknown",
     "/cadastro/etapa-8",
     "https://example.com",
     "//example.com",
@@ -42,9 +42,9 @@ test("resume accepts only existing authenticated registration screens without ar
 });
 test("last visited step survives a new login and is isolated by authenticated user", () => {
   const storage = memory();
-  rememberRegistrationStep("a", "/cadastro/etapa-4/br", storage);
+  rememberRegistrationStep("a", "/cadastro/etapa-5/br", storage);
   rememberRegistrationStep("b", "/cadastro/etapa-6", storage);
-  assert.equal(readRegistrationStep("a", storage), "/cadastro/etapa-4/br");
+  assert.equal(readRegistrationStep("a", storage), "/cadastro/etapa-5/br");
   assert.equal(
     registrationLoginDestination("b", null, storage).path,
     "/cadastro/etapa-6",
@@ -52,7 +52,7 @@ test("last visited step survives a new login and is isolated by authenticated us
   assert.equal(registrationLoginDestination("c", null, storage).name, "inicio");
   assert.deepEqual(
     [...storage.values.values()],
-    ["/cadastro/etapa-4/br", "/cadastro/etapa-6"],
+    ["/cadastro/etapa-5/br", "/cadastro/etapa-6"],
   );
 });
 test("Home and invalid paths never overwrite registration progress and no anonymous progress is stored", () => {
@@ -61,7 +61,7 @@ test("Home and invalid paths never overwrite registration progress and no anonym
     rememberRegistrationStep(null, "/cadastro/etapa-3", storage),
     false,
   );
-  rememberRegistrationStep("a", "/cadastro/etapa-4/br", storage);
+  rememberRegistrationStep("a", "/cadastro/etapa-5/br", storage);
   assert.equal(
     rememberRegistrationStep("a", "/system/dashboard", storage),
     false,
@@ -70,7 +70,7 @@ test("Home and invalid paths never overwrite registration progress and no anonym
     rememberRegistrationStep("a", "/cadastro/enviado", storage),
     false,
   );
-  assert.equal(readRegistrationStep("a", storage), "/cadastro/etapa-4/br");
+  assert.equal(readRegistrationStep("a", storage), "/cadastro/etapa-5/br");
 });
 test("explicit safe return takes precedence; corrupted storage and unavailable storage fail safely", () => {
   const storage = memory();
@@ -213,20 +213,20 @@ async function authHarness(storage) {
 }
 test("real authentication restores the same user's stage after logout and login without changing progress", async () => {
   const storage = memory();
-  rememberRegistrationStep("a", "/cadastro/etapa-4/br", storage);
+  rememberRegistrationStep("a", "/cadastro/etapa-5/br", storage);
   const h = await authHarness(storage);
   assert.equal(
     await h.auth({ person: "a@example.test", password: "test" }),
     true,
   );
-  assert.equal(h.destinations.at(-1).path, "/cadastro/etapa-4/br");
+  assert.equal(h.destinations.at(-1).path, "/cadastro/etapa-5/br");
   await h.setLogout();
   assert.equal(h.destinations.at(-1).path, "/login");
   assert.equal(
     await h.auth({ person: "a@example.test", password: "test" }),
     true,
   );
-  assert.equal(h.destinations.at(-1).path, "/cadastro/etapa-4/br");
+  assert.equal(h.destinations.at(-1).path, "/cadastro/etapa-5/br");
   assert.equal(h.errors.length, 0);
 });
 test("real authentication never sends another account to the previous user's stage", async () => {
@@ -310,33 +310,46 @@ async function routerHarness() {
 test("real router records only successful authenticated stage navigation and retains it through Home", async () => {
   const h = await routerHarness();
   h.after(
-    { path: "/cadastro/etapa-4/br", meta: { auth: true } },
+    { path: "/cadastro/etapa-5/br", meta: { auth: true } },
     { path: "/" },
   );
-  assert.equal(readRegistrationStep("a", h.storage), "/cadastro/etapa-4/br");
+  assert.equal(readRegistrationStep("a", h.storage), "/cadastro/etapa-5/br");
   h.after(
     { path: "/cadastro/etapa-6", meta: { auth: true } },
     { path: "/" },
     Error("cancelled"),
   );
   h.after({ path: "/system/dashboard", meta: { auth: true } }, { path: "/" });
-  assert.equal(readRegistrationStep("a", h.storage), "/cadastro/etapa-4/br");
+  assert.equal(readRegistrationStep("a", h.storage), "/cadastro/etapa-5/br");
   const to = await h.before({
     name: "login",
     path: "/login",
     query: {},
     meta: {},
   });
-  assert.equal(to.path, "/cadastro/etapa-4/br");
+  assert.equal(to.path, "/cadastro/etapa-5/br");
 });
 test("expired-session router requires login and preserves only the safe return route", async () => {
   const h = await routerHarness();
   h.expire();
   const result = await h.before({
-    path: "/cadastro/etapa-4/br",
+    path: "/cadastro/etapa-5/br",
     meta: { auth: true },
   });
   assert.equal(result.name, "login");
-  assert.equal(result.query.next, "/cadastro/etapa-4/br");
+  assert.equal(result.query.next, "/cadastro/etapa-5/br");
   assert.equal(readRegistrationStep("a", h.storage), null);
+});
+
+test("old progress migrates documents to 5 and employment to 4 without changing another account", () => {
+  const storage = memory();
+  storage.setItem("SA_registration_resume:v1:doc", "/cadastro/etapa-4/br");
+  storage.setItem("SA_registration_resume:v1:work", "/cadastro/etapa-5");
+  assert.equal(readRegistrationStep("doc", storage), "/cadastro/etapa-5/br");
+  assert.equal(readRegistrationStep("work", storage), "/cadastro/etapa-4");
+  assert.equal(readRegistrationStep("other", storage), null);
+  assert.equal(
+    storage.getItem("SA_registration_resume:v2:doc"),
+    "/cadastro/etapa-5/br",
+  );
 });

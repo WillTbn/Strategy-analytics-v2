@@ -113,14 +113,46 @@ export function addressRegistrationPatch(
   return patch;
 }
 export function professionalRegistrationPayload(current, draft, today) {
-  if (!nullable(draft.occupation)) return null;
+  if (!nullable(draft.occupation))
+    throw new Error(
+      "Informe sua ocupação antes de continuar para os documentos.",
+    );
   return {
-    occupation: draft.occupation,
-    employerName: current?.employerName ?? null,
+    occupation: draft.occupation.trim(),
+    employerName: Object.hasOwn(draft, "employerName")
+      ? nullable(draft.employerName)
+      : (current?.employerName ?? null),
     validFrom: current?.validFrom ?? today,
     validTo: current?.validTo ?? null,
     isCurrent: current?.isCurrent ?? true,
   };
+}
+export function registrationPreferencesPayload(profile, draft, catalog) {
+  const current = profile.preferences || {};
+  const payload = {
+    ...Object.fromEntries(
+      ["languageCode", "timeZoneId", "theme", "countryId"].map((key) => [
+        key,
+        current[key],
+      ]),
+    ),
+  };
+  for (const key of ["primaryCurrencyCode", "secondaryCurrencyCode"]) {
+    const value = draft[key];
+    if (
+      !value ||
+      !(catalog.currencies || []).some((option) => option.value === value)
+    )
+      throw new Error(
+        "Selecione as duas moedas disponíveis antes de continuar.",
+      );
+    payload[key] = value;
+  }
+  if (["languageCode", "timeZoneId", "theme"].some((key) => !payload[key]))
+    throw new Error(
+      "As preferências de idioma, fuso ou tema da conta estão incompletas. Confira os Ajustes antes de continuar.",
+    );
+  return payload;
 }
 export function financialRegistrationPayload(current, draft, today) {
   if (current?.currencyCode && current.currencyCode !== "BRL")
@@ -177,6 +209,7 @@ export function registrationCatalog(catalog, profile, professional) {
       isoCode: c.isoCode,
     })),
     occupations: existing(catalog.occupations, professional?.occupation),
+    currencies: catalog.currencies || [],
   };
 }
 export function documentRegistrationPayload(

@@ -1,6 +1,11 @@
 // Presentation draft; not an HTTP payload. Amounts never pass through binary floats.
 export const employmentFields = [
-  { key: "occupation", label: "Atividade trabalhista", kind: "select" },
+  { key: "occupation", label: "Ocupação", placeholder: "Informe sua ocupação" },
+  {
+    key: "employerName",
+    label: "Empregador (opcional)",
+    placeholder: "Nome da empresa ou organização",
+  },
   {
     key: "individualMonthlyIncome",
     label: "Renda média mensal (R$)",
@@ -20,13 +25,18 @@ export const employmentFields = [
     kind: "money",
     placeholder: "R$ 0,00",
   },
+  { key: "primaryCurrencyCode", label: "Moeda principal", kind: "select" },
+  { key: "secondaryCurrencyCode", label: "Moeda secundária", kind: "select" },
 ];
 export function newRegistrationEmployment(value = {}) {
   return {
-    occupation: value.occupation ?? null,
+    occupation: value.occupation ?? "",
+    employerName: value.employerName ?? "",
     individualMonthlyIncome: String(value.individualMonthlyIncome ?? ""),
     householdMonthlyIncome: String(value.householdMonthlyIncome ?? ""),
     declaredNetWorth: String(value.declaredNetWorth ?? ""),
+    primaryCurrencyCode: value.primaryCurrencyCode ?? null,
+    secondaryCurrencyCode: value.secondaryCurrencyCode ?? null,
   };
 }
 export function parseRegistrationAmount(value) {
@@ -41,16 +51,21 @@ export function parseRegistrationAmount(value) {
 }
 export function validateRegistrationEmployment(
   draft,
-  occupations = [],
-  required = [],
+  currencies = [],
+  required = ["occupation", "primaryCurrencyCode", "secondaryCurrencyCode"],
 ) {
   const errors = {};
-  if (
-    draft.occupation !== null &&
-    draft.occupation !== "" &&
-    !occupations.some((option) => option.value === draft.occupation)
-  )
-    errors.occupation = "Selecione uma atividade disponível.";
+  if (required.includes("occupation") && !String(draft.occupation ?? "").trim())
+    errors.occupation = "Informe sua ocupação.";
+  for (const key of ["primaryCurrencyCode", "secondaryCurrencyCode"]) {
+    if (!draft[key] && required.includes(key))
+      errors[key] = "Selecione a moeda.";
+    else if (
+      draft[key] &&
+      !currencies.some((option) => option.value === draft[key])
+    )
+      errors[key] = "Selecione uma moeda disponível.";
+  }
   for (const field of employmentFields) {
     if (field.kind !== "money") continue;
     const amount = parseRegistrationAmount(draft[field.key]);
@@ -59,10 +74,5 @@ export function validateRegistrationEmployment(
     else if (amount.kind === "empty" && required.includes(field.key))
       errors[field.key] = "Informe o valor deste campo.";
   }
-  if (
-    required.includes("occupation") &&
-    (draft.occupation === null || draft.occupation === "")
-  )
-    errors.occupation = "Selecione sua atividade trabalhista.";
   return errors;
 }

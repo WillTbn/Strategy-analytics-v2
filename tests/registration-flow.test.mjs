@@ -9,7 +9,9 @@ import { newRegistrationEmployment } from "../src/services/registrationEmploymen
 import { newRegistrationTrustedContacts } from "../src/services/registrationTrustedContacts.js";
 import { newRegistrationDocuments } from "../src/services/registrationDocuments.js";
 
-async function harness() {
+async function harness({ allowWrites = false } = {}) {
+  const writes = [],
+    destinations = [];
   const mounted = [];
   let sessionVersion = 0;
   const drafts = {
@@ -28,16 +30,37 @@ async function harness() {
     if (responses[key] instanceof Error) throw responses[key];
     return responses[key];
   };
-  const profile = { customerId: "client", contacts: [], personalDetails: {} };
+  const profile = {
+    customerId: "client",
+    contacts: [],
+    personalDetails: {},
+    preferences: {
+      primaryCurrencyCode: "BRL",
+      secondaryCurrencyCode: "USD",
+      countryId: "BR-id",
+      countryIsoCode: "BR",
+      languageCode: "pt-BR",
+      timeZoneId: "America/Sao_Paulo",
+      theme: "Dark",
+    },
+  };
   const exports = {
     ref,
     reactive,
     onMounted: (fn) => mounted.push(fn),
     onBeforeUnmount: () => {},
-    useRouter: () => ({ push: async () => {} }),
+    useRouter: () => ({
+      push: async (to) => destinations.push(to),
+      replace: async (to) => destinations.push(to),
+    }),
     useRoute: () => ({ params: {}, query: {} }),
     getClientProfile: async () => profile,
-    getPreferenceCatalog: async () => ({}),
+    getPreferenceCatalog: async () => ({
+      currencies: [
+        { value: "BRL", label: "Real Brasileiro" },
+        { value: "USD", label: "Dólar Americano" },
+      ],
+    }),
     getOnboardingStatus: async () => ({}),
     getClientProfessionalProfile: read("professional"),
     getClientFinancialProfile: read("financial"),
@@ -47,8 +70,15 @@ async function harness() {
     captureClientSession: () => sessionVersion,
     isClientSessionCurrent: (snapshot) => snapshot === sessionVersion,
     assertClientSessionCurrent: () => {},
-    registrationWrite: async () => {
-      throw Error("Unexpected write");
+    registrationWrite: async (method, path, body) => {
+      if (!allowWrites) throw Error("Unexpected write");
+      writes.push({ method, path, body });
+      if (responses.failWrite === path) throw Error("Write failed");
+      if (path.endsWith("/professional-profile")) responses.professional = body;
+      if (path.endsWith("/financial-profile")) responses.financial = body;
+      if (path.endsWith("/preferences"))
+        profile.preferences = { ...profile.preferences, ...body };
+      return body;
     },
     registrationUpload: async () => {
       throw Error("Unexpected upload");
@@ -87,6 +117,9 @@ async function harness() {
   return {
     ...drafts,
     responses,
+    profile,
+    writes,
+    destinations,
     newSession: () => {
       sessionVersion++;
     },
@@ -147,29 +180,102 @@ test("successful retry clears unavailable state without overwriting hydrated fin
 test("an unavailable financial read blocks its editing step without clearing successful occupation", async () => {
   const h = await harness();
   h.responses.financial = Error("financial");
-  const flow = await h.mount(5);
+  const flow = await h.mount(4);
   assert.equal(flow.ready.value, false);
   assert.equal(h.employmentDraft.value.occupation, "Atividade existente");
-  assert.match(h.state.notices[5], /dados financeiros/);
+  assert.match(h.state.notices[4], /dados financeiros/);
 });
 
 test("logging in again to the same customer reloads saved data instead of previous-session drafts", async () => {
   const h = await harness();
-  await h.mount(5);
+  await h.mount(4);
   h.employmentDraft.value.individualMonthlyIncome = "99,99";
   h.personalPreviewDraft.value.birthCity = "Unsaved";
   h.documentDrafts.br = { files: { front: { name: "unsaved.pdf" } } };
   h.newSession();
-  await h.mount(5);
+  await h.mount(4);
   assert.equal(h.employmentDraft.value.individualMonthlyIncome, "1234,56");
   assert.equal(h.personalPreviewDraft.value.birthCity, "");
-  assert.equal(Object.keys(h.documentDrafts).length, 0);
+  assert.equal(h.documentDrafts.br.files.front, undefined);
 });
 
 test("an old mounted stage cannot write after logout and a new login to the same customer", async () => {
   const h = await harness();
-  const flow = await h.mount(5);
+  const flow = await h.mount(4);
   h.newSession();
   await flow.save();
-  assert.match(h.state.notices[5], /sessão mudou/);
+  assert.match(h.state.notices[4], /sessão mudou/);
+});
+
+test("new stage 4 writes professional, financial and both preferences before entering documents", async () => {
+  const h = await harness({ allowWrites: true });
+  h.responses.professional = null;
+  h.responses.financial = null;
+  h.profile.preferences.primaryCurrencyCode = null;
+  h.profile.preferences.secondaryCurrencyCode = null;
+  const flow = await h.mount(4);
+  Object.assign(h.employmentDraft.value, {
+    occupation: " Analista QA ",
+    employerName: " Empresa QA ",
+    individualMonthlyIncome: "1.234,56",
+    householdMonthlyIncome: "",
+    declaredNetWorth: "0",
+    primaryCurrencyCode: "BRL",
+    secondaryCurrencyCode: "USD",
+  });
+  await flow.save();
+  assert.deepEqual(
+    h.writes.map((call) => call.path.split("/").at(-1)),
+    ["professional-profile", "financial-profile", "preferences"],
+  );
+  assert.equal(h.writes[0].body.occupation, "Analista QA");
+  assert.equal(h.writes[0].body.employerName, "Empresa QA");
+  assert.equal(h.writes[0].body.isCurrent, true);
+  assert.equal(h.writes[1].body.householdMonthlyIncome, null);
+  assert.equal(h.writes[1].body.declaredNetWorth, "0.00");
+  assert.equal(h.writes[2].body.primaryCurrencyCode, "BRL");
+  assert.equal(h.writes[2].body.secondaryCurrencyCode, "USD");
+  assert.equal(h.writes[2].body.countryId, "BR-id");
+  assert.equal(h.destinations.at(-1), "/cadastro/etapa-5");
+});
+test("incomplete preferences fail preflight without saving professional or financial data", async () => {
+  const h = await harness({ allowWrites: true });
+  h.profile.preferences.secondaryCurrencyCode = null;
+  const flow = await h.mount(4);
+  await flow.save();
+  assert.equal(h.writes.length, 0);
+  assert.equal(h.destinations.length, 0);
+  assert.match(h.state.notices[4], /duas moedas/);
+});
+test("a preference write failure keeps the new stage and drafts; retry resumes without invented defaults", async () => {
+  const h = await harness({ allowWrites: true });
+  const flow = await h.mount(4);
+  h.responses.failWrite = "/api/v1/client/profile/preferences";
+  await flow.save();
+  assert.equal(h.destinations.length, 0);
+  assert.equal(h.employmentDraft.value.occupation, "Atividade existente");
+  h.responses.failWrite = null;
+  await flow.save();
+  assert.equal(h.destinations.at(-1), "/cadastro/etapa-5");
+  assert.equal(
+    h.writes.filter((call) => call.path.endsWith("/professional-profile"))
+      .length,
+    1,
+  );
+  assert.equal(
+    h.writes.filter((call) => call.path.endsWith("/financial-profile")).length,
+    1,
+  );
+  assert.equal(
+    h.writes.filter((call) => call.path.endsWith("/preferences")).length,
+    2,
+  );
+});
+test("a resumed documents deep link returns to stage 4 if professional prerequisites are missing", async () => {
+  const h = await harness();
+  h.responses.professional = null;
+  const flow = await h.mount(5);
+  assert.equal(flow.ready.value, false);
+  assert.equal(h.destinations.at(-1), "/cadastro/etapa-4");
+  assert.equal(h.writes.length, 0);
 });

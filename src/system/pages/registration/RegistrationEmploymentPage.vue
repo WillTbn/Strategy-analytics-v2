@@ -1,14 +1,14 @@
 <template>
   <div>
     <aside
-      v-if="registrationContext.notices[5]"
+      v-if="registrationContext.notices[4]"
       class="preview-note"
       role="status"
     >
-      {{ registrationContext.notices[5] }}
+      {{ registrationContext.notices[4] }}
     </aside>
     <registration-shell
-      :step="5"
+      :step="4"
       title="Atividade trabalhista"
       style="
         --registration-background-angle: 209.1858deg;
@@ -19,14 +19,14 @@
         v-if="ready"
         :key="revision"
         v-model="employmentDraft"
-        :occupations="catalog.occupations || []"
+        :currencies="catalog.currencies || []"
         :busy="busy"
         @validated="save"
         @back="
           router.push(
             route.query.review === '1'
               ? '/cadastro/etapa-7'
-              : '/cadastro/etapa-4',
+              : '/cadastro/etapa-3',
           )
         "
       />
@@ -51,7 +51,7 @@ import {
 } from "src/composables/system/useRegistrationFlow";
 const router = useRouter(),
   route = useRoute();
-const { busy, ready, revision, catalog, save } = useRegistrationFlow(5);
+const { busy, ready, revision, catalog, save } = useRegistrationFlow(4);
 </script>
 <style scoped>
 .preview-note {

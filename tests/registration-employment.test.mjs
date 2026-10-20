@@ -6,12 +6,12 @@ import {
   parseRegistrationAmount,
   validateRegistrationEmployment,
 } from "../src/services/registrationEmployment.js";
-test("the employment draft contains only the four Figma fields and no invented initial zero", () => {
+test("the employment draft contains the business fields authorized by design and QA and no invented initial zero", () => {
   assert.deepEqual(
     Object.keys(newRegistrationEmployment()),
     employmentFields.map((field) => field.key),
   );
-  assert.equal(newRegistrationEmployment().occupation, null);
+  assert.equal(newRegistrationEmployment().occupation, "");
   assert.equal(newRegistrationEmployment().declaredNetWorth, "");
   assert.equal(parseRegistrationAmount("").kind, "empty");
   assert.deepEqual(parseRegistrationAmount("0"), {
@@ -58,7 +58,7 @@ test("all three monetary fields validate independently and failure preserves the
       declaredNetWorth: "1,234",
     },
     copy = { ...draft };
-  const errors = validateRegistrationEmployment(draft);
+  const errors = validateRegistrationEmployment(draft, [], []);
   assert.deepEqual(Object.keys(errors).sort(), [
     "declaredNetWorth",
     "householdMonthlyIncome",
@@ -67,40 +67,35 @@ test("all three monetary fields validate independently and failure preserves the
   assert.deepEqual(draft, copy);
   assert.ok(!JSON.stringify(errors).includes("9876.54"));
 });
-test("catalog and requiredness come from supplied rules without adding employment metadata or income ranges", () => {
-  const options = [{ value: "test-only", label: "Atividade de teste" }];
+test("free-text occupation is required, employer optional, and both currencies come from the API catalogue", () => {
+  const options = [
+    { value: "BRL", label: "Real" },
+    { value: "USD", label: "Dólar" },
+  ];
+  const draft = newRegistrationEmployment();
   assert.deepEqual(
-    validateRegistrationEmployment(newRegistrationEmployment()),
-    {},
+    Object.keys(validateRegistrationEmployment(draft, options)),
+    ["occupation", "primaryCurrencyCode", "secondaryCurrencyCode"],
   );
-  assert.equal(
-    Object.keys(
-      validateRegistrationEmployment(
-        newRegistrationEmployment(),
-        options,
-        employmentFields.map((f) => f.key),
-      ),
-    ).length,
-    4,
+  Object.assign(draft, {
+    occupation: "Analista",
+    primaryCurrencyCode: "BRL",
+    secondaryCurrencyCode: "USD",
+  });
+  assert.deepEqual(validateRegistrationEmployment(draft, options), {});
+  assert.deepEqual(
+    validateRegistrationEmployment({ ...draft, employerName: "" }, options),
+    {},
   );
   assert.ok(
     validateRegistrationEmployment(
-      { ...newRegistrationEmployment(), occupation: "invented" },
+      { ...draft, secondaryCurrencyCode: "INVALID" },
       options,
-    ).occupation,
+    ).secondaryCurrencyCode,
   );
-  assert.deepEqual(
-    validateRegistrationEmployment(
-      {
-        ...newRegistrationEmployment(),
-        occupation: "test-only",
-        individualMonthlyIncome: "2",
-        householdMonthlyIncome: "1",
-        declaredNetWorth: "0",
-      },
-      options,
-    ),
-    {},
+  assert.ok(
+    validateRegistrationEmployment({ ...draft, occupation: "   " }, options)
+      .occupation,
   );
 });
 test("copied drafts preserve user strings and isolate state for navigation", () => {
