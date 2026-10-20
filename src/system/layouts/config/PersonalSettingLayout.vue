@@ -132,7 +132,7 @@
 </template>
 <script setup>
 import { computed, reactive, ref } from "vue";
-import { saveProfileJob } from "src/services/profileJobEdit";
+import { saveProfileJob, profileJobChanges } from "src/services/profileJobEdit";
 import useClientProfile from "src/composables/system/useClientProfile";
 import ProfileFields from "src/system/components/setting/ProfileFields.vue";
 import ProfileResourceState from "src/system/components/setting/ProfileResourceState.vue";
@@ -372,6 +372,20 @@ const save = async (section) => {
     if (!isClientSessionCurrent(session)) return;
     editing.value = null;
     await Promise.all(section.resources.map((resource) => resource.load()));
+    if (!isClientSessionCurrent(session)) return;
+    if (
+      section.key === "job" &&
+      section.resources.every((resource) => resource.state.value && !resource.state.error)
+    ) {
+      const pending = profileJobChanges(
+        profile.professional.state.value,
+        profile.financial.state.value,
+        draft,
+      );
+      if (pending.professional || pending.financial)
+        saveError.value =
+          "Os dados foram enviados, mas a consulta ainda retorna valores diferentes. Confira os valores antes de editar novamente.";
+    }
   } catch (error) {
     if (isClientSessionCurrent(session))
       saveError.value = getApiErrorMessage(
