@@ -42,7 +42,7 @@ import { computed, reactive, ref } from 'vue'
 import LabelForm from 'src/system/components/form/LabelForm.vue'
 import useNotify from 'src/composables/useNotify'
 import { getApiErrorMessage } from 'src/services/clientAuthService'
-import { archiveClientBankAccount, createClientBankAccount, getClientBankAccount, listClientBankAccounts, listClientBanks, setPrimaryClientBankAccount, updateClientBankAccount } from 'src/services/clientProfileService'
+import { archiveClientBankAccount, createClientBankAccount, getClientBankAccount, listClientBankAccounts, listAllClientBanks, setPrimaryClientBankAccount, updateClientBankAccount } from 'src/services/clientProfileService'
 
 const { successNotify, errorNotify } = useNotify()
 const accounts=ref([]), banks=ref([]), loading=ref(true), saving=ref(false), error=ref(''), formDialog=ref(false), archiveDialog=ref(false), editingId=ref(null), archiveTarget=ref(null), formRef=ref(null)
@@ -53,7 +53,7 @@ const requiredRules=[v=>Boolean(String(v||'').trim())||'Campo obrigatório']
 const collection=v=>Array.isArray(v)?v:v?.data||v?.items||[]
 const bankOptions=computed(()=>banks.value.map(b=>({label:b.code?`${b.code} — ${b.name}`:b.name,value:b.id})))
 const bankName=id=>bankOptions.value.find(b=>b.value===id)?.label||'Banco não identificado'
-const load=async()=>{loading.value=true;error.value='';try{const [b,a]=await Promise.all([listClientBanks({page:1,pageSize:200}),listClientBankAccounts({page:1,pageSize:100})]);banks.value=collection(b).filter(x=>x.isActive!==false);accounts.value=collection(a)}catch(e){error.value=getApiErrorMessage(e,'Não foi possível carregar suas contas bancárias.')}finally{loading.value=false}}
+const load=async()=>{loading.value=true;error.value='';try{const [b,a]=await Promise.all([listAllClientBanks(),listClientBankAccounts({page:1,pageSize:100})]);banks.value=collection(b).filter(x=>x.isActive!==false);accounts.value=collection(a)}catch(e){error.value=getApiErrorMessage(e,'Não foi possível carregar suas contas bancárias.')}finally{loading.value=false}}
 const closeForm=()=>{Object.assign(form,empty());Object.assign(masks,{account:'',document:'',pix:''});editingId.value=null;formDialog.value=false;formRef.value?.resetValidation()}
 const openCreate=()=>{closeForm();formDialog.value=true}
 const openEdit=async account=>{try{saving.value=true;const d=await getClientBankAccount(account.id);editingId.value=account.id;Object.assign(form,{bankId:d.bankId,branch:d.branch,accountNumber:'',accountDigit:d.accountDigit,accountType:d.accountType,holderType:d.holderType,holderName:d.holderName,holderDocument:'',pixKey:null,pixKeyType:d.pixKeyType,isPrimary:d.isPrimary});Object.assign(masks,{account:d.accountNumberMasked||'Mascarada',document:d.holderDocumentMasked||'Mascarado',pix:d.pixKeyMasked||'Não informado'});formDialog.value=true}catch(e){errorNotify(getApiErrorMessage(e,'Não foi possível abrir a conta.'))}finally{saving.value=false}}

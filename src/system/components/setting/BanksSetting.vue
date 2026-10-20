@@ -43,7 +43,7 @@
 import { onScopeDispose, ref } from "vue";
 import {
   listClientBankAccounts,
-  listClientBanks,
+  listAllClientBanks,
 } from "src/services/clientProfileService";
 import { collection } from "src/services/profilePresentation";
 import { getApiErrorMessage } from "src/services/clientAuthService";
@@ -63,7 +63,7 @@ async function load() {
   try {
     const [a, b] = await Promise.all([
       listClientBankAccounts({ page: 1, pageSize: 100 }),
-      listClientBanks({ page: 1, pageSize: 200 }),
+      listAllClientBanks(),
     ]);
     if (active) {
       accounts.value = collection(a);
