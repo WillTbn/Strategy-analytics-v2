@@ -9,6 +9,9 @@ import { newRegistrationEmployment } from "../src/services/registrationEmploymen
 import { newRegistrationTrustedContacts } from "../src/services/registrationTrustedContacts.js";
 import { newRegistrationDocuments } from "../src/services/registrationDocuments.js";
 
+// Keep one VM realm alive; each SourceTextModule still owns isolated flow state.
+const testContext = vm.createContext({ Date });
+
 async function harness({ allowWrites = false } = {}) {
   const writes = [],
     destinations = [];
@@ -91,7 +94,7 @@ async function harness({ allowWrites = false } = {}) {
     newRegistrationTrustedContacts,
     newRegistrationDocuments,
   };
-  const context = vm.createContext({});
+  const context = testContext;
   const mod = new vm.SourceTextModule(
     await readFile(
       new URL(
