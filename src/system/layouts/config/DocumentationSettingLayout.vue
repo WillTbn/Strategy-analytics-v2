@@ -21,10 +21,10 @@
         <q-separator dark />
         <q-card-section v-if="!documents.length" class="empty-state q-pa-xl text-center text-grey-5"><q-icon name="description" size="36px" /><div class="q-mt-sm">Nenhum documento enviado.</div></q-card-section>
         <q-list v-else separator>
-          <q-item v-for="document in documents" :key="document.id">
+          <q-item v-for="document in documents" :key="document.id" class="document-row">
             <q-item-section avatar><q-avatar color="primary" text-color="white" icon="description" /></q-item-section>
             <q-item-section><q-item-label>{{ documentName(document) }}</q-item-label><q-item-label caption>{{ document.fileName || document.originalFileName || 'Arquivo protegido' }}</q-item-label><q-item-label v-if="document.rejectionReason" caption class="text-negative">{{ document.rejectionReason }}</q-item-label></q-item-section>
-            <q-item-section side><div class="row items-center q-gutter-xs"><q-badge outline :color="statusColor(document.status)" :label="statusLabel(document.status)" /><q-btn flat round dense icon="download" color="primary" aria-label="Baixar documento" @click="download(document)" /><q-btn flat round dense icon="link" color="primary" aria-label="Gerar link temporário" @click="temporaryUrl(document)" /><q-btn v-if="isRejected(document.status)" flat round dense icon="published_with_changes" color="warning" aria-label="Substituir documento" @click="openReplace(document)" /></div></q-item-section>
+            <q-item-section side class="document-row__actions"><div class="row items-center q-gutter-xs"><q-badge outline :color="statusColor(document.status)" :label="statusLabel(document.status)" /><q-btn flat round dense icon="download" color="primary" aria-label="Baixar documento" @click="download(document)" /><q-btn flat round dense icon="link" color="primary" aria-label="Gerar link temporário" @click="temporaryUrl(document)" /><q-btn v-if="isRejected(document.status)" flat round dense icon="published_with_changes" color="warning" aria-label="Substituir documento" @click="openReplace(document)" /></div></q-item-section>
           </q-item>
         </q-list>
       </q-card>
@@ -79,4 +79,10 @@ const temporaryUrl=async d=>{try{const result=await getClientDocumentTemporaryUr
 load()
 </script>
 
-<style scoped>.documentation-setting-layout{max-width:1180px;margin:0 auto}.form-card{width:min(720px,calc(100vw - 32px))}.empty-state{border:1px dashed rgba(255,255,255,.2);border-radius:8px}</style>
+<style scoped>.documentation-setting-layout{max-width:1180px;margin:0 auto}.form-card{width:min(720px,calc(100vw - 32px))}.empty-state{border:1px dashed rgba(255,255,255,.2);border-radius:8px}
+@media (max-width: 599px) {
+  .document-row { flex-wrap: wrap; }
+  .document-row__actions { flex-basis: 100%; margin-top: 8px; padding-left: 56px; align-items: flex-start; }
+  .document-row :deep(.q-item__label) { overflow-wrap: anywhere; }
+}
+</style>
