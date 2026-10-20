@@ -35,7 +35,7 @@
               <span class="text-primary text-inter-17-700">
                 R$ {{ nextInstallment }}
               </span>
-             <div class="divisor q-mx-sm"></div>
+             <span class="divisor q-mx-sm"></span>
              <span>Ven.: {{ dueDate }}</span>
             </p>
           </div>

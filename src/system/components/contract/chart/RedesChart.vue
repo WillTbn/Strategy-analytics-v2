@@ -1,6 +1,5 @@
 <template>
   <apexchart
-    :key="timeSelect"
     ref="chart"
     :options="chartOptions"
     :series="series"
@@ -8,7 +7,7 @@
 </template>
 
 <script setup>
-import { defineComponent } from "vue";
+import { defineComponent, computed, ref } from "vue";
 
 defineComponent({
   name: "RedesChart",
@@ -19,15 +18,16 @@ const props = defineProps({
   title: { type: String, default: "Bolsas" },
   labelsArray: {
     type: Array,
-    default: ["EUA (US)", "Europa (EU)", "Suíça (CH)", "Redes"],
+    default: () => ["EUA (US)", "Europa (EU)", "Suíça (CH)", "Redes"],
   },
   colorsArray: {
     type: Array,
-    default: ["#9875FF", "#06C9BF", "#FFC775", "#EE77A2"],
+    default: () => ["#9875FF", "#06C9BF", "#FFC775", "#EE77A2"],
   },
-  datasSeries: { type: Array, default: [22.19, 15.97, 15.38, 12.5] },
+  datasSeries: { type: Array, default: () => [22.19, 15.97, 15.38, 12.5] },
 });
 
+const series = computed(() => props.datasSeries);
 const chart = ref(null);
 const chartOptions = ref({
   colors: props.colorsArray,

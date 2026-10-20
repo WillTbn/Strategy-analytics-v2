@@ -1,7 +1,7 @@
 <template>
   <div class="active-your-leverages max-height-28em">
     <active-loans-section
-      v-for="(loan, index) in yourLeverages"
+      v-for="loan in yourLeverages"
       :key="loan.id"
       :title="loan.title"
       :isActive="loan.id == loanSelection"

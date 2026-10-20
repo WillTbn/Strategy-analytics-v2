@@ -20,24 +20,12 @@
 
 <script>
 import { defineComponent } from "vue";
-import LoanmainLayout from "../layouts/loans/LoanmainLayout.vue";
-
-// import TextareaTitle from "../components/TextareaTitle.vue";
-import TitleinterMedium from "../components/TitleinterMedium.vue";
 
 import { useLayoutStore } from "src/stores/layout";
 import { storeToRefs } from "pinia";
-import LoandetailsLayout from "../layouts/loans/LoandetailsLayout.vue";
-import RequestAnalysis from "../layouts/RequestAnalysis.vue";
 
 export default defineComponent({
   name: "LoanPage",
-  components: {
-    LoanmainLayout,
-    LoandetailsLayout,
-    TitleinterMedium,
-    RequestAnalysis,
-  },
   setup() {
     const layout = useLayoutStore();
     const { loanSteps } = storeToRefs(layout);

@@ -42,13 +42,13 @@ const props = defineProps({
   title: { type: String, default: "Bolsas" },
   labelsArray: {
     type: Array,
-    default: ["EUA (US)", "Europa (EU)", "Suíça (CH)", "Redes"],
+    default: () => ["EUA (US)", "Europa (EU)", "Suíça (CH)", "Redes"],
   },
   colorsArray: {
     type: Array,
-    default: ["#9875FF", "#06C9BF", "#FFC775", "#EE77A2"],
+    default: () => ["#9875FF", "#06C9BF", "#FFC775", "#EE77A2"],
   },
-  datasSeries: { type: Array, default: [22.19, 15.97, 15.38, 12.5] },
+  datasSeries: { type: Array, default: () => [22.19, 15.97, 15.38, 12.5] },
 });
 const timeSelect = ref("last_30_days");
 const chart = ref(null);
