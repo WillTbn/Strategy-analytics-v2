@@ -26,11 +26,13 @@
       />
       <img src="/system/icons/auth/upload.svg" alt="" />
       <strong>{{ label }}</strong>
-      <span v-if="!modelValue">Clique ou arraste a foto ou o arquivo</span>
-      <span v-else class="filename" :title="modelValue.name">{{
+      <span v-if="!modelValue && !status"
+        >Clique ou arraste a foto ou o arquivo</span
+      >
+      <span v-if="modelValue" class="filename" :title="modelValue.name">{{
         modelValue.name
       }}</span>
-      <span v-if="modelValue">Selecionado localmente, ainda não enviado.</span>
+      <span v-if="status">{{ status }}</span>
     </div>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
   </div>
@@ -42,6 +44,7 @@ const props = defineProps({
   label: { type: String, required: true },
   modelValue: { type: Object, default: null },
   rules: { type: Object, default: () => ({}) },
+  status: { type: String, default: "" },
   disabled: Boolean,
 });
 const emit = defineEmits(["update:modelValue"]);

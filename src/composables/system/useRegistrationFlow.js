@@ -1,3 +1,9 @@
+import {
+  hydrateRegistrationDocuments,
+  canReuseRegistrationDocument,
+  assertRegistrationDocumentNumber,
+  rememberRegistrationDocument,
+} from "src/services/registrationDocumentResume";
 import { reactive, ref, onMounted, onBeforeUnmount } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import {
@@ -188,8 +194,16 @@ export function useRegistrationFlow(step) {
         ];
         documentDrafts[variant] = draft;
       }
+      if (!hydrated.has(`documents:${variant}`)) {
+        hydrateRegistrationDocuments(documentDrafts[variant], profile, variant);
+        hydrated.add(`documents:${variant}`);
+      }
       documentCatalog.value = {
         region: optionsFor(documentDrafts[variant].values.region),
+        issuerRegion: optionsFor(
+          documentDrafts[variant].details[documentDrafts[variant].type]
+            ?.issuerRegion,
+        ),
       };
       catalog.value.regions = documentCatalog.value.region;
     }
@@ -366,6 +380,7 @@ export function useRegistrationFlow(step) {
             (draft.type === "Passaporte" && t.code === "PASSAPORTE"),
         );
         const saveDocument = async (documentType, attachments = []) => {
+          assertRegistrationDocumentNumber(draft);
           const definition = await getClientDocumentDataDefinition(
             documentType.id,
             profile.preferences.countryId,
@@ -399,6 +414,7 @@ export function useRegistrationFlow(step) {
               d.documentTypeId === documentType.id &&
               d.countryIsoCode === profile.preferences.countryIsoCode,
           );
+          let result;
           if (existing?.documentId) {
             const update = {
               issuedOn: payload.issuedOn,
@@ -406,16 +422,23 @@ export function useRegistrationFlow(step) {
               data: payload.data,
               evidenceDocumentIds: payload.evidenceDocumentIds,
             };
-            await write(
+            result = await write(
               "put",
               `/api/v1/client/profile/provided-documents/${existing.documentId}`,
               update,
             );
           } else
-            await write(
+            result = await write(
               "post",
               "/api/v1/client/profile/provided-documents",
               payload,
+            );
+          if (attachments.length)
+            rememberRegistrationDocument(
+              draft,
+              existing?.documentId || result?.id,
+              documentType.id,
+              attachments.length,
             );
         };
         if (variant === "br" && draft.values.taxNumber) {
@@ -431,11 +454,12 @@ export function useRegistrationFlow(step) {
           attachments = sides.map(
             (side) => draft.files[`${draft.type}:${side}`],
           );
-        if (attachments.some((f) => !f))
+        const reuse = canReuseRegistrationDocument(draft, profile, variant);
+        if (!reuse && attachments.some((f) => !f))
           throw new Error(
             "Endereço salvo. Selecione os arquivos do documento para concluir esta etapa.",
           );
-        await saveDocument(type, attachments);
+        if (!reuse) await saveDocument(type, attachments);
         if (draft.values.district)
           registrationContext.notices[7] =
             "Endereço/documentos salvos; o bairro não possui campo separado no contrato e permanece no rascunho.";

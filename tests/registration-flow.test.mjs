@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import vm from "node:vm";
 import { readFile } from "node:fs/promises";
 import { ref, reactive } from "vue";
+import * as resumeDocuments from "../src/services/registrationDocumentResume.js";
 import * as integration from "../src/services/registrationIntegration.js";
 import { newRegistrationPersonal } from "../src/services/registrationPersonal.js";
 import { newRegistrationEmployment } from "../src/services/registrationEmployment.js";
@@ -68,7 +69,7 @@ async function harness({ allowWrites = false } = {}) {
     getClientProfessionalProfile: read("professional"),
     getClientFinancialProfile: read("financial"),
     getClientTrustedContacts: read("contacts"),
-    listClientDocumentTypes: async () => [],
+    listClientDocumentTypes: async () => responses.types || [],
     getClientDocumentDataDefinition: async () => ({}),
     captureClientSession: () => sessionVersion,
     isClientSessionCurrent: (snapshot) => snapshot === sessionVersion,
@@ -88,6 +89,7 @@ async function harness({ allowWrites = false } = {}) {
     },
     resetRegistrationUploads: () => {},
     ...integration,
+    ...resumeDocuments,
     ...drafts,
     newRegistrationPersonal,
     newRegistrationEmployment,
@@ -281,4 +283,50 @@ test("a resumed documents deep link returns to stage 4 if professional prerequis
   assert.equal(flow.ready.value, false);
   assert.equal(h.destinations.at(-1), "/cadastro/etapa-4");
   assert.equal(h.writes.length, 0);
+});
+
+test("stage five restores masked document fields and reuses confirmed evidence without writing a masked number", async () => {
+  const h = await harness({ allowWrites: true });
+  h.profile.addresses = [
+    {
+      kind: "Residential",
+      isPrimary: true,
+      line1: "Rua QA, 100",
+      city: "Teste",
+    },
+  ];
+  h.profile.identificationDocuments = {
+    documents: [
+      {
+        documentCode: "RG",
+        documentId: "typed",
+        documentTypeId: "rg",
+        source: "ProvidedDocument",
+        status: "Active",
+        countryIsoCode: "BR",
+        numberMasked: "***0001",
+        issuer: "ORGAO QA",
+        issuedOn: "2025-01-01",
+        evidenceSummary: { count: 2, latestStatus: "Uploaded" },
+      },
+    ],
+  };
+  h.responses.types = [{ code: "RG", id: "rg" }];
+  const flow = await h.mount(5);
+  assert.equal(
+    h.documentDrafts.br.details[h.documentDrafts.br.type].documentNumber,
+    "***0001",
+  );
+  assert.equal(
+    h.documentDrafts.br.details[h.documentDrafts.br.type].issuer,
+    "ORGAO QA",
+  );
+  assert.equal(
+    h.documentDrafts.br.details[h.documentDrafts.br.type].issuedDate,
+    "01/01/2025",
+  );
+  await flow.save();
+  assert.equal(h.destinations.at(-1), "/cadastro/etapa-6");
+  assert.equal(h.writes.length, 1);
+  assert.equal(h.writes[0].path, "/api/v1/client/profile");
 });

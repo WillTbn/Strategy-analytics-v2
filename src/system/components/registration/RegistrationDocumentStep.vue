@@ -122,6 +122,7 @@
           :key="`${form.type}-${side.key}`"
           v-model="form.files[`${form.type}:${side.key}`]"
           :label="side.label"
+          :status="registrationFileState(form, side.key)"
           :rules="fileRules"
           :disabled="busy"
         />
@@ -168,6 +169,7 @@ import {
   documentVariants,
   validateRegistrationDocuments,
 } from "src/services/registrationDocuments";
+import { registrationFileState } from "src/services/registrationDocumentResume";
 import { lookupBrazilianPostalCode } from "src/services/postalCodeService";
 import { createRegistrationPostalLookup } from "src/services/registrationPostalCode";
 const props = defineProps({

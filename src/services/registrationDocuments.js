@@ -255,6 +255,7 @@ export function newRegistrationDocuments(variant) {
       { name: "", absent: false },
     ],
     files: {},
+    savedDocuments: {},
   };
 }
 export function calendarDate(value, format = "dd/mm/aaaa") {
@@ -342,6 +343,12 @@ export function copyRegistrationDocuments(draft) {
       ]),
     ),
     parents: draft.parents.map((parent) => ({ ...parent })),
+    savedDocuments: Object.fromEntries(
+      Object.entries(draft.savedDocuments || {}).map(([type, saved]) => [
+        type,
+        { ...saved, files: { ...saved.files } },
+      ]),
+    ),
     files: { ...draft.files },
   };
 }
