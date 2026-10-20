@@ -16,7 +16,7 @@
 
 - OpenAPI atual consultado em /openapi/v1.json. GET /data-intake/forms de Cláudio retornou somente quatro formulários patrimoniais; nenhum formulário cadastral foi inferido por nome/ID.
 - GET /preferences/catalog retornou moedas/idiomas/fusos/temas e países BR/PT; não contém gênero/estado civil/nacionalidade/atividade. GET /client/consents/requirements sem contexto retornou 400. Definições CPF/RG BR consultadas com sucesso.
-- 116 testes aprovados: mapeamentos de perfil/endereço, preservação de campos, valores/zero/nulos/moeda, metadados temporais, exigência de relacionamento, esquema de documento, catálogos reais, retry da escrita e cache de arquivo isolado por cliente. Lint e build aprovados; diff do lote sem whitespace. Alterações preexistentes de PRODUCT.md e MILESTONE-3-INTEGRATION.md preservadas e excluídas do commit.
+- 117 testes aprovados: mapeamentos de perfil/endereço, preservação de campos, valores/zero/nulos/moeda, metadados temporais, exigência de relacionamento, esquema de documento, catálogos reais, retry da escrita e cache de arquivo isolado por cliente. Lint e build aprovados; diff do lote sem whitespace. Alterações preexistentes de PRODUCT.md e MILESTONE-3-INTEGRATION.md preservadas e excluídas do commit.
 - Navegador local 9010: acesso sem sessão redirecionou ao login com retorno à etapa 5; login de Cláudio retornou à etapa pedida. Valores reais carregados; Continuar regravou profissional/financeiro sem alterar os valores e abriu etapa 6.
 - Contato novo de teste exibiu exigência de relationship e manteve a tela; não criou registro. Ausência local abriu revisão com aviso de não persistência, sem excluir dados.
 - Campo cidade de nascimento com texto fictício foi salvo via etapa 3 e apareceu na revisão. Campo restaurado em seguida. Componentes carregam dados antes de permitir edição, preservando rascunhos durante falha.
@@ -27,3 +27,5 @@
 Textos/versões e contexto do aceite; múltiplas nacionalidades/país de nascimento; bairro separado; catálogos dos seletores e países/variantes ausentes; relationship para inclusão e ausência declarada; operação final de envio/recibo/revisão. Datas iniciais, preservação de metadados e conexão dos endpoints existentes são decisões/trabalho do front e não devem ser atribuídos a falta de API.
 
 Checklist e documento consolidado no Admin atualizados com pendências e retestes separados. /cadastro/enviado permanece explicitamente uma referência visual, sem transição falsa de sucesso.
+
+Reteste após publicação: login com retorno à etapa 5 e gravação profissional/financeira avançaram para etapa 6 em homologação. A recarga revelou que PATCH personalDetails.birthCity=null preserva o valor anterior; PATCH com texto vazio limpou o valor e restaurou o teste. Adaptador corrigido para limpar textos explicitamente com string vazia.

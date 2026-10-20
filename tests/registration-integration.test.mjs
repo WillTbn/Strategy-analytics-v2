@@ -274,3 +274,15 @@ test("an address variant without filiation fields preserves existing parents", (
   const p = addressRegistrationPatch(original, draft, "US-id", "us-ca");
   assert.equal(p.personalDetails.motherName, "Preservar");
 });
+
+test("clearing a personal string uses empty text because the API preserves existing values on null", () => {
+  const original = profile();
+  original.birthDate = null;
+  original.personalDetails.birthCity = "Previous";
+  const p = personalRegistrationPatch(original, {
+    birthDate: "",
+    birthCity: "",
+    nationalities: [],
+  });
+  assert.equal(p.personalDetails.birthCity, "");
+});

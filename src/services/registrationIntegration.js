@@ -27,7 +27,7 @@ export function personalRegistrationPatch(profile, draft) {
     gender: nullable(draft.gender),
     maritalStatus: nullable(draft.maritalStatus),
     nationality: nullable(draft.nationalities?.[0]),
-    birthCity: nullable(draft.birthCity),
+    birthCity: String(draft.birthCity ?? "").trim(),
   };
   return patch;
 }
@@ -75,10 +75,10 @@ export function addressRegistrationPatch(
       fatherName: null,
       ...patch.personalDetails,
       motherName: draft.parents[0]?.absent
-        ? null
+        ? ""
         : nullable(draft.parents[0]?.name),
       fatherName: draft.parents[1]?.absent
-        ? null
+        ? ""
         : nullable(draft.parents[1]?.name),
     };
   return patch;
