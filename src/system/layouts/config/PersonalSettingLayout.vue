@@ -132,6 +132,7 @@
 </template>
 <script setup>
 import { computed, reactive, ref } from "vue";
+import { profileJobChanges } from "src/services/profileJobEdit";
 import useClientProfile from "src/composables/system/useClientProfile";
 import ProfileFields from "src/system/components/setting/ProfileFields.vue";
 import ProfileResourceState from "src/system/components/setting/ProfileResourceState.vue";
@@ -347,40 +348,15 @@ const save = async (section) => {
     if (section.key === "job") {
       const p = profile.professional.state.value,
         fin = profile.financial.state.value;
-      if (!draft.occupation?.trim())
-        throw new Error("Informe a atividade trabalhista.");
-      const amounts = Object.fromEntries(
-        [
-          "individualMonthlyIncome",
-          "householdMonthlyIncome",
-          "declaredNetWorth",
-        ].map((key) => {
-          if (
-            draft[key] === null ||
-            draft[key] === "" ||
-            !Number.isFinite(Number(draft[key])) ||
-            Number(draft[key]) < 0
-          )
-            throw new Error("Informe valores financeiros válidos.");
-          return [key, Number(draft[key])];
-        }),
-      );
-      await updateClientProfessionalProfile({
-        occupation: draft.occupation.trim(),
-        employerName: p.employerName,
-        validFrom: p.validFrom,
-        validTo: p.validTo,
-        isCurrent: p.isCurrent,
-      });
-      assertClientSessionCurrent(session);
-      await profile.professional.load();
-      assertClientSessionCurrent(session);
-      await updateClientFinancialProfile({
-        ...amounts,
-        currencyCode: fin.currencyCode,
-        effectiveFrom: fin.effectiveFrom,
-        effectiveTo: fin.effectiveTo,
-      });
+      const changes = profileJobChanges(p, fin, draft);
+      if (changes.professional) {
+        await updateClientProfessionalProfile(changes.professional);
+        assertClientSessionCurrent(session);
+        await profile.professional.load();
+        assertClientSessionCurrent(session);
+      }
+      if (changes.financial)
+        await updateClientFinancialProfile(changes.financial);
     }
     if (section.key === "trusted") {
       const contact = profile.trusted.state.value[0];
