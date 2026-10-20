@@ -31,6 +31,35 @@ export function personalRegistrationPatch(profile, draft) {
   };
   return patch;
 }
+// Only variants with a separate number field split the portal's "street, number"
+// representation. Keep ambiguous/legacy lines intact instead of inventing a number.
+export function registrationAddressValues(address, variant) {
+  const line = String(address.line1 ?? "");
+  let street = line,
+    number = "";
+  const separateNumber = documentVariants[variant]?.address
+    .flat()
+    .some((field) => field.key === "number");
+  if (separateNumber) {
+    const separator = line.lastIndexOf(",");
+    const suffix = line.slice(separator + 1).trim();
+    if (
+      separator > 0 &&
+      /^(?:\d[\p{L}\p{N}\s./-]*|s\/?n|sem n[uú]mero)$/iu.test(suffix)
+    ) {
+      street = line.slice(0, separator).trimEnd();
+      number = suffix;
+    }
+  }
+  return {
+    street,
+    number,
+    complement: address.line2 || "",
+    city: address.city || "",
+    region: address.stateOrProvince ?? null,
+    postalCode: address.postalCode || "",
+  };
+}
 export function addressRegistrationPatch(
   profile,
   draft,

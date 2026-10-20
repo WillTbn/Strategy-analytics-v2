@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   personalRegistrationPatch,
   addressRegistrationPatch,
+  registrationAddressValues,
   financialRegistrationPayload,
   professionalRegistrationPayload,
   contactRegistrationPayload,
@@ -285,4 +286,74 @@ test("clearing a personal string uses empty text because the API preserves exist
     nationalities: [],
   });
   assert.equal(p.personalDetails.birthCity, "");
+});
+
+test("address resume separates the number and resaving does not duplicate it", () => {
+  const draft = newRegistrationDocuments("br");
+  Object.assign(draft.values, {
+    street: "Rua Fictícia de Homologação",
+    number: "100",
+    city: "Cidade",
+    complement: "Unidade",
+  });
+  const first = addressRegistrationPatch(profile(), draft, "BR-id"),
+    address = first.addresses.at(-1);
+  Object.assign(draft.values, registrationAddressValues(address, "br"));
+  assert.equal(draft.values.street, "Rua Fictícia de Homologação");
+  assert.equal(draft.values.number, "100");
+  const second = addressRegistrationPatch(
+    { ...profile(), addresses: [{ ...address, id: "existing" }] },
+    draft,
+    "BR-id",
+  );
+  assert.equal(second.addresses[0].line1, address.line1);
+  assert.equal(second.addresses[0].id, "existing");
+  assert.equal(second.addresses[0].line2, "Unidade");
+});
+test("address resume keeps commas in the street and recognizes usual number suffixes", () => {
+  for (const number of ["0", "100A", "100-B", "10/2", "s/n"]) {
+    const values = registrationAddressValues(
+      { line1: `Rua, Setor de Teste, ${number}` },
+      "br",
+    );
+    assert.equal(values.street, "Rua, Setor de Teste");
+    assert.equal(values.number, number);
+  }
+});
+test("address resume leaves ambiguous lines and numbered street names untouched", () => {
+  for (const line1 of [
+    "Rua 25 de Março",
+    "Rua, Setor Central",
+    "Rua, ",
+    "100",
+    "",
+    null,
+  ]) {
+    const values = registrationAddressValues({ line1 }, "br");
+    assert.equal(values.street, line1 ?? "");
+    assert.equal(values.number, "");
+  }
+});
+test("only variants with a separate number field split the API address", () => {
+  assert.equal(
+    registrationAddressValues({ line1: "Calle de prueba, 12" }, "south-america")
+      .number,
+    "12",
+  );
+  for (const variant of ["us-ca", "jp", "cn", "europe", "africa", "au"]) {
+    const v = registrationAddressValues(
+      {
+        line1: "Test street, 12",
+        line2: "Unit",
+        city: "City",
+        stateOrProvince: "State",
+        postalCode: "123",
+      },
+      variant,
+    );
+    assert.equal(v.street, "Test street, 12");
+    assert.equal(v.number, "");
+    assert.equal(v.complement, "Unit");
+    assert.equal(v.city, "City");
+  }
 });

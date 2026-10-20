@@ -22,6 +22,7 @@ import {
 import {
   personalRegistrationPatch,
   addressRegistrationPatch,
+  registrationAddressValues,
   professionalRegistrationPayload,
   financialRegistrationPayload,
   contactRegistrationPayload,
@@ -169,13 +170,10 @@ export function useRegistrationFlow(step) {
             (a) => a.kind === "Residential" && a.isPrimary,
           );
         if (address)
-          Object.assign(draft.values, {
-            street: address.line1,
-            complement: address.line2 || "",
-            city: address.city,
-            region: address.stateOrProvince,
-            postalCode: address.postalCode || "",
-          });
+          Object.assign(
+            draft.values,
+            registrationAddressValues(address, variant),
+          );
         draft.parents = [
           { name: profile.personalDetails?.motherName || "", absent: false },
           { name: profile.personalDetails?.fatherName || "", absent: false },
