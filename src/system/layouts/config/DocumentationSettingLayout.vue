@@ -43,6 +43,7 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { profileDocumentRows, documentReplacementValues } from 'src/services/documentPresentation'
 import { onboardingBlockMessage } from 'src/services/onboardingBlock'
 import LabelForm from 'src/system/components/form/LabelForm.vue'
 import useNotify from 'src/composables/useNotify'
@@ -62,13 +63,13 @@ const definitionHint=computed(()=>definition.value?.description||definition.valu
 const requiredRules=[v=>Boolean(v)||'Campo obrigatório']
 const fileRules=[v=>Boolean(v)||'Selecione um arquivo',v=>!v||['application/pdf','image/jpeg','image/png'].includes(v.type)||'Use PDF, JPEG ou PNG',v=>!v||v.size<=26214400||'O arquivo deve ter no máximo 25 MB']
 const documentName=d=>d.documentTypeName||d.typeName||d.name||'Documento'
-const statusLabel=s=>({Pending:'Pendente',UnderReview:'Em análise',Approved:'Aprovado',Rejected:'Rejeitado'}[s]||s||'Enviado')
+const statusLabel=s=>({Uploaded:'Enviado',Pending:'Pendente',UnderReview:'Em análise',Approved:'Aprovado',Rejected:'Rejeitado'}[s]||s||'Enviado')
 const statusColor=s=>({Approved:'positive',Rejected:'negative',UnderReview:'warning',Pending:'grey'}[s]||'grey')
 const isRejected=s=>String(s).toLowerCase()==='rejected'
-const load=async()=>{loading.value=true;error.value='';guardBlocked.value='';try{const [o,p,d,t]=await Promise.all([getClientDocumentOverview(),getClientDocumentProgress(),listClientDocuments({page:1,pageSize:100}),listClientDocumentTypes()]);overview.value=o||{};progress.value=p||{};documents.value=collection(d);types.value=collection(t)}catch(e){const message=getApiErrorMessage(e,'Não foi possível carregar seus documentos.');const block=onboardingBlockMessage(e);if(block)guardBlocked.value=block;else error.value=message}finally{loading.value=false}}
+const load=async()=>{loading.value=true;error.value='';guardBlocked.value='';try{const [o,p,d,t]=await Promise.all([getClientDocumentOverview(),getClientDocumentProgress(),listClientDocuments({page:1,pageSize:100}),listClientDocumentTypes()]);overview.value=o||{};progress.value=p||{};documents.value=profileDocumentRows(collection(d),o);types.value=collection(t)}catch(e){const message=getApiErrorMessage(e,'Não foi possível carregar seus documentos.');const block=onboardingBlockMessage(e);if(block)guardBlocked.value=block;else error.value=message}finally{loading.value=false}}
 const closeDialog=()=>{Object.assign(form,blank());replacing.value=null;definition.value=null;dialog.value=false;formRef.value?.resetValidation()}
 const openUpload=()=>{closeDialog();dialog.value=true}
-const openReplace=d=>{closeDialog();replacing.value=d;dialog.value=true}
+const openReplace=d=>{closeDialog();replacing.value=d;Object.assign(form,documentReplacementValues(d));dialog.value=true}
 const typeChanged=()=>{form.countryId=null;definition.value=null;if(countryOptions.value.length===1){form.countryId=countryOptions.value[0].value;loadDefinition()}}
 const loadDefinition=async()=>{if(!form.documentTypeId||!form.countryId)return;try{definition.value=await getClientDocumentDataDefinition(form.documentTypeId,form.countryId)}catch(e){errorNotify(getApiErrorMessage(e,'Não foi possível carregar as orientações deste documento.'))}}
 const fileRejected=()=>errorNotify('Use um arquivo PDF, JPEG ou PNG com até 25 MB.')
