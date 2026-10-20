@@ -1,6 +1,27 @@
 <template>
-  <q-layout class="bg-simulator">
-    <q-page-container class="column justify-center" style="min-height: 96vh">
+  <q-layout
+    :class="
+      stateLogin === 'login'
+        ? 'portal-login'
+        : 'bg-simulator auth-legacy-screen'
+    "
+  >
+    <q-page-container v-if="stateLogin === 'login'">
+      <main class="portal-login__content">
+        <div class="portal-login__logo">
+          <img src="/system/icons/auth/logo.svg" alt="Strategy Analytics" />
+        </div>
+        <login-layout
+          :session-expired="route.query.session === 'expired'"
+          @status-login="stateLogin = $event"
+        />
+      </main>
+    </q-page-container>
+    <q-page-container
+      v-else
+      class="column justify-center"
+      style="min-height: 96vh"
+    >
       <div class="column justify-center" v-if="!emailSend">
         <div class="row text-white justify-center">
           <div
@@ -23,17 +44,16 @@
           </div>
         </div>
       </div>
-      <div v-if="route.query.session === 'expired'" class="row justify-center q-mb-md">
+      <div
+        v-if="route.query.session === 'expired'"
+        class="row justify-center q-mb-md"
+      >
         <q-banner rounded class="col-md-3 col-sm-8 bg-blue-grey-9 text-white">
           Sua sessão expirou. Entre novamente para continuar.
         </q-banner>
       </div>
-      <login-layout
-        v-if="stateLogin == 'login'"
-        @status-login="stateLogin = $event"
-      />
       <validatetoken-layout
-        v-else-if="stateLogin == 'validateToken'"
+        v-if="stateLogin == 'validateToken'"
         @status-login="stateLogin = $event"
       />
       <forgotpassword-layout
@@ -51,7 +71,7 @@
       label-class="text-teal"
       label-style="font-size: 1.1em"
     />
-    <footer-system class="text-blue-grey-9" />
+    <footer-system v-if="stateLogin !== 'login'" class="text-blue-grey-9" />
   </q-layout>
 </template>
 <script setup>
@@ -87,9 +107,44 @@ onMounted(() => {
 });
 </script>
 <style lang="sass">
-.q-field--outlined .q-field__control:before
+.auth-legacy-screen .q-field--outlined .q-field__control:before
   border-bottom: solid 1px #fff !important
 
-.q-field--outlined .q-field__control
+.auth-legacy-screen .q-field--outlined .q-field__control
   border-radius: 8px
+</style>
+<style scoped>
+.portal-login {
+  background: linear-gradient(
+    209.1858deg,
+    #791823 0.17422%,
+    #330a0f 9.0927%,
+    #090c15 39.128%,
+    #09293e 73.446%,
+    #114d76 99.826%
+  );
+}
+.portal-login__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  min-height: 100vh;
+  padding: 48px 16px;
+}
+.portal-login__logo {
+  display: flex;
+  align-items: center;
+  width: 152px;
+  height: 48px;
+  flex: none;
+}
+.portal-login__logo img {
+  width: 152px;
+  height: 32.7729px;
+  mask-image: url("/system/icons/auth/logo-mask.svg");
+  mask-repeat: no-repeat;
+  mask-size: 152px 32.7728px;
+}
 </style>
