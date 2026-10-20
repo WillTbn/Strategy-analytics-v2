@@ -19,6 +19,7 @@ import {
   isClientSessionCurrent,
   assertClientSessionCurrent,
 } from "src/services/clientApi";
+import { registrationLoginDestination } from "src/services/registrationResume";
 import { assertLoginIdentity } from "src/services/sessionIsolation";
 
 // Cookie para o refresh token da API do cliente
@@ -89,11 +90,7 @@ export default function useAuth() {
       if (!isClientSessionVersion(operation)) return;
       assertClientSessionCurrent(identitySession);
       setUserCookie(normalizeUser(me));
-      const next = /^\/cadastro\/etapa-[3-7](?:\/[a-z-]+)?$/.test(
-        String(route.query.next || ""),
-      )
-        ? { path: route.query.next }
-        : { name: "inicio" };
+      const next = registrationLoginDestination(me.id, route.query.next);
       await router.replace(destination || next);
       return true;
     } catch (e) {

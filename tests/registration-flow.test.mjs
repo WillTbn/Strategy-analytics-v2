@@ -11,6 +11,7 @@ import { newRegistrationDocuments } from "../src/services/registrationDocuments.
 
 async function harness() {
   const mounted = [];
+  let sessionVersion = 0;
   const drafts = {
     personalPreviewDraft: ref(newRegistrationPersonal()),
     employmentDraft: ref(newRegistrationEmployment()),
@@ -29,8 +30,10 @@ async function harness() {
   };
   const profile = { customerId: "client", contacts: [], personalDetails: {} };
   const exports = {
-    ref, reactive,
-    onMounted: (fn) => mounted.push(fn), onBeforeUnmount: () => {},
+    ref,
+    reactive,
+    onMounted: (fn) => mounted.push(fn),
+    onBeforeUnmount: () => {},
     useRouter: () => ({ push: async () => {} }),
     useRoute: () => ({ params: {}, query: {} }),
     getClientProfile: async () => profile,
@@ -41,24 +44,52 @@ async function harness() {
     getClientTrustedContacts: read("contacts"),
     listClientDocumentTypes: async () => [],
     getClientDocumentDataDefinition: async () => ({}),
-    captureClientSession: () => "session", assertClientSessionCurrent: () => {},
-    registrationWrite: async () => { throw Error("Unexpected write"); },
-    registrationUpload: async () => { throw Error("Unexpected upload"); },
+    captureClientSession: () => sessionVersion,
+    isClientSessionCurrent: (snapshot) => snapshot === sessionVersion,
+    assertClientSessionCurrent: () => {},
+    registrationWrite: async () => {
+      throw Error("Unexpected write");
+    },
+    registrationUpload: async () => {
+      throw Error("Unexpected upload");
+    },
     resetRegistrationUploads: () => {},
-    ...integration, ...drafts,
-    newRegistrationPersonal, newRegistrationEmployment,
-    newRegistrationTrustedContacts, newRegistrationDocuments,
+    ...integration,
+    ...drafts,
+    newRegistrationPersonal,
+    newRegistrationEmployment,
+    newRegistrationTrustedContacts,
+    newRegistrationDocuments,
   };
   const context = vm.createContext({});
-  const mod = new vm.SourceTextModule(await readFile(
-    new URL("../src/composables/system/useRegistrationFlow.js", import.meta.url), "utf8",
-  ), { context });
-  await mod.link(() => new vm.SyntheticModule(Object.keys(exports), function () {
-    for (const [key, value] of Object.entries(exports)) this.setExport(key, value);
-  }, { context }));
+  const mod = new vm.SourceTextModule(
+    await readFile(
+      new URL(
+        "../src/composables/system/useRegistrationFlow.js",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    { context },
+  );
+  await mod.link(
+    () =>
+      new vm.SyntheticModule(
+        Object.keys(exports),
+        function () {
+          for (const [key, value] of Object.entries(exports))
+            this.setExport(key, value);
+        },
+        { context },
+      ),
+  );
   await mod.evaluate();
   return {
-    ...drafts, responses,
+    ...drafts,
+    responses,
+    newSession: () => {
+      sessionVersion++;
+    },
     state: mod.namespace.registrationContext,
     async mount(step) {
       const flow = mod.namespace.useRegistrationFlow(step);
@@ -86,12 +117,18 @@ test("failed review reads preserve drafts and report all failed sections togethe
   h.responses.contacts = Error("contacts");
   await h.mount(7);
   h.employmentDraft.value.individualMonthlyIncome = "9,99";
-  h.trustedContactsDraft.value = { noContact: true, contacts: [{ name: "Rascunho" }] };
+  h.trustedContactsDraft.value = {
+    noContact: true,
+    contacts: [{ name: "Rascunho" }],
+  };
   await h.mount(7);
   assert.equal(h.employmentDraft.value.individualMonthlyIncome, "9,99");
   assert.equal(h.trustedContactsDraft.value.noContact, true);
   assert.equal(h.trustedContactsDraft.value.contacts[0].name, "Rascunho");
-  assert.match(h.state.notices[7], /atividade trabalhista, dados financeiros, contatos de confiança/);
+  assert.match(
+    h.state.notices[7],
+    /atividade trabalhista, dados financeiros, contatos de confiança/,
+  );
 });
 
 test("successful retry clears unavailable state without overwriting hydrated financial edits", async () => {
@@ -114,4 +151,25 @@ test("an unavailable financial read blocks its editing step without clearing suc
   assert.equal(flow.ready.value, false);
   assert.equal(h.employmentDraft.value.occupation, "Atividade existente");
   assert.match(h.state.notices[5], /dados financeiros/);
+});
+
+test("logging in again to the same customer reloads saved data instead of previous-session drafts", async () => {
+  const h = await harness();
+  await h.mount(5);
+  h.employmentDraft.value.individualMonthlyIncome = "99,99";
+  h.personalPreviewDraft.value.birthCity = "Unsaved";
+  h.documentDrafts.br = { files: { front: { name: "unsaved.pdf" } } };
+  h.newSession();
+  await h.mount(5);
+  assert.equal(h.employmentDraft.value.individualMonthlyIncome, "1234,56");
+  assert.equal(h.personalPreviewDraft.value.birthCity, "");
+  assert.equal(Object.keys(h.documentDrafts).length, 0);
+});
+
+test("an old mounted stage cannot write after logout and a new login to the same customer", async () => {
+  const h = await harness();
+  const flow = await h.mount(5);
+  h.newSession();
+  await flow.save();
+  assert.match(h.state.notices[5], /sessão mudou/);
 });

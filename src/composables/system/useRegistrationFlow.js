@@ -12,6 +12,7 @@ import {
 import { getOnboardingStatus } from "src/services/clientAccountService";
 import {
   captureClientSession,
+  isClientSessionCurrent,
   assertClientSessionCurrent,
 } from "src/services/clientApi";
 import {
@@ -54,6 +55,7 @@ export const registrationContext = reactive({
 });
 export const registrationCredentials = { password: "" };
 let owner = null;
+let ownerSession = null;
 const hydrated = new Set();
 const optionsFor = (value) => (value ? [{ value, label: value }] : []);
 const optionalProfile = async (read) => {
@@ -113,8 +115,9 @@ export function useRegistrationFlow(step) {
       );
     assertClientSessionCurrent(session);
     if (!active) return;
-    if (owner !== profile.customerId) {
+    if (owner !== profile.customerId || !isClientSessionCurrent(ownerSession)) {
       owner = profile.customerId;
+      ownerSession = session;
       hydrated.clear();
       resetRegistrationUploads();
       personalPreviewDraft.value = newRegistrationPersonal();
@@ -254,9 +257,9 @@ export function useRegistrationFlow(step) {
       const session = captureClientSession(),
         profile = await getClientProfile();
       assertClientSessionCurrent(session);
-      if (profile.customerId !== owner)
+      if (profile.customerId !== owner || !isClientSessionCurrent(ownerSession))
         throw new Error(
-          "A conta mudou. Recarregue para continuar com os dados corretos.",
+          "A sessão mudou. Recarregue para continuar com os dados salvos da sua conta.",
         );
       const write = async (...args) => {
         assertClientSessionCurrent(session);

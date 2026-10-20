@@ -9,6 +9,11 @@ import {
 import routes from "./routes";
 import useAuth from "src/composables/system/useAuth";
 import useCookies from "src/composables/useCookies";
+import { useUserStore } from "src/stores/user";
+import {
+  registrationLoginDestination,
+  rememberRegistrationStep,
+} from "src/services/registrationResume";
 
 /*
  * If not building with SSR mode, you can
@@ -57,16 +62,18 @@ export default route(function (/* { store, ssrContext } */) {
     //verificando se o usuário esta logado evitar logar duplicado
     if (to.name == "login") {
       if (Cookies.has(tokenName) && (await verifyLogged()))
-        return /^\/cadastro\/etapa-[3-7](?:\/[a-z-]+)?$/.test(
-          String(to.query.next || ""),
-        )
-          ? { path: to.query.next }
-          : { name: "inicio" };
+        return registrationLoginDestination(
+          useUserStore().data?.id,
+          to.query.next,
+        );
     }
     return true;
   });
 
-  Router.afterEach((to, from) => {
+  Router.afterEach((to, from, failure) => {
+    if (failure) return;
+    if (to.meta?.auth)
+      rememberRegistrationStep(useUserStore().data?.id, to.path);
     if (
       (from.path.startsWith("/cadastro/") ||
         from.path.startsWith("/dev/cadastro/")) &&
