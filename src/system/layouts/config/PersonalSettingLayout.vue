@@ -49,7 +49,7 @@
             no-caps
             label="Descartar"
             :disable="saving"
-            @click="editing = null"
+            @click="discard"
           />
         </template>
         <span v-else>
@@ -201,6 +201,11 @@ let original = "",
   fullProfile = null,
   jobBaseline = null;
 const changed = computed(() => JSON.stringify(draft) !== original);
+const discard = () => {
+  if (saving.value) return;
+  editing.value = null;
+  saveError.value = "";
+};
 const f = (key, title, type) => ({ key, title, type });
 const sections = computed(() => [
   {
