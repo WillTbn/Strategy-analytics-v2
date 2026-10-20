@@ -10,6 +10,7 @@ import {
 import { sessionRows } from "../src/services/profileSessions.js";
 import {
   basicProfilePatch,
+  basicProfileDraft,
   locationProfilePatch,
 } from "../src/services/profileEdit.js";
 
@@ -235,4 +236,50 @@ test("editing basic data keeps secondary names and addresses and never guesses a
     () => basicProfilePatch({ ...profile, names: [] }, draft),
     /nome principal/,
   );
+});
+
+test("structured contacts display server masks instead of missing data or raw values", () => {
+  const f = profileFields({
+    primaryEmail: { value: "private@example.com", valueMasked: "p***@***.com" },
+    mobilePhone: { value: "+5511999999999", valueMasked: "+55 ******9999" },
+  });
+  assert.equal(f.basic.find((f) => f.title === "Email").value, "p***@***.com");
+  assert.equal(
+    f.basic.find((f) => f.title === "Celular").value,
+    "+55 ******9999",
+  );
+  assert.ok(!JSON.stringify(f).includes("private@example.com"));
+});
+test("editing basic data uses full-profile contacts and preserves them when only personal details change", () => {
+  const draft = basicProfileDraft(profile, {
+    displayName: "Cliente API",
+    primaryEmail: { valueMasked: "***.com" },
+    mobilePhone: { valueMasked: "***0000" },
+  });
+  assert.equal(draft.email, "client@example.com");
+  assert.equal(draft.phone, "+551100000000");
+  draft.birthPlace = "Cidade de teste, SP";
+  const patch = basicProfilePatch(profile, draft);
+  assert.deepEqual(patch.contacts, profile.contacts);
+  assert.deepEqual(patch.addresses, profile.addresses);
+  assert.equal(patch.personalDetails.birthCity, "Cidade de teste");
+});
+test("invalid object contacts or ambiguous primary contacts cannot clear a saved email", () => {
+  const draft = basicProfileDraft(profile);
+  assert.throws(
+    () => basicProfilePatch(profile, { ...draft, email: { value: "wrong" } }),
+    /Confira os contatos/,
+  );
+  assert.throws(
+    () =>
+      basicProfileDraft({
+        ...profile,
+        contacts: [
+          ...profile.contacts,
+          { ...profile.contacts[0], id: "other" },
+        ],
+      }),
+    /contato principal/,
+  );
+  assert.equal(profile.contacts[0].value, "client@example.com");
 });

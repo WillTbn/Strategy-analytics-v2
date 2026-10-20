@@ -42,6 +42,37 @@ export const currentProfilePatch = (profile) => ({
       ])
     : null,
 });
+export function basicProfileDraft(profile, summary = {}) {
+  const primary = (kind) => {
+    const contacts = (profile.contacts || []).filter(
+      (c) => c.kind === kind && c.isPrimary,
+    );
+    if (
+      contacts.length > 1 ||
+      (contacts[0]?.value != null && typeof contacts[0].value !== "string")
+    )
+      throw new Error(
+        "Não foi possível identificar o contato principal para edição. Os dados foram preservados.",
+      );
+    return contacts[0]?.value ?? "";
+  };
+  const p = profile.personalDetails || {};
+  return {
+    name:
+      summary.displayName ||
+      profile.names?.find((n) => n.isPrimary)?.displayName ||
+      "",
+    gender: p.gender || "",
+    maritalStatus: p.maritalStatus || "",
+    nationality: p.nationality || "",
+    birthPlace: [p.birthCity, p.birthState].filter(Boolean).join(", "),
+    birthDate: profile.birthDate || "",
+    email: primary("Email"),
+    phone: primary("MobilePhone"),
+    motherName: p.motherName || "",
+    fatherName: p.fatherName || "",
+  };
+}
 export function basicProfilePatch(profile, draft) {
   const primaryNames = profile.names?.filter((name) => name.isPrimary) || [];
   const primaryName = primaryNames.length === 1 ? primaryNames[0] : null;
@@ -53,6 +84,10 @@ export function basicProfilePatch(profile, draft) {
     ({ id, kind, value, isPrimary }) => ({ id, kind, value, isPrimary }),
   );
   const changeContact = (kind, value) => {
+    if (value != null && typeof value !== "string")
+      throw new Error(
+        "Confira os contatos antes de salvar. Os dados foram preservados.",
+      );
     const current = contacts.find(
       (contact) => contact.kind === kind && contact.isPrimary,
     );

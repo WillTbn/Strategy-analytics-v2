@@ -9,6 +9,8 @@ export const collection = (value) =>
         : [];
 const text = (value) =>
   typeof value === "string" && value.trim() ? value.trim() : NOT_INFORMED;
+export const profileContactText = (contact) =>
+  text(contact && typeof contact === "object" ? contact.valueMasked : contact);
 const join = (values) =>
   values
     .filter((value) => typeof value === "string" && value.trim())
@@ -105,8 +107,8 @@ export function profileFields(
       text(join([personal.birthCity, personal.birthState])),
     ),
     field("Data de Nascimento", profileDate(summary.birthDate)),
-    field("Email", text(summary.primaryEmail)),
-    field("Celular", text(summary.mobilePhone)),
+    field("Email", profileContactText(summary.primaryEmail)),
+    field("Celular", profileContactText(summary.mobilePhone)),
     field("Nome Completo da Mãe", text(personal.motherName)),
     field("Nome Completo do Pai", text(personal.fatherName)),
   ];

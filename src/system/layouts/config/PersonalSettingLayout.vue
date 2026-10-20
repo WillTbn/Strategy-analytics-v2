@@ -151,6 +151,7 @@ import {
 } from "src/services/clientApi";
 import {
   basicProfilePatch,
+  basicProfileDraft,
   locationProfilePatch,
 } from "src/services/profileEdit";
 const profile = useClientProfile({ full: true });
@@ -294,24 +295,10 @@ const edit = async (section) => {
     if (["basic", "location"].includes(section.key)) {
       fullProfile = await getClientProfile();
       if (!isClientSessionCurrent(session)) return;
-      const s = profile.summary.state.value,
-        p = fullProfile.personalDetails || {};
+      const s = profile.summary.state.value;
       values =
         section.key === "basic"
-          ? {
-              name: s.displayName || "",
-              gender: p.gender || "",
-              maritalStatus: p.maritalStatus || "",
-              nationality: p.nationality || "",
-              birthPlace: [p.birthCity, p.birthState]
-                .filter(Boolean)
-                .join(", "),
-              birthDate: fullProfile.birthDate || "",
-              email: s.primaryEmail || "",
-              phone: s.mobilePhone || "",
-              motherName: p.motherName || "",
-              fatherName: p.fatherName || "",
-            }
+          ? basicProfileDraft(fullProfile, s)
           : {
               ...(fullProfile.addresses || []).find(
                 (a) => a.kind === "Residential" && a.isPrimary,
