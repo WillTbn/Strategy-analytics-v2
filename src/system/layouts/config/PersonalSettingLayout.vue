@@ -132,7 +132,7 @@
 </template>
 <script setup>
 import { computed, reactive, ref } from "vue";
-import { profileJobChanges } from "src/services/profileJobEdit";
+import { saveProfileJob } from "src/services/profileJobEdit";
 import useClientProfile from "src/composables/system/useClientProfile";
 import ProfileFields from "src/system/components/setting/ProfileFields.vue";
 import ProfileResourceState from "src/system/components/setting/ProfileResourceState.vue";
@@ -198,7 +198,8 @@ const editing = ref(null),
   saveError = ref(""),
   draft = reactive({});
 let original = "",
-  fullProfile = null;
+  fullProfile = null,
+  jobBaseline = null;
 const changed = computed(() => JSON.stringify(draft) !== original);
 const f = (key, title, type) => ({ key, title, type });
 const sections = computed(() => [
@@ -322,6 +323,11 @@ const edit = async (section) => {
         name: profile.trusted.state.value[0].name,
         phoneNumber: profile.trusted.state.value[0].phoneNumber,
       };
+    if (section.key === "job")
+      jobBaseline = {
+        professional: { ...profile.professional.state.value },
+        financial: { ...profile.financial.state.value },
+      };
     Object.keys(draft).forEach((key) => delete draft[key]);
     Object.assign(draft, values);
     original = JSON.stringify(draft);
@@ -346,17 +352,11 @@ const save = async (section) => {
     if (section.key === "location")
       await updateClientProfile(locationProfilePatch(fullProfile, draft));
     if (section.key === "job") {
-      const p = profile.professional.state.value,
-        fin = profile.financial.state.value;
-      const changes = profileJobChanges(p, fin, draft);
-      if (changes.professional) {
-        await updateClientProfessionalProfile(changes.professional);
-        assertClientSessionCurrent(session);
-        await profile.professional.load();
-        assertClientSessionCurrent(session);
-      }
-      if (changes.financial)
-        await updateClientFinancialProfile(changes.financial);
+      await saveProfileJob(jobBaseline, draft, {
+        professional: updateClientProfessionalProfile,
+        financial: updateClientFinancialProfile,
+        assertSession: () => assertClientSessionCurrent(session),
+      });
     }
     if (section.key === "trusted") {
       const contact = profile.trusted.state.value[0];

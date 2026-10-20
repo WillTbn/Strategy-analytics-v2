@@ -28,3 +28,16 @@ export function profileJobChanges(professional, financial, draft) {
     },
   };
 }
+
+// Keep the editor baseline separate from refreshes. Advance only after a
+// confirmed write, so a retry sends just the changes still pending.
+export async function saveProfileJob(baseline, draft, operations) {
+  const changes = profileJobChanges(baseline.professional, baseline.financial, draft);
+  for (const key of ["professional", "financial"]) {
+    if (!changes[key]) continue;
+    operations.assertSession();
+    await operations[key](changes[key]);
+    operations.assertSession();
+    baseline[key] = { ...baseline[key], ...changes[key] };
+  }
+}
