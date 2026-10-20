@@ -63,4 +63,9 @@ const askArchive=a=>{archiveTarget.value=a;archiveDialog.value=true}
 const confirmArchive=async()=>{saving.value=true;try{await archiveClientBankAccount(archiveTarget.value.id);archiveDialog.value=false;successNotify('Conta arquivada.');await load()}catch(e){errorNotify(getApiErrorMessage(e,'Não foi possível arquivar a conta.'))}finally{saving.value=false}}
 load()
 </script>
-<style scoped>.bank-accounts-layout{max-width:1180px;margin:0 auto}.form-card{width:min(760px,calc(100vw - 32px))}.confirm-card{width:min(440px,calc(100vw - 32px))}.empty-state{border:1px dashed rgba(255,255,255,.2);border-radius:8px}</style>
+<style scoped>.bank-accounts-layout{max-width:1180px;margin:0 auto}.form-card{width:min(760px,calc(100vw - 32px))}.confirm-card{width:min(440px,calc(100vw - 32px))}.empty-state{border:1px dashed rgba(255,255,255,.2);border-radius:8px}
+.form-card :deep(.label-form) {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+</style>
