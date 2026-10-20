@@ -11,8 +11,11 @@
         <div class="registration-shell__logo">
           <img src="/system/icons/auth/logo.svg" alt="Strategy Analytics" />
         </div>
-        <section class="registration-shell__card">
-          <header class="registration-shell__header">
+        <section
+          class="registration-shell__card"
+          :style="{ width: `min(${cardWidth}px, 100%)` }"
+        >
+          <header v-if="showHeader" class="registration-shell__header">
             <p>Etapa {{ step }} de 7</p>
             <h1>{{ title }}</h1>
             <div
@@ -34,6 +37,8 @@
 <script setup>
 defineProps({
   step: { type: Number, required: true },
+  showHeader: { type: Boolean, default: true },
+  cardWidth: { type: Number, default: 760 },
   title: { type: String, required: true },
 });
 </script>

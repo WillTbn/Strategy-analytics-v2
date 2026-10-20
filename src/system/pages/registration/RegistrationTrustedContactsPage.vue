@@ -13,15 +13,22 @@
       "
       ><registration-trusted-contacts-step
         v-model="trustedContactsDraft"
-        @back="router.push('/cadastro/etapa-5')"
+        @back="
+          router.push(
+            route.query.review === '1'
+              ? '/cadastro/etapa-7'
+              : '/cadastro/etapa-5',
+          )
+        "
     /></registration-shell>
   </div>
 </template>
 <script setup>
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import RegistrationShell from "src/system/components/registration/RegistrationShell.vue";
 import RegistrationTrustedContactsStep from "src/system/components/registration/RegistrationTrustedContactsStep.vue";
 import { trustedContactsDraft } from "./registrationTrustedContactsState";
+const route = useRoute();
 const router = useRouter();
 </script>
 <style scoped>

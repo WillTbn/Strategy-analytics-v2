@@ -13,15 +13,22 @@
       "
       ><registration-employment-step
         v-model="employmentDraft"
-        @back="router.push('/cadastro/etapa-4')"
+        @back="
+          router.push(
+            route.query.review === '1'
+              ? '/cadastro/etapa-7'
+              : '/cadastro/etapa-4',
+          )
+        "
     /></registration-shell>
   </div>
 </template>
 <script setup>
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import RegistrationShell from "src/system/components/registration/RegistrationShell.vue";
 import RegistrationEmploymentStep from "src/system/components/registration/RegistrationEmploymentStep.vue";
 import { employmentDraft } from "./registrationEmploymentState";
+const route = useRoute();
 const router = useRouter();
 </script>
 <style scoped>

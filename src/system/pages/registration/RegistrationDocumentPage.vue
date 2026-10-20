@@ -10,7 +10,13 @@
         :key="variant"
         v-model="draft"
         :variant="variant"
-        @back="router.push('/cadastro/etapa-3')"
+        @back="
+          router.push(
+            route.query.review === '1'
+              ? '/cadastro/etapa-7'
+              : '/cadastro/etapa-3',
+          )
+        "
       />
       <p v-else role="alert">
         Variação de residência indisponível.
@@ -27,7 +33,10 @@ import {
   documentVariants,
   newRegistrationDocuments,
 } from "src/services/registrationDocuments";
-import { documentDrafts } from "./registrationDocumentState";
+import {
+  documentDrafts,
+  activeDocumentVariant,
+} from "./registrationDocumentState";
 const route = useRoute(),
   router = useRouter();
 const variant = computed(() => route.params.variant || "br");
@@ -41,6 +50,7 @@ watch(
   (key) => {
     if (Object.hasOwn(documentVariants, key))
       documentDrafts[key] ||= newRegistrationDocuments(key);
+    if (Object.hasOwn(documentVariants, key)) activeDocumentVariant.value = key;
   },
   { immediate: true },
 );
