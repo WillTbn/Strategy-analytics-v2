@@ -1,4 +1,5 @@
 import { api, axios } from 'src/boot/axios';
+import { lookupBrazilianPostalCode } from 'src/services/postalCodeService';
 import { ref } from 'vue'
 import useNotify from 'src/composables/useNotify'
 import useStates from 'src/composables/useStates';
@@ -36,12 +37,10 @@ export default function useRegister() {
   const viaCEP = async (cep) => {
     try {
       loading.value = true
-      const res = await api.post('validator-cep', { cep: cep })
-      return res.data
+      return await lookupBrazilianPostalCode(cep)
 
     } catch (e) {
-      console.log(e)
-      errorNotify('Cpf não pode ser consultado, tente novamente.')
+      errorNotify('CEP não pode ser consultado, tente novamente.')
 
     } finally {
       loading.value = false

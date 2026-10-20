@@ -13,13 +13,14 @@
         :key="field.key"
         :ref="(el) => (controls[field.key] = el)"
         v-model="form.values[field.key]"
-        @lookup="
-          notice =
-            'Consulta automática de endereço indisponível nesta homologação. Preencha os campos manualmente.'
-        "
+        @lookup="lookupPostalCode"
         :field="field"
-        :options="catalog[field.key] || []"
-        :error="errors[field.key]"
+        :options="optionsFor(field.key)"
+        :error="
+          errors[field.key] ||
+          (field.key === 'postalCode' ? postalState.error : '')
+        "
+        :loading="field.key === 'postalCode' && postalState.loading"
         :disabled="busy"
       />
     </div>
@@ -36,12 +37,13 @@
         :key="field.key"
         :ref="(el) => (controls[field.key] = el)"
         v-model="form.values[field.key]"
-        @lookup="
-          notice =
-            'Consulta automática de endereço indisponível nesta homologação. Preencha os campos manualmente.'
-        "
+        @lookup="lookupPostalCode"
         :field="field"
-        :error="errors[field.key]"
+        :error="
+          errors[field.key] ||
+          (field.key === 'postalCode' ? postalState.error : '')
+        "
+        :loading="field.key === 'postalCode' && postalState.loading"
         :disabled="busy"
       />
     </div>
@@ -72,8 +74,12 @@
         :ref="(el) => (controls[field.key] = el)"
         v-model="form.details[form.type][field.key]"
         :field="field"
-        :options="catalog[field.key] || []"
-        :error="errors[field.key]"
+        :options="optionsFor(field.key)"
+        :error="
+          errors[field.key] ||
+          (field.key === 'postalCode' ? postalState.error : '')
+        "
+        :loading="field.key === 'postalCode' && postalState.loading"
         :disabled="busy"
       />
     </div>
@@ -139,7 +145,12 @@
         label="Voltar"
         :disable="busy"
         @click="emit('back')"
-      /><q-btn type="submit" no-caps unelevated class="continue" :disable="busy"
+      /><q-btn
+        type="submit"
+        no-caps
+        unelevated
+        class="continue"
+        :disable="busy || postalState.loading"
         ><span class="icon"
           ><img src="/system/icons/auth/enter.svg" alt="" /></span
         ><span>Continuar</span></q-btn
@@ -148,7 +159,7 @@
   </q-form>
 </template>
 <script setup>
-import { computed, reactive, ref, watch, nextTick } from "vue";
+import { computed, reactive, ref, watch, nextTick, onBeforeUnmount } from "vue";
 import RegistrationDocumentField from "./RegistrationDocumentField.vue";
 import RegistrationDocumentFile from "./RegistrationDocumentFile.vue";
 import {
@@ -157,6 +168,8 @@ import {
   documentVariants,
   validateRegistrationDocuments,
 } from "src/services/registrationDocuments";
+import { lookupBrazilianPostalCode } from "src/services/postalCodeService";
+import { createRegistrationPostalLookup } from "src/services/registrationPostalCode";
 const props = defineProps({
   variant: { type: String, required: true },
   modelValue: { type: Object, required: true },
@@ -174,6 +187,34 @@ watch(form, () => emit("update:modelValue", copyRegistrationDocuments(form)), {
   deep: true,
   flush: "sync",
 });
+const postalState = reactive({ loading: false, error: "" });
+const postalRegions = ref([]);
+const postal = createRegistrationPostalLookup({
+  values: form.values,
+  read: lookupBrazilianPostalCode,
+  state: postalState,
+  region: (value, name) => {
+    postalRegions.value = [
+      { value, label: typeof name === "string" && name.trim() ? name : value },
+    ];
+  },
+});
+watch(() => form.values.postalCode, postal.invalidate, { flush: "sync" });
+onBeforeUnmount(postal.invalidate);
+const lookupPostalCode = () => {
+  if (props.variant === "br" && !props.busy) return postal.lookup();
+};
+const optionsFor = (key) => {
+  const options = props.catalog[key] || [];
+  return key === "region" && props.variant === "br"
+    ? [
+        ...postalRegions.value,
+        ...options.filter(
+          (o) => !postalRegions.value.some((p) => p.value === o.value),
+        ),
+      ]
+    : options;
+};
 const rows = computed(() => documentRows(props.variant, form.type));
 const sides = computed(() =>
   form.type === "Passaporte"
@@ -197,7 +238,7 @@ const changeType = (type) => {
   notice.value = "";
 };
 const submit = async () => {
-  if (props.busy) return;
+  if (props.busy || postalState.loading) return;
   errors.value = validateRegistrationDocuments(props.variant, form);
   if (Object.keys(errors.value).length) {
     notice.value = "Confira as datas indicadas antes de continuar.";

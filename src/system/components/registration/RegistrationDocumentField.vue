@@ -33,22 +33,25 @@
       :placeholder="field.placeholder"
       :type="field.kind === 'phone' ? 'tel' : 'text'"
       :mask="
-        field.kind === 'date'
+        field.mask ||
+        (field.kind === 'date'
           ? field.format === 'aaaa/mm/dd'
             ? '####/##/##'
             : '##/##/####'
-          : undefined
+          : undefined)
       "
       :inputmode="
-        field.kind === 'date'
+        field.inputmode ||
+        (field.kind === 'date'
           ? 'numeric'
           : field.kind === 'phone'
             ? 'tel'
             : field.kind === 'money'
               ? 'decimal'
-              : 'text'
+              : 'text')
       "
       autocomplete="off"
+      :loading="loading"
       @blur="field.hint && emit('lookup')"
       :disable="disabled"
       :error="!!error"
@@ -67,6 +70,7 @@ defineProps({
   modelValue: { type: [String, Number], default: null },
   options: { type: Array, default: () => [] },
   disabled: Boolean,
+  loading: Boolean,
   error: { type: String, default: "" },
 });
 const emit = defineEmits(["update:modelValue", "lookup"]);

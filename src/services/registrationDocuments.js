@@ -21,6 +21,8 @@ export const documentVariants = {
       [
         field("postalCode", "CEP", "00000-000", {
           hint: "Preenchemos o endereço a partir do CEP",
+          mask: "#####-###",
+          inputmode: "numeric",
           half: true,
         }),
       ],
