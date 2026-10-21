@@ -242,6 +242,50 @@ Observações:
 - Seção 26: homologação com arquivos e link descartáveis.
 - Seção 27: regressão e aceite final nos dois ambientes.
 
+## Patrimônio — homologação integrada em 21/10/2026
+
+Ambiente: https://hml.strategyanalytics.com.br/system/config/profile.
+Versão publicada: `64e0901`. Conta Client da sessão de homologação, sem carteira:
+a tela de saque informou “Nenhuma carteira disponível”. Nenhuma carteira foi
+criada e nenhuma movimentação financeira foi executada nesta rodada.
+
+Cada célula abaixo registra cadastro, edição e persistência confirmados pela
+interface após recarregar a página e reabrir o registro.
+
+| Tipo | Moeda | Cadastro | Edição | Persistência |
+| --- | --- | --- | --- | --- |
+| Imóvel | BRL | [x] | [x] | [x] |
+| Imóvel | USD | [x] | [x] | [x] |
+| Imóvel | EUR | [x] | [x] | [x] |
+| Veículo | BRL | [x] | [x] | [x] |
+| Veículo | USD | [x] | [x] | [x] |
+| Veículo | EUR | [x] | [x] | [x] |
+| Investimento | BRL | [x] | [x] | [x] |
+| Investimento | USD | [x] | [x] | [x] |
+| Investimento | EUR | [x] | [x] | [x] |
+| Consórcio | BRL | [x] | [x] | [x] |
+| Consórcio | USD | [x] | [x] | [x] |
+| Consórcio | EUR | [x] | [x] | [x] |
+
+- [x] Catálogo apresentou Real Brasileiro (BRL), Dólar Americano (USD) e Euro (EUR).
+- [x] Moeda preservada na edição, com valores formatados na moeda selecionada.
+- [x] Imóveis: apelido, valor estimado e quartos editados; quatro quartos persistiram.
+  Valores finais: BRL 325.000,50; USD 325.000,50; EUR 325.000,75.
+- [x] Veículos: versão e valor FIPE editados e persistidos.
+  Valores finais: BRL 52.500,75; USD 52.500,50; EUR 52.500,75.
+- [x] Investimentos: nome do produto e valor bruto editados e persistidos.
+  Valores finais: BRL 125,00; USD 125,50; EUR 250,75.
+- [x] Consórcios: corretora/origem, valor pago, parcelas pagas e restante editados.
+  Nas três moedas: carta de 100.000,00; pago 12.000,00; 12 de 100 parcelas;
+  restante 88.000,00. Valores independentes, sem conversão entre moedas.
+
+Os 12 registros fictícios, identificados pelo prefixo `QA` e data `2026-10-21`,
+foram mantidos para conferência. A evidência desta rodada é funcional pela UI;
+não foram capturados status HTTP, request IDs ou payloads de rede.
+Não foram testados aqui documentos anexos aos bens, todos os estados de
+financiamento/contemplação, falhas de rede ou moedas inativas em homologação.
+Nenhum erro de backend foi observado nestes cenários.
+
 ## Bugs de backend encontrados no portal
 
 |  Nº | Seção/fluxo                         | Passos para reproduzir                                               | Endpoint                                                                                                        | HTTP | Request ID / Correlation ID      | Situação                                                                                        |

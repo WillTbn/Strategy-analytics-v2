@@ -17,8 +17,8 @@
       <q-spinner color="primary" size="36px" />
     </div>
     <template v-else-if="!error && !guardBlocked">
-      <div class="row q-col-gutter-md q-mb-md">
-        <div class="col-12 col-md-6">
+      <div class="documentation-summary">
+        <div>
           <q-card class="tool full-height"
             ><q-card-section
               ><div class="text-subtitle1 text-weight-bold">
@@ -34,7 +34,7 @@
             ></q-card
           >
         </div>
-        <div class="col-12 col-md-6">
+        <div>
           <q-card class="tool full-height"
             ><q-card-section
               ><div class="text-subtitle1 text-weight-bold">Progresso</div>
@@ -562,17 +562,41 @@ load();
 
 <style scoped>
 .documentation-setting-layout {
-  max-width: 1180px;
-  margin: 0 auto;
+  width: 100%;
+}
+.documentation-summary {
+  display: grid;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.documentation-setting-layout > .tool > .q-card__section,
+.documentation-summary .q-card__section {
+  padding: 0;
+}
+.documentation-setting-layout > .tool > .q-card__section:first-child {
+  gap: 16px;
+}
+.documentation-setting-layout > .tool > .q-separator {
+  margin: 24px 0;
+}
+.documentation-setting-layout > .tool > .q-card__section.empty-state {
+  padding: 24px 0;
+}
+.document-row {
+  padding: 16px 0;
+  min-width: 0;
+}
+.document-row :deep(.q-item__label) {
+  overflow-wrap: anywhere;
 }
 .form-card {
   width: min(720px, calc(100vw - 32px));
 }
-.empty-state {
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-}
 @media (max-width: 599px) {
+  .documentation-setting-layout > .tool,
+  .documentation-summary .tool {
+    padding: 16px;
+  }
   .document-row {
     flex-wrap: wrap;
   }

@@ -519,8 +519,22 @@ load();
 </script>
 <style scoped>
 .bank-accounts-layout {
-  max-width: 1180px;
-  margin: 0 auto;
+  width: 100%;
+}
+.bank-accounts-layout > .tool > .q-card__section {
+  padding: 0;
+}
+.bank-accounts-layout > .tool > .q-card__section:first-child {
+  gap: 16px;
+}
+.bank-accounts-layout > .tool > .q-separator {
+  margin: 24px 0;
+}
+.bank-accounts-layout .q-item {
+  padding: 16px 0;
+}
+.bank-accounts-layout :deep(.q-item__label) {
+  overflow-wrap: anywhere;
 }
 .form-card {
   width: min(760px, calc(100vw - 32px));
@@ -529,11 +543,24 @@ load();
   width: min(440px, calc(100vw - 32px));
 }
 .empty-state {
-  border: 1px dashed rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  padding: 24px 0;
 }
 .form-card :deep(.label-form) {
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
+}
+@media (max-width: 599px) {
+  .bank-accounts-layout > .tool {
+    padding: 16px;
+  }
+  .bank-accounts-layout .q-item {
+    flex-wrap: wrap;
+  }
+  .bank-accounts-layout .q-item__section--side:last-child {
+    flex-basis: 100%;
+    padding-left: 56px;
+    margin-top: 8px;
+    align-items: flex-start;
+  }
 }
 </style>
