@@ -334,5 +334,5 @@ test("existing fields are disabled during submission without introducing new act
   for (const tag of html.match(/<(?:input|select)\b[^>]*>/g) || [])
     assert.match(tag, /disabled/);
   assert.match(html, />Salvar<\/button>/);
-  assert.match(html, />Cancelar<\/button>/);
+  assert.match(html, />Descartar<\/button>/);
 });

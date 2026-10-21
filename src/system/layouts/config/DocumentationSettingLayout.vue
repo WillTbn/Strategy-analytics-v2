@@ -17,128 +17,163 @@
       <q-spinner color="primary" size="36px" />
     </div>
     <template v-else-if="!error && !guardBlocked">
-      <div class="documentation-summary">
-        <div>
-          <q-card class="tool full-height"
-            ><q-card-section
-              ><div class="text-subtitle1 text-weight-bold">
-                Visão documental
-              </div>
-              <div class="text-caption text-grey-5 q-mb-md">
-                Situação atual dos documentos enviados.
-              </div>
-              <div class="text-h4 text-primary">{{ overviewValue }}</div>
-              <div class="text-caption">
-                documentos cadastrados
-              </div></q-card-section
-            ></q-card
-          >
+      <q-card class="tool documentation-progress q-mb-lg">
+        <div class="documentation-progress-icon">
+          <img src="/system/icons/profile/progress.png" alt="" />
         </div>
-        <div>
-          <q-card class="tool full-height"
-            ><q-card-section
-              ><div class="text-subtitle1 text-weight-bold">Progresso</div>
-              <div class="text-caption text-grey-5 q-mb-md">
-                Evolução do seu cadastro documental.
-              </div>
-              <q-linear-progress
-                rounded
-                size="12px"
-                color="primary"
-                :value="progressValue / 100"
-              />
-              <div class="q-mt-sm">
-                {{ progressValue }}% concluído
-              </div></q-card-section
-            ></q-card
-          >
-        </div>
-      </div>
-
-      <q-card class="tool">
-        <q-card-section class="row items-center justify-between"
-          ><div>
-            <div class="text-subtitle1 text-weight-bold">Meus documentos</div>
-            <div class="text-caption text-grey-5">
-              PDF, JPEG ou PNG, com até 25 MB.
-            </div>
+        <div class="documentation-progress-copy">
+          <div class="text-subtitle1 text-weight-bold">
+            Acompanhe seu nível documental
           </div>
-          <q-btn
-            flat
-            color="primary"
-            icon="upload_file"
-            label="Enviar documento"
-            no-caps
-            :disable="loading || saving"
-            @click="openUpload"
-        /></q-card-section>
-        <q-separator dark />
-        <q-card-section
-          v-if="!documents.length"
-          class="empty-state q-pa-xl text-center text-grey-5"
-          ><q-icon name="description" size="36px" />
-          <div class="q-mt-sm">Nenhum documento enviado.</div></q-card-section
-        >
-        <q-list v-else separator>
-          <q-item
-            v-for="document in documents"
-            :key="document.id"
-            class="document-row"
+          <div class="text-caption q-mt-xs">
+            {{
+              progress.nextLevel?.name
+                ? `Próximo nível: ${progress.nextLevel.name}`
+                : "Progresso dos requisitos documentais"
+            }}
+          </div>
+          <div class="row items-center q-gutter-sm q-mt-xs">
+            <q-linear-progress
+              rounded
+              size="6px"
+              color="primary"
+              :value="progressValue / 100"
+              class="col"
+              aria-label="Progresso documental"
+            />
+            <span>{{ progressValue }}%</span>
+          </div>
+        </div>
+        <div class="document-levels" aria-label="Níveis documentais">
+          <div
+            v-for="level in [1, 2, 3]"
+            :key="level"
+            class="document-level"
+            :class="{ 'document-level--current': currentLevelNumber === level }"
           >
-            <q-item-section avatar
-              ><q-avatar color="primary" text-color="white" icon="description"
-            /></q-item-section>
-            <q-item-section
-              ><q-item-label>{{ documentName(document) }}</q-item-label
-              ><q-item-label caption>{{
-                document.fileName ||
-                document.originalFileName ||
-                "Arquivo protegido"
-              }}</q-item-label
-              ><q-item-label
-                v-if="document.rejectionReason"
-                caption
-                class="text-negative"
-                >{{ document.rejectionReason }}</q-item-label
-              ></q-item-section
+            <img :src="`/system/icons/profile/level-${level}.svg`" alt="" />
+            <span
+              >Nível {{ level }}
+              <span v-if="currentLevelNumber === level" class="text-primary"
+                >(atual)</span
+              ></span
             >
-            <q-item-section side class="document-row__actions"
-              ><div class="row items-center q-gutter-xs">
+          </div>
+        </div>
+      </q-card>
+      <p v-if="!documentGroups.length" class="text-grey">
+        Nenhum documento ou requisito disponível.
+      </p>
+      <q-card
+        v-for="group in documentGroups"
+        :key="group.key"
+        class="tool q-mb-lg"
+      >
+        <div class="text-subtitle1 text-weight-bold q-mb-lg">
+          {{ group.name }}
+        </div>
+        <q-markup-table flat class="document-table" wrap-cells>
+          <thead>
+            <tr>
+              <th class="text-left">Documento requisitado</th>
+              <th class="text-left">Arquivo anexado</th>
+              <th class="text-left">Status</th>
+              <th class="text-left">Última atualização</th>
+              <th><span class="sr-only">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in group.rows" :key="row.key">
+              <td>
+                {{ row.name }}
+                <div v-if="row.isRequired" class="text-caption text-grey-5">
+                  Obrigatório
+                </div>
+              </td>
+              <td>
+                <span class="document-filename">{{
+                  row.document?.fileName ||
+                  row.document?.originalFileName ||
+                  row.document?.file?.originalFileName ||
+                  row.document?.file?.fileName ||
+                  (row.document
+                    ? "Arquivo protegido"
+                    : "Nenhum arquivo anexado")
+                }}</span>
+                <div v-if="row.document?.rejectionReason" class="text-negative">
+                  {{ row.document.rejectionReason }}
+                </div>
+              </td>
+              <td>
                 <q-badge
                   outline
-                  :color="statusColor(document.status)"
-                  :label="statusLabel(document.status)"
-                /><q-btn
-                  flat
-                  round
-                  dense
-                  icon="download"
-                  color="primary"
-                  aria-label="Baixar documento"
-                  @click="download(document)"
-                /><q-btn
-                  flat
-                  round
-                  dense
-                  icon="link"
-                  color="primary"
-                  aria-label="Gerar link temporário"
-                  @click="temporaryUrl(document)"
-                /><q-btn
-                  v-if="isRejected(document.status)"
-                  flat
-                  round
-                  dense
-                  icon="published_with_changes"
-                  color="warning"
-                  aria-label="Substituir documento"
-                  :disable="saving"
-                  @click="openReplace(document)"
-                /></div
-            ></q-item-section>
-          </q-item>
-        </q-list>
+                  :color="statusColor(row.status)"
+                  :label="statusLabel(row.status)"
+                />
+              </td>
+              <td>{{ formatUpdatedAt(row.updatedAt) }}</td>
+              <td>
+                <div class="row no-wrap items-center q-gutter-xs">
+                  <template v-if="row.document">
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      color="primary"
+                      icon="download"
+                      :aria-label="`Baixar ${row.name}`"
+                      @click="download(row.document)"
+                    />
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      color="primary"
+                      icon="link"
+                      :aria-label="`Abrir ${row.name}`"
+                      @click="temporaryUrl(row.document)"
+                    />
+                    <q-btn
+                      v-if="isRejected(row.status)"
+                      flat
+                      dense
+                      no-caps
+                      color="primary"
+                      label="Upload de arquivo"
+                      :disable="saving"
+                      @click="openReplace(row.document)"
+                    />
+                  </template>
+                  <q-btn
+                    v-else-if="!row.isWaived && row.documentTypeId"
+                    flat
+                    dense
+                    no-caps
+                    color="primary"
+                    label="Upload de arquivo"
+                    :disable="saving"
+                    @click="openRequirementUpload(row)"
+                  />
+                </div>
+              </td>
+            </tr>
+            <tr v-if="!group.rows.length">
+              <td colspan="5" class="text-grey">
+                Nenhum requisito neste grupo.
+              </td>
+            </tr>
+          </tbody>
+        </q-markup-table>
       </q-card>
+      <q-btn
+        flat
+        no-caps
+        color="primary"
+        icon="upload_file"
+        label="Enviar outro documento"
+        :disable="saving || !typeOptions.length"
+        @click="openUpload"
+      />
     </template>
 
     <q-dialog v-model="dialog" persistent
@@ -165,6 +200,7 @@
                 ><q-select
                   :disable="saving"
                   v-model="form.documentTypeId"
+                  :readonly="Boolean(form.requirementId)"
                   :options="typeOptions"
                   emit-value
                   map-options
@@ -253,6 +289,7 @@
 import { computed, reactive, ref, onScopeDispose } from "vue";
 import {
   profileDocumentRows,
+  profileDocumentGroups,
   documentReplacementValues,
 } from "src/services/documentPresentation";
 import { onboardingBlockMessage } from "src/services/onboardingBlock";
@@ -290,6 +327,7 @@ const loading = ref(true),
   definition = ref(null);
 const blank = () => ({
     documentTypeId: null,
+    requirementId: null,
     countryId: null,
     file: null,
     issuedOn: "",
@@ -297,12 +335,22 @@ const blank = () => ({
   }),
   form = reactive(blank());
 const collection = (v) => (Array.isArray(v) ? v : v?.items || v?.data || []);
-const overviewValue = computed(
-  () =>
-    overview.value.totalDocuments ??
-    overview.value.total ??
-    documents.value.length,
+const documentGroups = computed(() =>
+  profileDocumentGroups(documents.value, overview.value, progress.value),
 );
+const currentLevelNumber = computed(() => {
+  const level = progress.value.currentLevel;
+  return (
+    Number(String(level?.name || level?.code || "").match(/[1-3]/)?.[0]) || null
+  );
+});
+const formatUpdatedAt = (value) => {
+  if (!value) return "Não informada";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Não informada"
+    : date.toLocaleDateString("pt-BR");
+};
 const progressValue = computed(() =>
   Math.max(
     0,
@@ -351,12 +399,13 @@ const fileRules = [
     "Use PDF, JPEG ou PNG",
   (v) => !v || v.size <= 26214400 || "O arquivo deve ter no máximo 25 MB",
 ];
-const documentName = (d) =>
-  d.documentTypeName || d.typeName || d.name || "Documento";
 const statusLabel = (s) =>
   ({
     Uploaded: "Enviado",
     Pending: "Pendente",
+    Missing: "Pendente",
+    Waived: "Dispensado",
+    InReview: "Em análise",
     UnderReview: "Em análise",
     Approved: "Aprovado",
     Rejected: "Rejeitado",
@@ -435,6 +484,13 @@ const openUpload = () => {
   resetDialog();
   dialog.value = true;
 };
+const openRequirementUpload = (row) => {
+  if (!canOpen()) return;
+  openUpload();
+  form.documentTypeId = row.documentTypeId;
+  form.requirementId = row.requirementId || null;
+  typeChanged();
+};
 const openReplace = (d) => {
   if (!canOpen()) return;
   resetDialog();
@@ -496,6 +552,7 @@ const save = async () => {
     if (replacement) await replaceClientDocument(replacement.id, data);
     else {
       data.append("documentTypeId", form.documentTypeId);
+      if (form.requirementId) data.append("requirementId", form.requirementId);
       if (form.countryId) data.append("countryId", form.countryId);
       await uploadClientDocument(data);
     }
@@ -608,6 +665,82 @@ load();
   }
   .document-row :deep(.q-item__label) {
     overflow-wrap: anywhere;
+  }
+}
+.documentation-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.documentation-progress-copy {
+  flex: 1;
+  min-width: min(260px, 100%);
+}
+.documentation-progress-icon {
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  position: relative;
+}
+.documentation-progress-icon img {
+  position: absolute;
+  height: 135.93%;
+  width: 248.76%;
+  max-width: none;
+  left: -74.38%;
+  top: -13.81%;
+}
+.document-levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.document-level {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+.document-level img {
+  flex: none;
+}
+.document-level--current {
+  border-color: var(--q-primary);
+}
+.document-table {
+  background: transparent;
+  color: inherit;
+}
+.document-table :deep(td),
+.document-table :deep(th) {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.document-table :deep(td) {
+  min-width: 130px;
+}
+.document-filename {
+  display: block;
+  overflow-wrap: anywhere;
+  max-width: 320px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+@media (max-width: 599px) {
+  .document-levels {
+    width: 100%;
+    gap: 8px;
+  }
+  .document-level {
+    padding: 8px;
+    flex: 1;
   }
 }
 </style>

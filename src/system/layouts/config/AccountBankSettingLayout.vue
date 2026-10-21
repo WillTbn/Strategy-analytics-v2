@@ -8,16 +8,6 @@
             Seus dados bancários são sempre exibidos de forma mascarada.
           </div>
         </div>
-        <q-btn
-          flat
-          dense
-          color="primary"
-          icon="add"
-          label="Adicionar"
-          no-caps
-          :disable="loading || saving || Boolean(error)"
-          @click="openCreate"
-        />
       </q-card-section>
       <q-separator dark />
       <q-card-section>
@@ -40,13 +30,17 @@
           <q-icon name="account_balance" size="36px" />
           <div class="q-mt-sm">Nenhuma conta bancária cadastrada.</div>
         </div>
-        <q-list v-else-if="!error" separator>
-          <q-item v-for="account in accounts" :key="account.id">
+        <q-list v-else-if="!error" class="bank-account-list">
+          <q-item
+            v-for="account in accounts"
+            :key="account.id"
+            class="bank-account-row"
+          >
             <q-item-section avatar
-              ><q-avatar
+              ><q-icon
                 color="primary"
-                text-color="white"
-                icon="account_balance"
+                size="32px"
+                name="img:/system/icons/profile/bank.svg"
             /></q-item-section>
             <q-item-section
               ><q-item-label>{{ bankName(account.bankId) }}</q-item-label
@@ -71,7 +65,7 @@
                   icon="edit"
                   color="primary"
                   aria-label="Editar conta"
-                  :disable="loading || saving"
+                  :disable="loading || saving || formDialog"
                   @click="openEdit(account)"
                 /><q-btn
                   v-if="!account.isPrimary"
@@ -81,7 +75,7 @@
                   icon="star_outline"
                   color="primary"
                   aria-label="Definir como principal"
-                  :disable="loading || saving"
+                  :disable="loading || saving || formDialog"
                   @click="makePrimary(account)"
                 /><q-btn
                   flat
@@ -90,18 +84,15 @@
                   icon="archive"
                   color="negative"
                   aria-label="Arquivar conta"
-                  :disable="loading || saving"
+                  :disable="loading || saving || formDialog"
                   @click="askArchive(account)"
                 /></div
             ></q-item-section>
           </q-item>
         </q-list>
       </q-card-section>
-    </q-card>
-
-    <q-dialog v-model="formDialog" persistent
-      ><q-card class="tool form-card"
-        ><q-card-section class="row items-center justify-between"
+      <div v-if="formDialog" class="form-card q-mt-lg">
+        <q-card-section class="row items-center justify-between"
           ><div class="text-subtitle1 text-weight-bold">
             {{ editingId ? "Editar conta" : "Nova conta" }}
           </div>
@@ -116,7 +107,7 @@
         ><q-separator dark /><q-form ref="formRef" @submit.prevent="save"
           ><q-card-section
             ><div class="row q-col-gutter-md">
-              <label-form class-name="col-12" text-label="Banco"
+              <label-form class-name="col-12 col-md-4" text-label="Banco"
                 ><q-select
                   :disable="saving"
                   v-model="form.bankId"
@@ -128,7 +119,7 @@
                   dark
                   :rules="requiredRules"
               /></label-form>
-              <label-form class-name="col-12 col-md-4" text-label="Agência"
+              <label-form class-name="col-12 col-md-2" text-label="Agência"
                 ><q-input
                   :disable="saving"
                   v-model.trim="form.branch"
@@ -137,7 +128,7 @@
                   dark
                   :rules="requiredRules"
               /></label-form>
-              <label-form class-name="col-8 col-md-6" text-label="Conta"
+              <label-form class-name="col-8 col-md-4" text-label="Conta"
                 ><q-input
                   :disable="saving"
                   v-model.trim="form.accountNumber"
@@ -161,7 +152,7 @@
                   dark
               /></label-form>
               <label-form
-                class-name="col-12 col-md-6"
+                class-name="col-12 col-md-4"
                 text-label="Tipo de conta"
                 ><q-select
                   :disable="saving"
@@ -175,7 +166,7 @@
                   :rules="requiredRules"
               /></label-form>
               <label-form
-                class-name="col-12 col-md-6"
+                class-name="col-12 col-md-4"
                 text-label="Tipo de titular"
                 ><q-select
                   :disable="saving"
@@ -188,7 +179,9 @@
                   dark
                   :rules="requiredRules"
               /></label-form>
-              <label-form class-name="col-12" text-label="Nome do titular"
+              <label-form
+                class-name="col-12 col-md-4"
+                text-label="Nome do titular"
                 ><q-input
                   :disable="saving"
                   v-model.trim="form.holderName"
@@ -198,7 +191,7 @@
                   :rules="requiredRules"
               /></label-form>
               <label-form
-                class-name="col-12 col-md-6"
+                class-name="col-12 col-md-4"
                 text-label="Documento do titular"
                 ><q-input
                   :disable="saving"
@@ -210,7 +203,7 @@
                   :rules="requiredRules"
               /></label-form>
               <label-form
-                class-name="col-12 col-md-6"
+                class-name="col-12 col-md-4"
                 text-label="Tipo de chave Pix"
                 ><q-select
                   :disable="saving"
@@ -223,7 +216,7 @@
                   dense
                   dark
               /></label-form>
-              <label-form class-name="col-12" text-label="Chave Pix"
+              <label-form class-name="col-12 col-md-4" text-label="Chave Pix"
                 ><q-input
                   :disable="saving"
                   v-model.trim="form.pixKey"
@@ -243,7 +236,7 @@
           ><q-card-actions align="right"
             ><q-btn
               flat
-              label="Cancelar"
+              label="Descartar"
               no-caps
               :disable="saving"
               @click="closeForm" /><q-btn
@@ -253,8 +246,23 @@
               icon="save"
               label="Salvar"
               no-caps
-              :loading="saving" /></q-card-actions></q-form></q-card
-    ></q-dialog>
+              :loading="saving" /></q-card-actions
+        ></q-form>
+      </div>
+      <div class="q-mt-md">
+        <q-btn
+          flat
+          dense
+          color="primary"
+          icon="add"
+          label="Adicionar"
+          no-caps
+          :disable="loading || saving || formDialog || Boolean(error)"
+          @click="openCreate"
+        />
+      </div>
+    </q-card>
+
     <q-dialog v-model="archiveDialog" persistent
       ><q-card class="tool confirm-card"
         ><q-card-section
@@ -537,7 +545,9 @@ load();
   overflow-wrap: anywhere;
 }
 .form-card {
-  width: min(760px, calc(100vw - 32px));
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  padding-top: 16px;
 }
 .confirm-card {
   width: min(440px, calc(100vw - 32px));
@@ -546,6 +556,8 @@ load();
   padding: 24px 0;
 }
 .form-card :deep(.label-form) {
+  align-content: start;
+  grid-template-rows: auto 1fr;
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
 }
@@ -562,5 +574,17 @@ load();
     margin-top: 8px;
     align-items: flex-start;
   }
+}
+.bank-account-list {
+  display: grid;
+  gap: 16px;
+}
+.bank-accounts-layout .bank-account-row {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  padding: 16px;
+}
+.form-card :deep(.q-card__section) {
+  padding: 16px 0;
 }
 </style>

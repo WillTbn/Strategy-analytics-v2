@@ -38,7 +38,7 @@
                 dense
                 icon="edit"
                 :aria-label="`Editar ${item.nickname}`"
-                :disable="saving"
+                :disable="saving || dialog"
                 @click.stop="open(section, item)"
             /></q-item-section>
           </template>
@@ -75,181 +75,200 @@
             </resource-state>
           </div>
         </q-expansion-item>
+        <div
+          v-if="dialog && selectedSection?.type === section.type"
+          class="asset-editor q-mt-lg"
+        >
+          <q-card-section class="row items-center"
+            ><div class="text-subtitle1 text-weight-bold">
+              {{ selected ? "Editar" : "Adicionar" }}
+              {{ selectedSection?.singular }}
+            </div>
+            <q-space />
+            <div class="row q-gutter-sm">
+              <q-btn
+                flat
+                no-caps
+                label="Descartar"
+                :disable="saving"
+                @click="dialog = false"
+              /><q-btn
+                flat
+                no-caps
+                color="primary"
+                label="Salvar"
+                type="submit"
+                form="asset-editor-form"
+                :loading="saving"
+                :disable="
+                  !draft ||
+                  !currencyAvailable ||
+                  currencies.state.loading ||
+                  !!currencies.state.error
+                "
+              /></div
+          ></q-card-section>
+          <q-card-section
+            ><resource-state :state="detail.state" @retry="loadDetail">
+              <q-form
+                v-if="draft"
+                id="asset-editor-form"
+                @submit.prevent="save"
+              >
+                <p v-if="saveError" class="text-negative" role="alert">
+                  {{ saveError }}
+                </p>
+                <resource-state
+                  :state="currencies.state"
+                  @retry="loadCurrencies"
+                  ><label-form text-label="Moeda"
+                    ><q-select
+                      v-model="currencyId"
+                      :options="currencyOptions"
+                      emit-value
+                      map-options
+                      dark
+                      outlined
+                      dense
+                      :disable="saving || !!selected"
+                      :rules="[required]"
+                      aria-label="Moeda"
+                  /></label-form>
+                  <p v-if="!currencyOptions.length" class="text-grey">
+                    Nenhuma moeda disponível para cadastrar patrimônio nesta
+                    conta.
+                  </p>
+                  <p
+                    v-else-if="currencyId && !currencyAvailable"
+                    class="text-negative"
+                    role="alert"
+                  >
+                    A moeda deste patrimônio não está ativa. Não é possível
+                    salvar alterações.
+                  </p></resource-state
+                >
+                <div
+                  v-for="section in formSections"
+                  :key="section.title"
+                  class="q-mt-lg"
+                >
+                  <div class="text-weight-medium q-mb-md">
+                    {{ section.title }}
+                  </div>
+                  <div class="row q-col-gutter-md">
+                    <label-form
+                      v-for="field in section.fields"
+                      :key="field.key"
+                      :text-label="field.label"
+                      class-name="col-12 col-sm-6 col-lg-4"
+                      ><q-input
+                        v-model="draft[field.key]"
+                        :type="field.type"
+                        dark
+                        outlined
+                        dense
+                        :aria-label="field.label"
+                        :disable="saving"
+                        :min="field.type === 'number' ? 0 : undefined"
+                        :step="
+                          field.type === 'number'
+                            ? isAssetIntegerField(field.key)
+                              ? 1
+                              : 'any'
+                            : undefined
+                        "
+                        :rules="fieldRules(field)"
+                    /></label-form>
+                  </div>
+                </div>
+                <div
+                  class="q-mt-lg"
+                  v-if="selectedSection.type === 'Investment'"
+                >
+                  <q-toggle
+                    v-model="draft.hasFixedTerm"
+                    label="Prazo determinado"
+                    :disable="saving"
+                  />
+                  <div v-if="draft.hasFixedTerm" class="row q-col-gutter-md">
+                    <label-form
+                      text-label="Data de vencimento"
+                      class-name="col-12 col-sm-6 col-lg-4"
+                      ><q-input
+                        v-model="draft.maturityDate"
+                        type="date"
+                        dark
+                        outlined
+                        dense
+                        :disable="saving"
+                        :rules="[required, assetDateRule]"
+                        aria-label="Data de vencimento" /></label-form
+                    ><label-form
+                      text-label="Prazo em meses (opcional)"
+                      class-name="col-12 col-sm-6 col-lg-4"
+                      ><q-input
+                        v-model="draft.termMonths"
+                        type="number"
+                        min="1"
+                        step="1"
+                        dark
+                        outlined
+                        dense
+                        :disable="saving"
+                        :rules="[assetTermMonthsRule]"
+                        aria-label="Prazo em meses"
+                    /></label-form>
+                  </div>
+                </div>
+                <template v-else
+                  ><q-toggle
+                    v-if="selectedSection.type !== 'Consortium'"
+                    v-model="draft.paidOff"
+                    label="Está quitado?"
+                    class="q-mt-md"
+                    :disable="saving" /><label-form
+                    v-if="
+                      selectedSection.type === 'Consortium' || !draft.paidOff
+                    "
+                    text-label="Restante para quitação"
+                    class="q-mt-md"
+                    ><q-input
+                      v-model="draft.remainingBalance"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      dark
+                      outlined
+                      dense
+                      :disable="saving"
+                      :rules="[required]"
+                      aria-label="Restante para quitação" /></label-form
+                ></template>
+                <asset-document-gallery
+                  v-if="selected"
+                  :key="selected.id"
+                  :asset-id="selected.id"
+                  class="q-mt-lg"
+                />
+              </q-form> </resource-state
+          ></q-card-section>
+        </div>
         <q-btn
           flat
           no-caps
           icon="add"
           label="Adicionar"
           class="q-mt-md"
-          :disable="saving"
+          :disable="saving || dialog"
           @click="open(section)"
         />
       </q-card>
     </resource-state>
-    <q-dialog v-model="dialog" :persistent="saving"
-      ><q-card class="tool asset-editor">
-        <q-card-section class="row items-center"
-          ><div class="text-h6">
-            {{ selected ? "Editar" : "Adicionar" }}
-            {{ selectedSection?.singular }}
-          </div>
-          <q-space /><q-btn
-            flat
-            round
-            dense
-            icon="close"
-            aria-label="Fechar"
-            :disable="saving"
-            @click="dialog = false"
-        /></q-card-section>
-        <q-card-section
-          ><resource-state :state="detail.state" @retry="loadDetail">
-            <q-form v-if="draft" @submit.prevent="save">
-              <p v-if="saveError" class="text-negative" role="alert">
-                {{ saveError }}
-              </p>
-              <resource-state :state="currencies.state" @retry="loadCurrencies"
-                ><label-form text-label="Moeda"
-                  ><q-select
-                    v-model="currencyId"
-                    :options="currencyOptions"
-                    emit-value
-                    map-options
-                    dark
-                    outlined
-                    dense
-                    :disable="saving || !!selected"
-                    :rules="[required]"
-                    aria-label="Moeda"
-                /></label-form>
-                <p v-if="!currencyOptions.length" class="text-grey">
-                  Nenhuma moeda disponível para cadastrar patrimônio nesta
-                  conta.
-                </p>
-                <p v-else-if="currencyId && !currencyAvailable" class="text-negative" role="alert">
-                  A moeda deste patrimônio não está ativa. Não é possível salvar alterações.
-                </p></resource-state
-              >
-              <div
-                v-for="section in formSections"
-                :key="section.title"
-                class="q-mt-lg"
-              >
-                <div class="text-weight-medium q-mb-md">
-                  {{ section.title }}
-                </div>
-                <div class="row q-col-gutter-md">
-                  <label-form
-                    v-for="field in section.fields"
-                    :key="field.key"
-                    :text-label="field.label"
-                    class-name="col-12 col-sm-6"
-                    ><q-input
-                      v-model="draft[field.key]"
-                      :type="field.type"
-                      dark
-                      outlined
-                      dense
-                      :aria-label="field.label"
-                      :disable="saving"
-                      :min="field.type === 'number' ? 0 : undefined"
-                      :step="
-                        field.type === 'number'
-                          ? isAssetIntegerField(field.key)
-                            ? 1
-                            : 'any'
-                          : undefined
-                      "
-                      :rules="fieldRules(field)"
-                  /></label-form>
-                </div>
-              </div>
-              <div class="q-mt-lg" v-if="selectedSection.type === 'Investment'">
-                <q-toggle
-                  v-model="draft.hasFixedTerm"
-                  label="Prazo determinado"
-                  :disable="saving"
-                />
-                <div v-if="draft.hasFixedTerm" class="row q-col-gutter-md">
-                  <label-form
-                    text-label="Data de vencimento"
-                    class-name="col-12 col-sm-6"
-                    ><q-input
-                      v-model="draft.maturityDate"
-                      type="date"
-                      dark
-                      outlined
-                      dense
-                      :disable="saving"
-                      :rules="[required, assetDateRule]"
-                      aria-label="Data de vencimento" /></label-form
-                  ><label-form
-                    text-label="Prazo em meses (opcional)"
-                    class-name="col-12 col-sm-6"
-                    ><q-input
-                      v-model="draft.termMonths"
-                      type="number"
-                      min="1"
-                      step="1"
-                      dark
-                      outlined
-                      dense
-                      :disable="saving"
-                      :rules="[assetTermMonthsRule]"
-                      aria-label="Prazo em meses"
-                  /></label-form>
-                </div>
-              </div>
-              <template v-else
-                ><q-toggle
-                  v-if="selectedSection.type !== 'Consortium'"
-                  v-model="draft.paidOff"
-                  label="Está quitado?"
-                  class="q-mt-md"
-                  :disable="saving" /><label-form
-                  v-if="selectedSection.type === 'Consortium' || !draft.paidOff"
-                  text-label="Restante para quitação"
-                  class="q-mt-md"
-                  ><q-input
-                    v-model="draft.remainingBalance"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    dark
-                    outlined
-                    dense
-                    :disable="saving"
-                    :rules="[required]"
-                    aria-label="Restante para quitação" /></label-form
-              ></template>
-              <div class="row justify-end q-gutter-sm q-mt-lg">
-                <q-btn
-                  flat
-                  no-caps
-                  label="Descartar"
-                  :disable="saving"
-                  @click="dialog = false"
-                /><q-btn
-                  flat
-                  no-caps
-                  color="primary"
-                  label="Salvar"
-                  type="submit"
-                  :loading="saving"
-                  :disable="
-                    !currencyAvailable ||
-                    currencies.state.loading ||
-                    !!currencies.state.error
-                  "
-                />
-              </div>
-            </q-form> </resource-state
-        ></q-card-section> </q-card
-    ></q-dialog>
   </div>
 </template>
 <script setup>
 import { computed, onScopeDispose, ref } from "vue";
+import AssetDocumentGallery from "src/system/components/profile/AssetDocumentGallery.vue";
 import LabelForm from "src/system/components/form/LabelForm.vue";
 import ResourceState from "src/system/components/finance/ResourceState.vue";
 import { useFinanceResource } from "src/composables/useFinanceResource";
@@ -334,10 +353,13 @@ const currencyOptions = computed(() => {
     });
   return options;
 });
-const currencyAvailable = computed(() =>
-  !currencies.state.loading &&
-  !currencies.state.error &&
-  (currencies.state.data || []).some((option) => option.value === currencyId.value),
+const currencyAvailable = computed(
+  () =>
+    !currencies.state.loading &&
+    !currencies.state.error &&
+    (currencies.state.data || []).some(
+      (option) => option.value === currencyId.value,
+    ),
 );
 const amount = (item) => {
   const code = (currencies.state.data || []).find(
@@ -449,9 +471,10 @@ loadCurrencies();
 </script>
 <style scoped>
 .asset-editor {
-  width: min(820px, calc(100vw - 32px));
-  max-height: 90vh;
-  overflow: auto;
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  padding: 0 16px;
 }
 .asset-entry {
   border: 1px solid rgba(255, 255, 255, 0.18);

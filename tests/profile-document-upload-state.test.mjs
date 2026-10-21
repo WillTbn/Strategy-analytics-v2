@@ -6,6 +6,7 @@ import { parse } from "@vue/compiler-sfc";
 import * as Vue from "vue";
 import {
   profileDocumentRows,
+  profileDocumentGroups,
   documentReplacementValues,
 } from "../src/services/documentPresentation.js";
 import { onboardingBlockMessage } from "../src/services/onboardingBlock.js";
@@ -67,6 +68,7 @@ async function harness() {
     },
     "src/services/documentPresentation": {
       profileDocumentRows,
+  profileDocumentGroups,
       documentReplacementValues,
     },
     "src/services/onboardingBlock": { onboardingBlockMessage },
@@ -86,7 +88,7 @@ async function harness() {
   };
   const mod = new vm.SourceTextModule(
     descriptor.scriptSetup.content +
-      "\nexport { load, loading, error, guardBlocked, overview, progress, documents, types, form, formRef, dialog, saving, definition, openUpload, openReplace, closeDialog, typeChanged, loadDefinition, save };",
+      "\nexport { load, loading, error, guardBlocked, overview, progress, documents, types, form, formRef, dialog, saving, definition, openUpload, openRequirementUpload, openReplace, closeDialog, typeChanged, loadDefinition, save };",
     { context },
   );
   await mod.link((specifier) => {
@@ -261,4 +263,15 @@ test("leaving the view suppresses late upload notifications and refreshes", asyn
   assert.equal(h.reads.length, 4);
   assert.equal(h.model.form.file, null);
   await request;
+});
+
+test("upload from a requirement preserves its identity in the multipart request", async () => {
+ const h = await harness(); await h.ready();
+ h.model.openRequirementUpload({documentTypeId:"type",requirementId:"identity-back"});
+ h.model.form.file = {name:"verso-ficticio.png",type:"image/png",size:10};
+ h.model.formRef.value = {validate:async()=>true,resetValidation(){}};
+ const saving = h.model.save(); await flush();
+ assert.ok(h.writes[0].value.data.fields.some(([key,value])=>key==="requirementId" && value==="identity-back"));
+ h.writes[0].reject(Error("test failure")); await saving;
+ assert.equal(h.model.form.requirementId,"identity-back");
 });
