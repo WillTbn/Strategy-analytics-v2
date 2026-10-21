@@ -80,12 +80,19 @@ const terms = reactive({
 const sections = computed(() => [contracts, terms]),
   downloading = ref(null);
 const { errorNotify } = useNotify();
-let active = true;
+let active = true,
+  contractsRevision = 0,
+  termsRevision = 0;
 onScopeDispose(() => {
   active = false;
+  contractsRevision++;
+  termsRevision++;
 });
 async function loadContracts() {
-  const session = captureClientSession();
+  const session = captureClientSession(),
+    revision = ++contractsRevision;
+  const current = () =>
+    active && revision === contractsRevision && isClientSessionCurrent(session);
   contracts.loading = true;
   contracts.error = "";
   contracts.items = [];
@@ -95,7 +102,7 @@ async function loadContracts() {
     while (true) {
       const result = collection(await listProfileContracts(page));
       assertClientSessionCurrent(session);
-      if (!active) return;
+      if (!current()) return;
       all.push(...result);
       if (result.length < 100) break;
       page++;
@@ -106,7 +113,7 @@ async function loadContracts() {
         documents: collection(await listProfileContractDocuments(contract.id)),
       })),
     );
-    if (!active || !isClientSessionCurrent(session)) return;
+    if (!current()) return;
     contracts.items = results
       .filter((r) => r.status === "fulfilled")
       .flatMap(({ value: { contract, documents } }) =>
@@ -124,23 +131,26 @@ async function loadContracts() {
       contracts.error =
         "Não foi possível carregar os documentos de todos os contratos.";
   } catch (e) {
-    if (active && isClientSessionCurrent(session))
+    if (current())
       contracts.error = getApiErrorMessage(
         e,
         "Não foi possível carregar os documentos dos contratos.",
       );
   } finally {
-    if (active) contracts.loading = false;
+    if (current()) contracts.loading = false;
   }
 }
 async function loadTerms() {
-  const session = captureClientSession();
+  const session = captureClientSession(),
+    revision = ++termsRevision;
+  const current = () =>
+    active && revision === termsRevision && isClientSessionCurrent(session);
   terms.loading = true;
   terms.error = "";
   terms.items = [];
   try {
     const result = await listProfileTerms();
-    if (!active || !isClientSessionCurrent(session)) return;
+    if (!current()) return;
     terms.items = collection(result?.items).map((t) => ({
       key: t.versionId || t.code,
       name: t.content?.title || t.code,
@@ -148,13 +158,13 @@ async function loadTerms() {
       downloadable: Boolean(t.content?.documentUri || t.content?.body),
     }));
   } catch (e) {
-    if (active && isClientSessionCurrent(session))
+    if (current())
       terms.error = getApiErrorMessage(
         e,
         "Não foi possível carregar os termos.",
       );
   } finally {
-    if (active) terms.loading = false;
+    if (current()) terms.loading = false;
   }
 }
 async function download(item) {
