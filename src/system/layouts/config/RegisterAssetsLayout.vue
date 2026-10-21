@@ -178,7 +178,7 @@
                       outlined
                       dense
                       :disable="saving"
-                      :rules="[required]"
+                      :rules="[required, assetDateRule]"
                       aria-label="Data de vencimento" /></label-form
                   ><label-form
                     text-label="Prazo em meses (opcional)"
@@ -192,7 +192,7 @@
                       outlined
                       dense
                       :disable="saving"
-                      :rules="[assetIntegerRule]"
+                      :rules="[assetTermMonthsRule]"
                       aria-label="Prazo em meses"
                   /></label-form>
                 </div>
@@ -257,6 +257,8 @@ import {
   assetPayload,
   isAssetIntegerField,
   assetIntegerRule,
+  assetDateRule,
+  assetTermMonthsRule,
 } from "src/services/clientAssetModel";
 import {
   listClientAssets,
@@ -312,6 +314,7 @@ const required = (v) =>
 const fieldRules = (f) => [
   ...(f.required ? [required] : []),
   ...(isAssetIntegerField(f.key) ? [assetIntegerRule] : []),
+  ...(f.type === "date" ? [assetDateRule] : []),
 ];
 const rowsFor = (section) =>
   (assets.state.data || []).filter((item) => item.assetType === section.type);

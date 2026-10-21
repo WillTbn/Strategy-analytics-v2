@@ -1,3 +1,4 @@
+import { calendarDate } from "./registrationDocuments.js";
 import { profileAmount } from "./profileJobEdit.js";
 // Only fields present in the profile's Figma asset editors belong in this projection.
 const fields = (definitions) =>
@@ -147,6 +148,21 @@ export const assetIntegerRule = (value) => {
     "Informe um número inteiro válido."
   );
 };
+export const assetDateRule = (value) => {
+  if (value == null || String(value).trim() === "") return true;
+  return (
+    (typeof value === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+      !!calendarDate(value.replaceAll("-", "/"), "aaaa/mm/dd")) ||
+    "Informe uma data válida."
+  );
+};
+export const assetTermMonthsRule = (value) => {
+  const integer = assetIntegerRule(value);
+  if (integer !== true) return integer;
+  if (value == null || String(value).trim() === "") return true;
+  return Number(value) > 0 || "Informe um prazo maior que zero.";
+};
 export const assetFormSections = (type) => sections[type] || [];
 export function assetDraft(asset, type) {
   return {
@@ -173,6 +189,8 @@ export function assetPayload(draft, type, currencyId, existing) {
   }
   const numeric = (key) => {
     if (draft[key] == null || String(draft[key]).trim() === "") return null;
+    if (key === "termMonths" && assetTermMonthsRule(draft[key]) !== true)
+      throw new Error(assetTermMonthsRule(draft[key]));
     if (isAssetIntegerField(key) && assetIntegerRule(draft[key]) !== true)
       throw new Error(assetIntegerRule(draft[key]));
     const value = Number(draft[key]);
@@ -188,10 +206,18 @@ export function assetPayload(draft, type, currencyId, existing) {
     (section) => section.fields,
   )) {
     if (["nickname", "declaredValue"].includes(field.key)) continue;
+    if (field.type === "date" && assetDateRule(draft[field.key]) !== true)
+      throw new Error(assetDateRule(draft[field.key]));
     detail[field.key] =
       field.type === "number"
         ? numeric(field.key)
         : draft[field.key]?.trim() || null;
+  }
+  if (type === "Investment" && draft.hasFixedTerm) {
+    if (!draft.maturityDate || !String(draft.maturityDate).trim())
+      throw new Error("Preencha Data de vencimento.");
+    if (assetDateRule(draft.maturityDate) !== true)
+      throw new Error(assetDateRule(draft.maturityDate));
   }
   if (type === "Investment")
     Object.assign(detail, {
