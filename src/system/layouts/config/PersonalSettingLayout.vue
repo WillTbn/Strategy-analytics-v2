@@ -199,12 +199,7 @@ import {
   saveTrustedContacts,
 } from "src/services/profileTrustedEdit";
 const profile = useClientProfile({ full: true });
-const selectFields = new Set([
-  "gender",
-  "maritalStatus",
-  "nationality",
-  "occupation",
-]);
+const selectFields = new Set(["gender", "maritalStatus", "nationality"]);
 const fieldOptions = (key) => {
   const catalog = profile.catalog.state.value || {};
   if (key === "nationality")
@@ -217,7 +212,6 @@ const fieldOptions = (key) => {
       {
         gender: "genders",
         maritalStatus: "maritalStatuses",
-        occupation: "occupations",
       }[key]
     ] || []
   );
