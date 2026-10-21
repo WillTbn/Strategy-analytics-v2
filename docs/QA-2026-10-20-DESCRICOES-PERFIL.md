@@ -16,6 +16,9 @@ Campos, seletores, rótulos, grid, botões e contrato de escrita preservados. Au
 - [x] PreferNotToSay em português; labels do catálogo têm prioridade.
 - [x] Ausência real e nacionalidade legada preservadas.
 - [x] 236 testes, lint/build e diff-check do lote aprovados.
-- [ ] Publicação e leitura visual em homologação.
+- [x] Publicação 0e0de79 / [pipeline 39531180021](https://github.com/WillTbn/Strategy-analytics-v2/actions/runs/39531180021) aprovada.
+- [x] Leitura real do perfil preservou campos e ausência legítima de gênero/nacionalidade. Editor abriu os labels reais Feminino, Masculino, Outro e Prefiro não informar; seleção não foi alterada e edição descartada.
+- [x] Desktop 1366 px/mobile 390 px revisados, largura útil/rolagem 378/378 px; viewport restaurado e nenhum PATCH de perfil.
+- [x] Evidências cliente-perfil-descricoes-hml.png e cliente-perfil-descricoes-mobile-hml.png.
 
 Catálogo faltante/incompleto foi exercitado nos testes automatizados; não foram removidos países nem induzida falha no backend. Na conta usada para revisão visual, nacionalidade está vazia e deve continuar Não informado; isso não reproduz artificialmente uma nacionalidade preenchida.
