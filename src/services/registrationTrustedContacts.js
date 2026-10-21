@@ -29,11 +29,11 @@ export function validateRegistrationTrustedContacts(draft) {
     const phone = text(contact.phoneNumber);
     if (!phone)
       errors[`${index}.phoneNumber`] = "Informe o telefone do contato.";
-    else if (!/^\+?[\d\s().-]+$/.test(phone) || !/\d/.test(phone))
+    else if (!/^\+?[\d\s().-]+$/.test(phone) || !/^\d{7,15}$/.test(phone.replace(/\D/g, "")))
       errors[`${index}.phoneNumber`] =
         "Informe um telefone usando números e, se necessário, o código do país.";
   }
-  // Length, country-specific rules and normalization await the onboarding contract.
+  // Do not infer a country, add a DDI or require a relationship for a contact.
   return errors;
 }
 export function appendRegistrationTrustedContact(draft) {

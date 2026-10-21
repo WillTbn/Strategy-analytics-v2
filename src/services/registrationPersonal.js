@@ -5,6 +5,9 @@ export const personalCatalogKeys = [
   "nationalities",
   "countries",
 ];
+export function availableNationalities(options, selected, index) {
+  return options.filter((option) => !selected.some((value, other) => other !== index && value === option.value));
+}
 export function newRegistrationPersonal(value = {}) {
   return {
     birthDate: value.birthDate || "",

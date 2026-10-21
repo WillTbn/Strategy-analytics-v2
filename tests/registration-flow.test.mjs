@@ -78,6 +78,11 @@ async function harness({ allowWrites = false } = {}) {
       if (!allowWrites) throw Error("Unexpected write");
       writes.push({ method, path, body });
       if (responses.failWrite === path) throw Error("Write failed");
+      if (path.endsWith('/trusted-contacts') && method === 'post') {
+        const created = { ...body, id: `contact-${responses.contacts.length + 1}` };
+        responses.contacts.push(created);
+        return created;
+      }
       if (path.endsWith("/professional-profile")) responses.professional = body;
       if (path.endsWith("/financial-profile")) responses.financial = body;
       if (path.endsWith("/preferences"))
@@ -146,6 +151,26 @@ test("review hydrates successful financial data independently from a failed prof
   assert.equal(h.employmentDraft.value.declaredNetWorth, "0");
   assert.equal(h.state.readErrors.professional, true);
   assert.equal(h.trustedContactsDraft.value.contacts[0].id, "contact");
+});
+
+test('new contacts use POST and retain IDs on partial failure and retry', async () => {
+  const h = await harness({ allowWrites: true });
+  h.responses.contacts = [{ id: 'existing', name: 'Existing', phoneNumber: '11999990000' }];
+  const flow = await h.mount(6);
+  h.trustedContactsDraft.value.contacts = [
+    { name: 'New', phoneNumber: '11999990001' },
+    { id: 'existing', name: 'Edited', phoneNumber: '11999990002' },
+  ];
+  h.responses.failWrite = '/api/v1/client/profile/trusted-contacts/existing';
+  await flow.save();
+  assert.equal(h.writes[0].method, 'post');
+  assert.equal(h.writes[0].path, '/api/v1/client/profile/trusted-contacts');
+  assert.ok(h.trustedContactsDraft.value.contacts[0].id);
+  h.responses.failWrite = null;
+  await flow.save();
+  assert.equal(h.writes.filter(w => w.method === 'post').length, 1);
+  assert.ok(h.writes.every(w => !w.path.includes('undefined')));
+  assert.equal(h.destinations.at(-1), '/cadastro/etapa-7');
 });
 
 test("failed review reads preserve drafts and report all failed sections together", async () => {

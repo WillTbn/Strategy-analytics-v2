@@ -77,7 +77,7 @@
             "
             v-bind="selectStyle"
             :aria-label="index ? `Nacionalidade ${index + 1}` : 'Nacionalidade'"
-            :options="catalog.nationalities || []"
+            :options="availableNationalities(catalog.nationalities || [], form.nationalities, index)"
             :disable="busy"
             :error="
               !!errors.nationalities && index === form.nationalities.length - 1
@@ -168,6 +168,7 @@ import LabelField from "src/system/components/form/LabelField.vue";
 import { inputWhite } from "src/Utils/ViewInput";
 import {
   appendRegistrationNationality,
+  availableNationalities,
   newRegistrationPersonal,
   personalCatalogReady,
   validateRegistrationPersonal,

@@ -34,7 +34,7 @@ export const documentVariants = {
       [field("district", "Bairro"), field("city", "Cidade")],
       [select("region", "Estado")],
     ],
-    before: [[field("taxNumber", "CPF", "000.000.000-00", { half: true })]],
+    before: [[field("taxNumber", "CPF", "000.000.000-00", { half: true, mask: "###.###.###-##", maxlength: 14, inputmode: "numeric" })]],
     choices: ["Documento de identificação", "Passaporte"],
     document: [
       [number(), field("issuer", "Órgão emissor", "ex: SSP")],
@@ -300,6 +300,8 @@ export function validateRegistrationDocuments(
   const fields = documentFields(variant, draft.type),
     dates = {};
   const values = { ...draft.values, ...draft.details?.[draft.type] };
+  if (variant === "br" && values.taxNumber && !validRegistrationCpf(values.taxNumber))
+    errors.taxNumber = "CPF inválido.";
   for (const field of fields) {
     const value = String(values[field.key] || "").trim();
     if (field.kind === "date" && value) {
@@ -316,8 +318,20 @@ export function validateRegistrationDocuments(
     errors.issuedDate = "A expedição não pode estar no futuro.";
   if (issued && expires && expires < issued)
     errors.expiryDate = "A validade não pode ser anterior à expedição.";
-  // Requiredness, fiscal formats/check digits and expiry policy await the onboarding contract.
+  // Additional requiredness and non-Brazilian fiscal rules follow the onboarding contract.
   return errors;
+}
+export function validRegistrationCpf(value) {
+  const text = String(value ?? "").trim();
+  if (!/^(?:\d{11}|\d{3}\.\d{3}\.\d{3}-\d{2})$/.test(text)) return false;
+  const digits = text.replace(/\D/g, "");
+  if (/^(\d)\1{10}$/.test(digits)) return false;
+  for (const length of [9, 10]) {
+    const sum = [...digits.slice(0, length)].reduce((total, digit, index) => total + Number(digit) * (length + 1 - index), 0);
+    const check = (sum * 10) % 11;
+    if (Number(digits[length]) !== (check === 10 ? 0 : check)) return false;
+  }
+  return true;
 }
 export function validateDocumentSelection(files, rules = {}) {
   if (files.length !== 1)

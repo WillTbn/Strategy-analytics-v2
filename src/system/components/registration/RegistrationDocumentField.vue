@@ -31,6 +31,7 @@
       v-bind="style"
       :aria-label="field.ariaLabel || field.label"
       :placeholder="field.placeholder"
+      :maxlength="field.maxlength"
       :type="field.kind === 'phone' ? 'tel' : 'text'"
       :mask="
         field.mask ||
@@ -52,7 +53,7 @@
       "
       autocomplete="off"
       :loading="loading"
-      @blur="field.hint && emit('lookup')"
+      @blur="formatValue"
       :disable="disabled"
       :error="!!error"
       :error-message="error"
@@ -65,7 +66,8 @@
 import { ref } from "vue";
 import LabelField from "src/system/components/form/LabelField.vue";
 import { inputWhite } from "src/Utils/ViewInput";
-defineProps({
+import { formatRegistrationInput } from "src/services/registrationInputFormatting";
+const props = defineProps({
   field: { type: Object, required: true },
   modelValue: { type: [String, Number], default: null },
   options: { type: Array, default: () => [] },
@@ -75,6 +77,11 @@ defineProps({
 });
 const emit = defineEmits(["update:modelValue", "lookup"]);
 const control = ref(null);
+const formatValue = () => {
+  const value = formatRegistrationInput(props.field.kind, props.modelValue);
+  if (value !== props.modelValue) emit("update:modelValue", value);
+  if (props.field.hint) emit("lookup");
+};
 defineExpose({ focus: () => control.value?.focus() });
 const style = {
   ...inputWhite,

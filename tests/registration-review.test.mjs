@@ -56,7 +56,7 @@ test("review explicitly selects fields and never serializes password, codes, tok
     "private-file.pdf",
   ])
     assert.ok(!result.includes(secret));
-  assert.ok(result.includes("selecionada localmente"));
+  assert.ok(result.includes("aguardando envio"));
 });
 test("identifier masking never reveals short values in full", () => {
   assert.equal(maskRegistrationIdentifier(""), "");

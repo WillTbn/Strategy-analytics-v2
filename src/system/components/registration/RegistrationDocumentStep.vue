@@ -243,7 +243,7 @@ const submit = async () => {
   if (props.busy || postalState.loading) return;
   errors.value = validateRegistrationDocuments(props.variant, form);
   if (Object.keys(errors.value).length) {
-    notice.value = "Confira as datas indicadas antes de continuar.";
+    notice.value = "Confira os campos indicados antes de continuar.";
     await nextTick();
     controls.value[Object.keys(errors.value)[0]]?.focus();
     return;

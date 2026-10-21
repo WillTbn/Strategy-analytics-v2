@@ -196,6 +196,11 @@ export function contactRegistrationPayload(current, draft) {
     email: current?.email ?? null,
   };
 }
+export const brazilianStates = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO"
+  .split(" ").map((value) => ({ value, label: value }));
+export function registrationRegionOptions(variant, value) {
+  return variant === "br" ? brazilianStates : value ? [{ value, label: value }] : [];
+}
 export function registrationCatalog(catalog, profile, professional) {
   const existing = (options, value) =>
     options?.length ? options : value ? [{ value, label: value }] : [];
@@ -230,7 +235,7 @@ export function documentRegistrationPayload(
   const mapped = {
     documentNumber:
       definition.code === "CPF"
-        ? draft.values.taxNumber
+        ? String(draft.values.taxNumber ?? "").replace(/[.\-\s]/g, "")
         : values.documentNumber,
     issuer: values.issuer,
     issuerState: values.issuerRegion,
@@ -240,22 +245,24 @@ export function documentRegistrationPayload(
     const value = nullable(mapped[field.code]);
     if (field.required && !value)
       throw new Error(`O documento exige ${field.label}.`);
+    if (value && Number.isInteger(field.maxLength) && value.length > field.maxLength)
+      throw new Error(`${field.label} deve ter no máximo ${field.maxLength} caracteres.`);
     if (value) data[field.code] = value;
   }
   if (!(definition.fields || []).length)
     throw new Error(
-      "A definição dos dados deste documento ainda não está disponível.",
+      "Não foi possível consultar os campos deste documento. Tente novamente antes de enviar.",
     );
   const format = documentVariants[variant]?.dateFormat || "dd/mm/aaaa";
   const dates = {};
   for (const [key, input] of [
-    ["issuedOn", values.issuedDate],
-    ["expiresOn", values.expiryDate],
+    ["issuedOn", definition.code === "CPF" ? null : values.issuedDate],
+    ["expiresOn", definition.code === "CPF" ? null : values.expiryDate],
   ]) {
     const rule = definition.dateRules?.[key];
     if (rule === "Forbidden" && input)
       throw new Error(
-        "A API não aceita uma das datas previstas para este documento. Revise antes de enviar.",
+        "Este tipo de documento não permite essa data. Confira os dados antes de continuar.",
       );
     dates[key] = rule === "Forbidden" ? null : registrationDate(input, format);
     if (rule === "Required" && !dates[key])

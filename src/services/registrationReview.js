@@ -66,13 +66,21 @@ export function registrationReviewSections(snapshot) {
   const fileText =
     document?.type === "Passaporte"
       ? files[`${document.type}:passport`]
-        ? "página de dados selecionada localmente"
+        ? document.savedDocuments?.[document.type]?.files?.[`${document.type}:passport`] === files[`${document.type}:passport`]
+          ? "Página de dados enviada"
+          : "Página de dados aguardando envio"
         : ""
       : join([
           files[`${document?.type}:front`]
-            ? "frente selecionada localmente"
+            ? document.savedDocuments?.[document.type]?.files?.[`${document.type}:front`] === files[`${document.type}:front`]
+              ? "Frente enviada"
+              : "Frente aguardando envio"
             : "",
-          files[`${document?.type}:back`] ? "verso selecionado localmente" : "",
+          files[`${document?.type}:back`]
+            ? document.savedDocuments?.[document.type]?.files?.[`${document.type}:back`] === files[`${document.type}:back`]
+              ? "Verso enviado"
+              : "Verso aguardando envio"
+            : "",
         ]);
   const documentText = join([
     maskRegistrationIdentifier(values.taxNumber),

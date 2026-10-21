@@ -35,6 +35,7 @@ import {
   financialRegistrationPayload,
   contactRegistrationPayload,
   registrationCatalog,
+  registrationRegionOptions,
   documentRegistrationPayload,
   displayRegistrationDate,
   displayRegistrationAmount,
@@ -64,7 +65,6 @@ export const registrationCredentials = { password: "" };
 let owner = null;
 let ownerSession = null;
 const hydrated = new Set();
-const optionsFor = (value) => (value ? [{ value, label: value }] : []);
 const optionalProfile = async (read) => {
   try {
     return await read();
@@ -77,7 +77,7 @@ const message = (error) => {
   const status = error?.response?.status;
   if (status === 401) return "Entre na sua conta para continuar o cadastro.";
   if (status === 403)
-    return "A API ainda não liberou esta operação para sua conta. Os dados digitados foram mantidos.";
+    return "Esta operação não está disponível para sua conta. Seus dados foram mantidos; entre em contato com seu assessor.";
   if (status === 409)
     return "Os dados ou requisitos mudaram. Confira a etapa e tente novamente.";
   if (status === 429)
@@ -200,8 +200,8 @@ export function useRegistrationFlow(step) {
         hydrated.add(`documents:${variant}`);
       }
       documentCatalog.value = {
-        region: optionsFor(documentDrafts[variant].values.region),
-        issuerRegion: optionsFor(
+        region: registrationRegionOptions(variant, documentDrafts[variant].values.region),
+        issuerRegion: registrationRegionOptions(variant,
           documentDrafts[variant].details[documentDrafts[variant].type]
             ?.issuerRegion,
         ),
@@ -341,12 +341,6 @@ export function useRegistrationFlow(step) {
           "/api/v1/client/profile",
           personalRegistrationPatch(profile, personalPreviewDraft.value),
         );
-        if (
-          personalPreviewDraft.value.birthCountry ||
-          personalPreviewDraft.value.nationalities.filter(Boolean).length > 1
-        )
-          registrationContext.notices[7] =
-            "País de nascimento e nacionalidades adicionais ainda não têm campos de gravação no contrato do perfil. Permanecem somente neste rascunho.";
       }
       if (step === 5) {
         const variant = activeDocumentVariant.value,
@@ -381,7 +375,7 @@ export function useRegistrationFlow(step) {
             (draft.type === "Passaporte" && t.code === "PASSAPORTE"),
         );
         const saveDocument = async (documentType, attachments = []) => {
-          assertRegistrationDocumentNumber(draft);
+          if (documentType.code !== "CPF") assertRegistrationDocumentNumber(draft);
           const definition = await getClientDocumentDataDefinition(
             documentType.id,
             profile.preferences.countryId,
@@ -448,7 +442,7 @@ export function useRegistrationFlow(step) {
         }
         if (!type)
           throw new Error(
-            "Endereço salvo. O tipo documental desta variante ainda precisa de correspondência no catálogo da API.",
+            "Endereço salvo. Este tipo de documento ainda não está disponível para envio. Entre em contato com seu assessor.",
           );
         const sides =
             draft.type === "Passaporte" ? ["passport"] : ["front", "back"],
@@ -461,9 +455,6 @@ export function useRegistrationFlow(step) {
             "Endereço salvo. Selecione os arquivos do documento para concluir esta etapa.",
           );
         if (!reuse) await saveDocument(type, attachments);
-        if (draft.values.district)
-          registrationContext.notices[7] =
-            "Endereço/documentos salvos; o bairro não possui campo separado no contrato e permanece no rascunho.";
       }
       if (step === 4) {
         const [professional, financial] = await Promise.all([
@@ -504,10 +495,10 @@ export function useRegistrationFlow(step) {
         if (draft.noContact) {
           if (current.length)
             throw new Error(
-              "Seus contatos existentes foram preservados. A API não oferece registro da declaração de ausência.",
+              "Você já possui contatos cadastrados. Eles foram mantidos. Revise os contatos antes de continuar.",
             );
           registrationContext.notices[7] =
-            "A declaração de ausência de contato ainda não possui gravação na API; permanece somente neste rascunho.";
+            "Sua escolha de não informar contatos ainda não foi salva. Entre em contato com seu assessor para registrar essa informação.";
         } else {
           const contacts = draft.contacts.filter(
             (c) => c.name?.trim() || c.phoneNumber?.trim(),
@@ -520,18 +511,25 @@ export function useRegistrationFlow(step) {
               c,
             ),
           }));
-          for (const { draft: c, payload } of writes)
-            await write(
-              "put",
-              `/api/v1/client/profile/trusted-contacts/${c.id}`,
+          for (const { draft: c, payload } of writes) {
+            assertClientSessionCurrent(session);
+            const result = await write(
+              c.id ? "put" : "post",
+              `/api/v1/client/profile/trusted-contacts${c.id ? `/${encodeURIComponent(c.id)}` : ""}`,
               payload,
             );
+            assertClientSessionCurrent(session);
+            if (!c.id) {
+              if (!result?.id) throw new Error("Não foi possível confirmar o contato salvo. Tente novamente.");
+              c.id = result.id;
+            }
+          }
         }
       }
       if (step === 7) {
         registrationContext.status = await getOnboardingStatus();
         throw new Error(
-          "Os dados disponíveis foram consultados. O envio final para análise e o registro desta confirmação ainda não possuem operação de onboarding identificada na API. Nenhum sucesso de envio foi simulado.",
+          "O envio para análise ainda não está disponível. Seu cadastro não foi enviado. Entre em contato com seu assessor para concluir.",
         );
       }
       assertClientSessionCurrent(session);
