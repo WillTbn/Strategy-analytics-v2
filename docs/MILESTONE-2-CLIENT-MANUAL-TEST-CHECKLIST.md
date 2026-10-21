@@ -336,6 +336,64 @@ Evidência funcional pela UI; nenhum payload ou status HTTP foi capturado.
 Captura local não versionada: `qa-cpf-retomada-publicada.png`.
 Lint, build e 259 testes automatizados aprovados antes da publicação.
 
+## QA complementar 21, 22 e 23 — homologação em 21/10/2026
+
+Ambiente: https://hml.strategyanalytics.com.br/system/config/profile.
+Versão publicada: `45aec78`.
+[Deploy concluído com sucesso](https://github.com/WillTbn/Strategy-analytics-v2/actions/runs/39649080709).
+Teste na sessão do usuário já autorizada, com os patrimônios fictícios `QA`
+existentes na conta sem carteira. Numeração do lote “Mais apontamentos · 21/10”.
+
+- [x] **21 — Documentação:** faixa de progresso e níveis 1 a 3 exibidos;
+  tabela com Documento requisitado, Arquivo anexado, Status e Última atualização.
+- [x] Arquivos existentes e seus estados carregaram; a linha de RG rejeitado
+  abriu Upload de arquivo/Substituir documento, retomando a data de emissão.
+- [x] Cancelamento fechou o formulário sem enviar nem substituir arquivo.
+- [x] **22 — Contas bancárias:** estado vazio e botão Adicionar no fim;
+  formulário Nova conta abriu dentro da seção, com campos alinhados no desktop.
+- [x] Descartar fechou o formulário; nenhuma conta criada, editada ou arquivada.
+- [x] **23 — Patrimônio:** os quatro grupos carregaram os registros existentes.
+- [x] Editar o imóvel fictício EUR abriu o formulário na própria seção, abaixo
+  da lista, com Salvar/Descartar e os dados preenchidos.
+- [x] Salvar sem alterar os valores concluiu; reabrir confirmou EUR 325.000,75,
+  quatro quartos e os demais dados carregados. O segundo editor foi descartado.
+- [x] Adicionar veículo abriu o formulário na seção Veículos; descarte confirmado
+  sem criar registro. Não equivale a homologação de nova gravação dos quatro tipos.
+- [x] Área de anexos do imóvel exibiu “Nenhum documento vinculado”.
+- [x] Nenhum erro capturado no console das abas durante o reteste.
+- [ ] Validar imagens reais vinculadas em homologação: abrir um patrimônio
+  fictício com anexos de imagem e conferir miniaturas, abertura e recarga.
+
+Auditoria, lint, 266 testes, build, upload e ativação passaram. A prévia de imagem,
+URL inválida e resposta após desmontagem foram cobertas automaticamente; isso
+não substitui a validação visual integrada de imagens. O imóvel retestado não
+possui anexos. Não foi feito upload documental/patrimonial nesta rodada nem
+nova validação mobile. A matriz dos 12 cadastros anterior permanece histórica;
+não foi integralmente reexecutada com esta versão.
+
+**Limites e próximos passos:**
+
+- **21:** grupos/requisitos refletem o catálogo recebido. A conta não oferece
+  vínculo explícito frente/verso nem data de última atualização; a tela mostra
+  “Não informada”. Não declarar equivalência integral aos quatro grupos do Figma
+  sem o contrato/dados correspondentes.
+- **18 — pendente de backend e integração:** derivar nome/documento do titular
+  do cliente autenticado, impedir outro titular no servidor e permitir omitir
+  esses campos na escrita. Depois, remover os campos no front e retestar.
+  Os campos atuais foram mantidos; ocultá-los sozinho não garante titularidade.
+- **24 — pendente de backend e integração:** definir moeda principal ativa na
+  criação, sem carteira; preservar a moeda gravada na edição e após mudanças
+  nas preferências; retornar ID/código da moeda para portal e admin. Depois,
+  remover o seletor e exibir o símbolo correspondente, sem conversão automática.
+  O seletor continua presente. O fornecimento de IDs pelo catálogo, já resolvido,
+  não encerra esta nova regra de moeda automática e imutável por patrimônio.
+- A validação de imagens é uma pendência de teste, não um bug de backend observado.
+
+Evidência funcional pela UI, sem captura de payloads/status HTTP. Captura local
+não versionada: `qa21-hml-documentacao.png`. Nenhum novo erro de backend observado;
+a tabela de bugs abaixo não recebe pendências de implementação ou teste.
+Lista consolidada: `strategy-control/docs/QA-2026-10-17-TRIAGEM.md`, lote 17 a 24.
+
 ## Bugs de backend encontrados no portal
 
 |  Nº | Seção/fluxo                         | Passos para reproduzir                                               | Endpoint                                                                                                        | HTTP | Request ID / Correlation ID      | Situação                                                                                        |
