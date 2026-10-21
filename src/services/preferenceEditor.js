@@ -44,16 +44,25 @@ export function createPreferenceEditor({
   readProfile,
   write,
   errorMessage,
+  captureSession = () => null,
+  isSessionCurrent = () => true,
 }) {
   let revision = 0;
+  let active = true;
   let residentialCountryId = null;
+  let loadedSession = null;
   const load = async () => {
+    if (!active) return false;
     const operation = ++revision;
+    const session = captureSession();
+    const current = () =>
+      active && operation === revision && isSessionCurrent(session);
     state.loading = true;
     state.loadError = "";
     state.saveError = "";
     try {
       const [values, catalog] = await Promise.all([read(), readCatalog()]);
+      if (!current()) return false;
       let countryId = null;
       if (!values.countryId && readProfile) {
         try {
@@ -62,14 +71,15 @@ export function createPreferenceEditor({
           /* Profile availability must not block the preferences controls. */
         }
       }
-      if (operation !== revision) return false;
+      if (!current()) return false;
+      loadedSession = session;
       residentialCountryId = countryId;
       state.values = preferencePayload(values);
       state.catalog = catalog;
       state.ready = true;
       return true;
     } catch (error) {
-      if (operation === revision) {
+      if (current()) {
         state.ready = false;
         state.loadError = errorMessage(
           error,
@@ -78,12 +88,14 @@ export function createPreferenceEditor({
       }
       return false;
     } finally {
-      if (operation === revision) state.loading = false;
+      if (current()) state.loading = false;
     }
   };
   const select = async (field, value) => {
     if (
+      !active ||
       !state.ready ||
+      !isSessionCurrent(loadedSession) ||
       state.loading ||
       state.saving ||
       !editableFields.has(field)
@@ -96,6 +108,9 @@ export function createPreferenceEditor({
     )
       return false;
     const operation = revision;
+    const session = captureSession();
+    const current = () =>
+      active && operation === revision && isSessionCurrent(session);
     const previous = { ...state.values };
     state.values = { ...previous, [field]: value };
     state.saveError = "";
@@ -107,16 +122,18 @@ export function createPreferenceEditor({
         payload.countryId = residentialCountryId;
       const response = await write(payload);
       accepted = true;
+      if (!current()) return false;
       const confirmed =
         response && hasOwn(response, "primaryCurrencyCode")
           ? response
           : await read();
-      if (operation !== revision) return false;
+      if (!current()) return false;
       state.values = preferencePayload(confirmed);
       return true;
     } catch (error) {
-      if (operation === revision) {
+      if (current()) {
         if (!accepted) state.values = previous;
+        else state.ready = false;
         state.saveError = errorMessage(
           error,
           accepted
@@ -126,13 +143,14 @@ export function createPreferenceEditor({
       }
       return false;
     } finally {
-      if (operation === revision) state.saving = false;
+      if (current()) state.saving = false;
     }
   };
   return {
     load,
     select,
     dispose: () => {
+      active = false;
       revision++;
     },
   };

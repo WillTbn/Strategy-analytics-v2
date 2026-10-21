@@ -39,6 +39,10 @@ import {
   updateClientPreferences,
 } from "src/services/clientProfileService";
 import { getApiErrorMessage } from "src/services/clientAuthService";
+import {
+  captureClientSession,
+  isClientSessionCurrent,
+} from "src/services/clientApi";
 import { createPreferenceEditor } from "src/services/preferenceEditor";
 import useNotify from "src/composables/useNotify";
 
@@ -54,6 +58,8 @@ const state = reactive({
 });
 const editor = createPreferenceEditor({
   state,
+  captureSession: captureClientSession,
+  isSessionCurrent: isClientSessionCurrent,
   read: getClientPreferences,
   readCatalog: getPreferenceCatalog,
   readProfile: getClientProfile,
