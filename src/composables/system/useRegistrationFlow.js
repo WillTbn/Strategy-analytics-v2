@@ -166,9 +166,10 @@ export function useRegistrationFlow(step) {
       personalPreviewDraft.value = newRegistrationPersonal({
         birthDate: displayRegistrationDate(profile.birthDate),
         ...profile.personalDetails,
-        nationalities: profile.personalDetails?.nationality
-          ? [profile.personalDetails.nationality]
+        nationalities: profile.personalDetails?.nationalityCountryIds?.length
+          ? [...profile.personalDetails.nationalityCountryIds]
           : [null],
+        birthCountry: profile.personalDetails?.birthCountryId ?? null,
       });
       hydrated.add(3);
     }

@@ -2,7 +2,16 @@ import { validBirthDate } from "./registrationPersonal.js";
 const nullable = (value) =>
   typeof value === "string" && value.trim() ? value.trim() : null;
 const pick = (value, keys) =>
-  Object.fromEntries(keys.map((key) => [key, value[key] ?? null]));
+  Object.fromEntries(
+    keys
+      .filter(
+        (key) =>
+          !["neighborhood", "birthCountryId", "nationalityCountryIds"].includes(
+            key,
+          ) || Object.hasOwn(value, key),
+      )
+      .map((key) => [key, value[key] ?? null]),
+  );
 export const currentProfilePatch = (profile) => ({
   birthDate: profile.birthDate,
   names: (profile.names || []).map((value) =>
@@ -24,6 +33,7 @@ export const currentProfilePatch = (profile) => ({
       "kind",
       "line1",
       "line2",
+      "neighborhood",
       "city",
       "stateOrProvince",
       "postalCode",
@@ -40,6 +50,8 @@ export const currentProfilePatch = (profile) => ({
         "birthState",
         "motherName",
         "fatherName",
+        "birthCountryId",
+        "nationalityCountryIds",
       ])
     : null,
 });
@@ -65,7 +77,7 @@ export function basicProfileDraft(profile, summary = {}) {
       "",
     gender: p.gender || "",
     maritalStatus: p.maritalStatus || "",
-    nationality: p.nationality || "",
+    nationality: [...(p.nationalityCountryIds || [])],
     birthPlace: [p.birthCity, p.birthState].filter(Boolean).join(", "),
     birthDate: profile.birthDate || "",
     email: primary("Email"),
@@ -78,8 +90,13 @@ export function basicProfilePatch(profile, draft, { today = new Date() } = {}) {
   const birthDate = nullable(draft.birthDate);
   if (birthDate) {
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthDate);
-    if (!match || !validBirthDate(match[3] + "/" + match[2] + "/" + match[1], today))
-      throw new Error("Informe uma data de nascimento válida, sem ser no futuro.");
+    if (
+      !match ||
+      !validBirthDate(match[3] + "/" + match[2] + "/" + match[1], today)
+    )
+      throw new Error(
+        "Informe uma data de nascimento válida, sem ser no futuro.",
+      );
   }
   const primaryNames = profile.names?.filter((name) => name.isPrimary) || [];
   const primaryName = primaryNames.length === 1 ? primaryNames[0] : null;
@@ -120,11 +137,23 @@ export function basicProfilePatch(profile, draft, { today = new Date() } = {}) {
   const birthPlace = String(draft.birthPlace || "")
     .split(",")
     .map((value) => value.trim());
-  const personalDetails = Object.fromEntries(
-    ["gender", "maritalStatus", "nationality", "motherName", "fatherName"].map(
-      (key) => [key, nullable(draft[key])],
+  const personalDetails = {
+    ...currentProfilePatch(profile).personalDetails,
+    ...Object.fromEntries(
+      ["gender", "maritalStatus", "motherName", "fatherName"].map((key) => [
+        key,
+        nullable(draft[key]),
+      ]),
     ),
-  );
+  };
+  if (Array.isArray(draft.nationality)) {
+    if (
+      draft.nationality.length > 3 ||
+      new Set(draft.nationality).size !== draft.nationality.length
+    )
+      throw new Error("Selecione até três nacionalidades sem repetir.");
+    personalDetails.nationalityCountryIds = [...draft.nationality];
+  }
   personalDetails.birthCity = nullable(birthPlace[0]);
   personalDetails.birthState = nullable(birthPlace.slice(1).join(", "));
   return {
@@ -136,6 +165,8 @@ export function basicProfilePatch(profile, draft, { today = new Date() } = {}) {
   };
 }
 export function locationProfilePatch(profile, draft) {
+  if (String(draft.neighborhood ?? "").trim().length > 120)
+    throw new Error("O bairro deve ter até 120 caracteres.");
   if (
     !profile.addresses?.some(
       (address) => address.kind === "Residential" && address.isPrimary,
@@ -150,6 +181,7 @@ export function locationProfilePatch(profile, draft) {
       kind,
       line1,
       line2,
+      neighborhood,
       city,
       stateOrProvince,
       postalCode,
@@ -161,6 +193,7 @@ export function locationProfilePatch(profile, draft) {
         kind,
         line1,
         line2,
+        neighborhood,
         city,
         stateOrProvince,
         postalCode,
@@ -171,6 +204,7 @@ export function locationProfilePatch(profile, draft) {
         for (const key of [
           "line1",
           "line2",
+          "neighborhood",
           "city",
           "stateOrProvince",
           "postalCode",

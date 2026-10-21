@@ -213,7 +213,7 @@ test("editing location preserves country, birthday, names, contacts and personal
   assert.deepEqual(result.contacts, profile.contacts);
   assert.equal(result.addresses[0].countryId, "BR");
   assert.equal(result.addresses[0].line1, "Novo");
-  assert.ok(!("neighborhood" in result.addresses[0]));
+  assert.equal(result.addresses[0].neighborhood, "ignored");
   assert.equal(result.personalDetails.motherName, "Mãe API");
 });
 test("editing basic data keeps secondary names and addresses and never guesses a contact kind", () => {

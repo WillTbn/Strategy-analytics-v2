@@ -57,7 +57,8 @@ test("personal save maps dates and existing fields while preserving unrelated da
       birthCountry: "country-id",
     });
   assert.equal(p.birthDate, "2000-02-29");
-  assert.equal(p.personalDetails.nationality, "BR");
+  assert.deepEqual(p.personalDetails.nationalityCountryIds, ["BR", "PT"]);
+  assert.equal(p.personalDetails.birthCountryId, "country-id");
   assert.equal(p.personalDetails.motherName, "Preservar");
   assert.equal(p.personalDetails.birthState, "existing-state");
   assert.ok(!("birthCountry" in p.personalDetails));
@@ -78,7 +79,7 @@ test("address creation preserves secondary addresses and does not conflate distr
   assert.equal(p.addresses[0].id, "secondary");
   assert.equal(p.addresses[1].line1, "Rua, 10");
   assert.equal(p.addresses[1].line2, "Sala");
-  assert.ok(!JSON.stringify(p.addresses).includes("Bairro"));
+  assert.equal(p.addresses[1].neighborhood, "Bairro");
   assert.throws(() => addressRegistrationPatch(profile(), draft, null), /país/);
 });
 test("financial save preserves zero absence precision and temporal metadata, rejects implicit currency conversion", () => {
@@ -133,12 +134,8 @@ test("professional save preserves metadata and does not invent an occupation", (
     },
   );
 });
-test("contacts retain real relationship for edits and reject a missing relationship without guessing", () => {
-  assert.throws(
-    () =>
-      contactRegistrationPayload(null, { name: "Teste", phoneNumber: "123" }),
-    /parentesco/,
-  );
+test("contacts preserve existing relationship and accept new contacts without one", () => {
+  assert.deepEqual(contactRegistrationPayload(null, {name:"Teste",phoneNumber:"123"}), {name:"Teste",phoneNumber:"123",relationship:null,email:null});
   assert.deepEqual(
     contactRegistrationPayload(
       { relationship: "Sibling", email: null },

@@ -1,6 +1,7 @@
 <template>
   <div class="personal-setting-layout">
     <profile-resource-state :resource="profile.progress" />
+    <profile-resource-state :resource="profile.catalog" />
     <div
       v-if="saveError && !editing"
       class="text-negative q-mb-md"
@@ -89,14 +90,18 @@
         >
           <q-select
             v-if="selectFields.has(field.key)"
-            :model-value="draft[field.key] || null"
-            :options="draft[field.key] ? [draft[field.key]] : []"
+            v-model="draft[field.key]"
+            :options="fieldOptions(field.key)"
+            emit-value
+            map-options
+            :multiple="field.key === 'nationality'"
+            :max-values="field.key === 'nationality' ? 3 : undefined"
             outlined
             dense
             dark
-            disable
+            :disable="saving || !fieldOptions(field.key).length"
           >
-            <q-tooltip
+            <q-tooltip v-if="!fieldOptions(field.key).length"
               >As opções deste campo ainda não foram disponibilizadas pela
               API.</q-tooltip
             >
@@ -110,6 +115,7 @@
             :type="field.type || 'text'"
             :disable="saving || field.readonly"
             :min="field.type === 'number' ? 0 : undefined"
+            :maxlength="field.key === 'neighborhood' ? 120 : undefined"
           />
         </label-form>
       </div>
@@ -162,6 +168,23 @@ const selectFields = new Set([
   "nationality",
   "occupation",
 ]);
+const fieldOptions = (key) => {
+  const catalog = profile.catalog.state.value || {};
+  if (key === "nationality")
+    return (catalog.countries || []).map((c) => ({
+      value: c.id,
+      label: c.name,
+    }));
+  return (
+    catalog[
+      {
+        gender: "genders",
+        maritalStatus: "maritalStatuses",
+        occupation: "occupations",
+      }[key]
+    ] || []
+  );
+};
 const fieldClass = (section, key) => {
   const basic = {
     name: 6,
@@ -243,7 +266,7 @@ const sections = computed(() => [
       f("stateOrProvince", "Estado"),
       f("city", "Cidade"),
       f("line1", "Logradouro"),
-      { ...f("neighborhood", "Bairro"), readonly: true },
+      f("neighborhood", "Bairro"),
       f("line2", "Complemento"),
     ],
   },
@@ -310,7 +333,6 @@ const edit = async (section) => {
               ...(fullProfile.addresses || []).find(
                 (a) => a.kind === "Residential" && a.isPrimary,
               ),
-              neighborhood: "",
             };
     } else if (section.key === "job")
       values = {
@@ -380,7 +402,9 @@ const save = async (section) => {
     if (!isClientSessionCurrent(session)) return;
     if (
       section.key === "job" &&
-      section.resources.every((resource) => resource.state.value && !resource.state.error)
+      section.resources.every(
+        (resource) => resource.state.value && !resource.state.error,
+      )
     ) {
       const pending = profileJobChanges(
         profile.professional.state.value,

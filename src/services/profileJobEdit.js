@@ -1,8 +1,14 @@
-const keys = ["individualMonthlyIncome", "householdMonthlyIncome", "declaredNetWorth"];
+const keys = [
+  "individualMonthlyIncome",
+  "householdMonthlyIncome",
+  "declaredNetWorth",
+];
 // Number inputs use dot decimals; retain strings to avoid rounding API amounts.
 export function profileAmount(value) {
-  if (value == null || (typeof value === "string" && !value.trim())) return null;
-  if (!["string", "number"].includes(typeof value)) throw new Error("Informe valores financeiros válidos.");
+  if (value == null || (typeof value === "string" && !value.trim()))
+    return null;
+  if (!["string", "number"].includes(typeof value))
+    throw new Error("Informe valores financeiros válidos.");
   const text = String(value).trim();
   if (!/^\d+(?:\.\d+)?$/.test(text) || !Number.isFinite(Number(text)))
     throw new Error("Informe valores financeiros válidos e não negativos.");
@@ -16,23 +22,40 @@ export function profileJobChanges(professional, financial, draft) {
     throw new Error("Informe a atividade trabalhista.");
   const occupation = draft.occupation.trim();
   // Validate all inputs before starting either write.
-  const amounts = Object.fromEntries(keys.map((key) => [key, profileAmount(draft[key])]));
+  const amounts = Object.fromEntries(
+    keys.map((key) => [key, profileAmount(draft[key])]),
+  );
   return {
-    professional: occupation === professional.occupation?.trim() ? null : {
-      occupation, employerName: professional.employerName, validFrom: professional.validFrom,
-      validTo: professional.validTo, isCurrent: professional.isCurrent,
-    },
-    financial: keys.every((key) => amounts[key] === profileAmount(financial[key])) ? null : {
-      ...amounts, currencyCode: financial.currencyCode,
-      effectiveFrom: financial.effectiveFrom, effectiveTo: financial.effectiveTo,
-    },
+    professional:
+      occupation === professional.occupation?.trim()
+        ? null
+        : {
+            occupation,
+            employerName: professional.employerName,
+            validFrom: professional.validFrom,
+            validTo: professional.validTo,
+            isCurrent: professional.isCurrent,
+          },
+    financial: keys.every(
+      (key) => amounts[key] === profileAmount(financial[key]),
+    )
+      ? null
+      : {
+          ...amounts,
+          currencyCode: financial.currencyCode,
+          effectiveFrom: financial.effectiveFrom,
+        },
   };
 }
 
 // Keep the editor baseline separate from refreshes. Advance only after a
 // confirmed write, so a retry sends just the changes still pending.
 export async function saveProfileJob(baseline, draft, operations) {
-  const changes = profileJobChanges(baseline.professional, baseline.financial, draft);
+  const changes = profileJobChanges(
+    baseline.professional,
+    baseline.financial,
+    draft,
+  );
   for (const key of ["professional", "financial"]) {
     if (!changes[key]) continue;
     operations.assertSession();

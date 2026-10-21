@@ -11,7 +11,9 @@ test("optional empty amounts remain null while explicit zero and precise decimal
   assert.equal(profileAmount("9007199254740993.01"), "9007199254740993.01");
   const changes = profileJobChanges(p, f, { ...draft(), individualMonthlyIncome: "1234.57", householdMonthlyIncome: "" });
   assert.equal(changes.professional, null);
-  assert.deepEqual(changes.financial, { ...f, individualMonthlyIncome: "1234.57", declaredNetWorth: "0" });
+  const { effectiveTo, ...current } = f;
+  assert.deepEqual(changes.financial, { ...current, individualMonthlyIncome: "1234.57", declaredNetWorth: "0" });
+  assert.ok(!Object.hasOwn(changes.financial, "effectiveTo"));
 });
 test("equivalent numeric formatting does not rewrite either unchanged profile", () => {
   assert.deepEqual(profileJobChanges(p, f, { ...draft(), occupation: " Analista QA ", individualMonthlyIncome: "001234.5600", householdMonthlyIncome: "", declaredNetWorth: "0.00" }), { professional: null, financial: null });

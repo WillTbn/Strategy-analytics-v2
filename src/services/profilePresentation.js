@@ -90,6 +90,7 @@ export function profileFields(
   professional = {},
   financial = {},
   contacts = [],
+  catalog = {},
 ) {
   const personal = summary.personalDetails || {};
   const address = summary.residentialAddress || {};
@@ -99,9 +100,27 @@ export function profileFields(
   const identification = documents.find(identity);
   const basic = [
     field("Nome Completo", text(summary.displayName)),
-    field("Gênero", translated(personal.gender)),
-    field("Estado Civil", translated(personal.maritalStatus)),
-    field("Nacionalidade", text(personal.nationality)),
+    field(
+      "Gênero",
+      catalog.genders?.find((o) => o.value === personal.gender)?.label ||
+        translated(personal.gender),
+    ),
+    field(
+      "Estado Civil",
+      catalog.maritalStatuses?.find((o) => o.value === personal.maritalStatus)
+        ?.label || translated(personal.maritalStatus),
+    ),
+    field(
+      "Nacionalidade",
+      personal.nationalityCountryIds?.length
+        ? text(
+            personal.nationalityCountryIds
+              .map((id) => catalog.countries?.find((c) => c.id === id)?.name)
+              .filter(Boolean)
+              .join(", "),
+          )
+        : text(personal.nationality),
+    ),
     field(
       "Naturalidade (Cidade, UF)",
       text(join([personal.birthCity, personal.birthState])),
@@ -124,8 +143,7 @@ export function profileFields(
     field("Estado", text(address.stateOrProvince)),
     field("Cidade", text(address.city)),
     field("Logradouro", text(address.line1)),
-    // The HTTP address contract has no neighborhood field; line2 is the complement.
-    field("Bairro", NOT_INFORMED),
+    field("Bairro", text(address.neighborhood)),
     field("Complemento", text(address.line2)),
   ];
   const job = [

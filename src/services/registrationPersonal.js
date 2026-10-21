@@ -69,7 +69,9 @@ export function validateRegistrationPersonal(
       errors[field] = "Selecione uma opção disponível.";
   }
   const selected = (value.nationalities || []).filter(present);
-  if (new Set(selected).size !== selected.length)
+  if (selected.length > 3)
+    errors.nationalities = "Selecione no máximo três nacionalidades.";
+  else if (new Set(selected).size !== selected.length)
     errors.nationalities = "Não repita a mesma nacionalidade.";
   else if (
     selected.some(
@@ -82,6 +84,7 @@ export function validateRegistrationPersonal(
 }
 export function appendRegistrationNationality(value) {
   const nationalities = value.nationalities || [];
+  if (nationalities.length >= 3) return false;
   if (
     !nationalities.length ||
     nationalities.every(

@@ -209,7 +209,9 @@ const addNationality = async () => {
   errors.value.nationalities = "";
   if (!appendRegistrationNationality(form))
     errors.value.nationalities =
-      "Selecione uma nacionalidade antes de adicionar outra.";
+      form.nationalities.length >= 3
+        ? "Selecione no máximo três nacionalidades."
+        : "Selecione uma nacionalidade antes de adicionar outra.";
   await nextTick();
   nationalityInputs.value.at(-1)?.focus();
 };

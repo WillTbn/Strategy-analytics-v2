@@ -13,6 +13,12 @@ export const displayRegistrationDate = (value) =>
 export const displayRegistrationAmount = (value) =>
   value == null ? "" : String(value).replace(".", ",");
 export function personalRegistrationPatch(profile, draft) {
+  const nationalities = (draft.nationalities || []).filter(Boolean);
+  if (
+    nationalities.length > 3 ||
+    new Set(nationalities).size !== nationalities.length
+  )
+    throw new Error("Selecione até três nacionalidades sem repetir.");
   const patch = currentProfilePatch(profile);
   patch.birthDate = registrationDate(draft.birthDate);
   patch.personalDetails = {
@@ -26,7 +32,8 @@ export function personalRegistrationPatch(profile, draft) {
     ...patch.personalDetails,
     gender: nullable(draft.gender),
     maritalStatus: nullable(draft.maritalStatus),
-    nationality: nullable(draft.nationalities?.[0]),
+    birthCountryId: nullable(draft.birthCountry),
+    nationalityCountryIds: nationalities,
     birthCity: String(draft.birthCity ?? "").trim(),
   };
   return patch;
@@ -55,6 +62,7 @@ export function registrationAddressValues(address, variant) {
     street,
     number,
     complement: address.line2 || "",
+    district: address.neighborhood || "",
     city: address.city || "",
     region: address.stateOrProvince ?? null,
     postalCode: address.postalCode || "",
@@ -68,6 +76,8 @@ export function addressRegistrationPatch(
 ) {
   const patch = currentProfilePatch(profile),
     values = draft.values;
+  if (String(values.district ?? "").trim().length > 120)
+    throw new Error("O bairro deve ter até 120 caracteres.");
   if (!countryId)
     throw new Error(
       "O país de residência precisa estar definido na sua conta.",
@@ -84,6 +94,7 @@ export function addressRegistrationPatch(
       .filter(Boolean)
       .join(", "),
     line2: nullable(values.complement),
+    neighborhood: nullable(values.district),
     city: values.city.trim(),
     stateOrProvince: nullable(values.region),
     postalCode: nullable(values.postalCode),
@@ -175,19 +186,14 @@ export function financialRegistrationPayload(current, draft, today) {
     ...amounts,
     currencyCode: "BRL",
     effectiveFrom: current?.effectiveFrom ?? today,
-    effectiveTo: current?.effectiveTo ?? null,
   };
 }
 export function contactRegistrationPayload(current, draft) {
-  if (!current?.relationship)
-    throw new Error(
-      "A API exige parentesco para cadastrar um contato novo, mas o Figma solicita somente nome e telefone. Este contato ainda não foi salvo.",
-    );
   return {
     name: draft.name.trim(),
     phoneNumber: draft.phoneNumber.trim(),
-    relationship: current.relationship,
-    email: current.email ?? null,
+    relationship: current?.relationship ?? null,
+    email: current?.email ?? null,
   };
 }
 export function registrationCatalog(catalog, profile, professional) {
@@ -199,10 +205,11 @@ export function registrationCatalog(catalog, profile, professional) {
       catalog.maritalStatuses,
       profile.personalDetails?.maritalStatus,
     ),
-    nationalities: existing(
-      catalog.nationalities,
-      profile.personalDetails?.nationality,
-    ),
+    nationalities: (catalog.countries || []).map((c) => ({
+      value: c.id,
+      label: c.name,
+      isoCode: c.isoCode,
+    })),
     countries: (catalog.countries || []).map((c) => ({
       value: c.id,
       label: c.name,

@@ -16,7 +16,7 @@ export async function getPreferenceCatalog() { return unwrap(await clientApi.get
 export async function getClientProfessionalProfile() { return unwrap(await clientApi.get("/api/v1/client/profile/professional-profile")); }
 export async function updateClientProfessionalProfile(profile) { return unwrap(await clientApi.put("/api/v1/client/profile/professional-profile", profile)); }
 export async function getClientFinancialProfile() { return unwrap(await clientApi.get("/api/v1/client/profile/financial-profile")); }
-export async function updateClientFinancialProfile(profile) { return unwrap(await clientApi.put("/api/v1/client/profile/financial-profile", profile)); }
+export async function updateClientFinancialProfile(profile) { const payload = { ...profile }; delete payload.effectiveTo; return unwrap(await clientApi.put("/api/v1/client/profile/financial-profile", payload)); }
 export async function getClientTrustedContacts() { return unwrap(await clientApi.get("/api/v1/client/profile/trusted-contacts")); }
 export async function createClientTrustedContact(contact) { return unwrap(await clientApi.post("/api/v1/client/profile/trusted-contacts", contact)); }
 export async function updateClientTrustedContact(contactId, contact) { return unwrap(await clientApi.put(`/api/v1/client/profile/trusted-contacts/${contactId}`, contact)); }

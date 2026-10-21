@@ -5,6 +5,7 @@ import {
   getClientFinancialProfile,
   getClientTrustedContacts,
   getClientDocumentProgress,
+  getPreferenceCatalog,
 } from "src/services/clientProfileService";
 import { getApiErrorMessage } from "src/services/clientAuthService";
 import {
@@ -47,6 +48,7 @@ export default function useClientProfile({ full = false } = {}) {
     load();
     return { state, load };
   };
+  const catalog = resource(getPreferenceCatalog, "as opções do perfil");
   const summary = resource(getClientProfileSummary, "os dados pessoais");
   const professional = resource(
     getClientProfessionalProfile,
@@ -65,6 +67,7 @@ export default function useClientProfile({ full = false } = {}) {
       professional.state.value || {},
       financial.state.value || {},
       trusted?.state.value || [],
+      catalog.state.value || {},
     ),
   );
   const approved = computed(() =>
@@ -72,6 +75,7 @@ export default function useClientProfile({ full = false } = {}) {
   );
   return {
     summary,
+    catalog,
     professional,
     financial,
     trusted,
