@@ -35,6 +35,10 @@ export function hydrateRegistrationDocuments(draft, profile, variant) {
   const config = documentVariants[variant];
   if (!config) return;
   draft.savedDocuments ||= {};
+  if (variant === "br") {
+    const cpf = currentRegistrationDocument(profile, "CPF");
+    draft.savedTaxNumber = cpf?.numberMasked || "";
+  }
   const format = config.dateFormat;
   for (const type of config.choices) {
     const code = registrationDocumentCode(type, variant);

@@ -33,6 +33,24 @@ const fixture = () => {
   hydrateRegistrationDocuments(draft, profile, "br");
   return { draft, profile, doc };
 };
+test("CPF resume preserves only the server mask and never submits it as a new CPF", () => {
+  const { profile } = fixture();
+  profile.identificationDocuments.documents.push({
+    ...profile.identificationDocuments.documents[0],
+    documentCode: "CPF", documentId: "cpf", numberMasked: "******4725",
+  });
+  const draft = newRegistrationDocuments("br");
+  hydrateRegistrationDocuments(draft, profile, "br");
+  assert.equal(draft.savedTaxNumber, "******4725");
+  assert.ok(!draft.values.taxNumber);
+  assert.equal(copyRegistrationDocuments(draft).savedTaxNumber, "******4725");
+  draft.values.taxNumber = "123";
+  hydrateRegistrationDocuments(draft, profile, "br");
+  assert.equal(draft.values.taxNumber, "123");
+  profile.identificationDocuments.documents[1].status = "Inactive";
+  hydrateRegistrationDocuments(draft, profile, "br");
+  assert.equal(draft.savedTaxNumber, "");
+});
 test("resume displays server mask, issuer, region and dates and only reuses unchanged current evidence", () => {
   const { draft, profile, doc } = fixture();
   assert.equal(draft.details[draft.type].documentNumber, "***0001");

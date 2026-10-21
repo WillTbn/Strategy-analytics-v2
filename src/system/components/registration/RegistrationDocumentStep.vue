@@ -27,7 +27,7 @@
     <div class="divider" />
     <h2>Documento</h2>
     <div
-      v-for="(row, index) in config.before || []"
+      v-for="(row, index) in beforeRows"
       :key="`before-${index}`"
       class="fields"
       :class="rowClass(row)"
@@ -47,6 +47,10 @@
         :disabled="busy"
       />
     </div>
+    <p v-if="variant === 'br' && form.savedTaxNumber" class="muted" role="status">
+      CPF cadastrado: {{ form.savedTaxNumber }}. Para manter, deixe o campo vazio.
+      Para alterar, informe o novo CPF completo.
+    </p>
     <div class="type">
       <p>Tipo de documento</p>
       <div role="group" aria-label="Tipo de documento" class="choices">
@@ -182,6 +186,11 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "back", "validated"]);
 const config = computed(() => documentVariants[props.variant]);
 const form = reactive(copyRegistrationDocuments(props.modelValue));
+const beforeRows = computed(() => (config.value.before || []).map((row) =>
+  row.map((field) => field.key === "taxNumber" && props.variant === "br" && form.savedTaxNumber
+    ? { ...field, placeholder: form.savedTaxNumber }
+    : field),
+));
 const controls = ref({});
 const errors = ref({}),
   notice = ref("");

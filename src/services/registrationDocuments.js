@@ -348,6 +348,7 @@ export function validateDocumentSelection(files, rules = {}) {
 
 export function copyRegistrationDocuments(draft) {
   return {
+    savedTaxNumber: draft.savedTaxNumber || "",
     type: draft.type,
     values: { ...draft.values },
     details: Object.fromEntries(
