@@ -9,3 +9,7 @@ Correção complementar do perfil (QA 8), reutilizando os campos e o padrão vis
 - [ ] Lint, build, publicação e revisão desktop/mobile em homologação.
 
 Nenhum campo, ação ou regra de negócio de cronologia adicionada. Não se impõe data passada/futura ou relação entre início e vencimento sem contrato confirmado. Criação integrada na conta do Jorge continua bloqueada pelo currencyId indisponível para conta sem carteira. Os testes do payload são controlados e não criam patrimônio fictício.
+
+## Publicação — execução dos testes
+
+Pipeline 39532642622 interrompida no teste de cadastro por SIGSEGV do Node 20.20.2, reproduzido localmente (8 cenários executados antes da queda). O mesmo arquivo executou seus 11 cenários com sucesso no Node 24 local, assim como a suíte completa. CI alinhado ao Node 24 usado na validação, mantendo os testes, lint e build obrigatórios. A pipeline anterior de documentação 39532381239 também falhou pelo mesmo sinal; a versão funcional anterior 7262cfa foi publicada com sucesso na 39532153190.
