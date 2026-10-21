@@ -1,4 +1,4 @@
-import { defineConfig } from '#q-app/wrappers'
+import { defineConfig } from '#q-app'
 import { fileURLToPath } from 'node:url'
 
 export default defineConfig((ctx) => {
@@ -39,10 +39,20 @@ export default defineConfig((ctx) => {
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
-      optimizeDeps: { esbuildOptions: { target: 'esnext', }, },
+      vueOptionsAPI: true,
+      alias: {
+        src: ctx.appPaths.srcDir,
+        app: ctx.appPaths.appDir,
+        components: ctx.appPaths.resolve.src('components'),
+        layouts: ctx.appPaths.resolve.src('layouts'),
+        pages: ctx.appPaths.resolve.src('pages'),
+        assets: ctx.appPaths.resolve.src('assets'),
+        boot: ctx.appPaths.resolve.src('boot'),
+        stores: ctx.appPaths.resolve.src('stores'),
+      },
       target: {
         browser: ["es2019", "edge88", "firefox78", "chrome87", "safari13.1"],
-        node: "node16",
+        node: "node24",
       },
       extendViteConf(viteConf) {
         viteConf.define.__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = false;
@@ -56,13 +66,14 @@ export default defineConfig((ctx) => {
 
       publicPath: "/",
       // analyze: true,
-      env:
-        ctx.dev ? {
+      // Keep the existing explicit client constants while migrating the build tool.
+      define: Object.fromEntries(Object.entries(ctx.dev ? {
           VERSION_APP: 2.0,
             CLIENT_API_URL: process.env.CLIENT_API_URL || 'https://strategyanalytics.codebiz.com.br',
             CLIENT_PROFILE_CONSENT_CONTEXT: process.env.CLIENT_PROFILE_CONSENT_CONTEXT || '',
           API_URL: "http://localhost:8085/api/",
           COOKIE_TOKEN_NAME: "SA_token",
+          COOKIE_REFRESH: "SA_refresh",
           COOKIE_USER_DATA: "SA_user",
           WEB_URL: process.env.WEB_URL,
           API_URL_CORS: "http://localhost:8085/sanctum/csrf-cookie",
@@ -75,6 +86,7 @@ export default defineConfig((ctx) => {
           CLIENT_PROFILE_CONSENT_CONTEXT: process.env.CLIENT_PROFILE_CONSENT_CONTEXT || '',
           API_URL: "https://sources.strategyanalytics.com.br/api/",
           COOKIE_TOKEN_NAME: "SA_token",
+          COOKIE_REFRESH: "SA_refresh",
           COOKIE_USER_DATA: "SA_user",
           WEB_URL: process.env.WEB_URL,
           API_URL_CORS: "https://sources.strategyanalytics.com.br/sanctum/csrf-cookie",
@@ -82,7 +94,7 @@ export default defineConfig((ctx) => {
           CLIENT_SECRET: "l6v5MTt8M5IsfuVhLwwppJJjadubIPF2R8"
 
         }
-      ,
+      ).map(([key, value]) => [`process.env.${key}`, JSON.stringify(value) ?? 'undefined'])),
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
@@ -116,7 +128,7 @@ export default defineConfig((ctx) => {
           'vite-plugin-checker',
           {
             eslint: {
-              lintCommand: 'eslint -c ./eslint.config.js "./src*/**/*.{js,mjs,cjs,vue}"',
+              lintCommand: 'eslint -c ./eslint.config.mjs "./src*/**/*.{js,mjs,cjs,vue}"',
               useFlatConfig: true,
             },
           },

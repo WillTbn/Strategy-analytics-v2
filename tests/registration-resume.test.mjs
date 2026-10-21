@@ -281,7 +281,16 @@ async function routerHarness() {
   };
   const mod = new vm.SourceTextModule(
     await readFile(new URL("../src/router/index.js", import.meta.url), "utf8"),
-    { context },
+    {
+      context,
+      initializeImportMeta: (meta) => {
+        meta.env = {
+          QUASAR_SERVER: false,
+          QUASAR_VUE_ROUTER_MODE: "history",
+          QUASAR_VUE_ROUTER_BASE: "/",
+        };
+      },
+    },
   );
   await mod.link((name) => {
     const values = modules[name];

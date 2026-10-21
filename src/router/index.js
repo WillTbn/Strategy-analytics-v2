@@ -25,9 +25,9 @@ import {
  */
 
 export default route(function (/* { store, ssrContext } */) {
-  const createHistory = process.env.SERVER
+  const createHistory = import.meta.env.QUASAR_SERVER
     ? createMemoryHistory
-    : process.env.VUE_ROUTER_MODE === "history"
+    : import.meta.env.QUASAR_VUE_ROUTER_MODE === "history"
       ? createWebHistory
       : createWebHashHistory;
 
@@ -37,7 +37,7 @@ export default route(function (/* { store, ssrContext } */) {
     // quasar.conf.js -> build -> vueRouterMode
     // quasar.conf.js -> build -> publicPath
     routes,
-    history: createHistory(process.env.VUE_ROUTER_BASE),
+    history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE),
   });
   Router.beforeEach(async (to) => {
     const { verifyLogged } = useAuth();
