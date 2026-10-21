@@ -125,6 +125,9 @@
                 <p v-if="!currencyOptions.length" class="text-grey">
                   Nenhuma moeda disponível para cadastrar patrimônio nesta
                   conta.
+                </p>
+                <p v-else-if="currencyId && !currencyAvailable" class="text-negative" role="alert">
+                  A moeda deste patrimônio não está ativa. Não é possível salvar alterações.
                 </p></resource-state
               >
               <div
@@ -234,7 +237,7 @@
                   type="submit"
                   :loading="saving"
                   :disable="
-                    !currencyId ||
+                    !currencyAvailable ||
                     currencies.state.loading ||
                     !!currencies.state.error
                   "
@@ -326,14 +329,20 @@ const currencyOptions = computed(() => {
   )
     options.push({
       value: selected.value.currencyId,
-      label: "Moeda do patrimônio atual",
+      label: "Moeda do patrimônio atual (indisponível)",
+      disable: true,
     });
   return options;
 });
+const currencyAvailable = computed(() =>
+  !currencies.state.loading &&
+  !currencies.state.error &&
+  (currencies.state.data || []).some((option) => option.value === currencyId.value),
+);
 const amount = (item) => {
   const code = (currencies.state.data || []).find(
     (option) => option.value === item.currencyId,
-  )?.label;
+  )?.code;
   return code
     ? money(item.declaredValue, code)
     : `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(Number(item.declaredValue))} (moeda não informada)`;
@@ -362,7 +371,7 @@ async function open(section, item = null) {
   dialog.value = true;
   currencyId.value =
     item?.currencyId ||
-    (currencies.state.data || []).find((option) => option.label === "BRL")
+    (currencies.state.data || []).find((option) => option.code === "BRL")
       ?.value ||
     currencies.state.data?.[0]?.value ||
     null;
@@ -382,6 +391,8 @@ async function save() {
   saving.value = true;
   saveError.value = "";
   try {
+    if (!currencyAvailable.value)
+      throw new Error("Selecione uma moeda ativa para salvar o patrimônio.");
     const payload = assetPayload(
       draft.value,
       selectedSection.value.type,

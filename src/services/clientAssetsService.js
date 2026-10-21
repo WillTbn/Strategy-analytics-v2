@@ -1,9 +1,9 @@
 import {
-  clientApi,
   captureClientSession,
   assertClientSessionCurrent,
 } from "./clientApi";
 import { financeGet, financeWrite } from "./financeService";
+import { getPreferenceCatalog } from "./clientProfileService";
 const base = "client/profile/assets";
 export async function listClientAssets() {
   const session = captureClientSession(),
@@ -64,17 +64,19 @@ export const getClientAssetDocumentUrl = async (id, documentId) =>
     )
   ).data;
 export const getClientAssetCurrencies = async () => {
-  const response = await clientApi.get("/api/v1/client/wallets");
-  const rows = response.data?.data;
+  const session = captureClientSession();
+  const catalog = await getPreferenceCatalog();
+  assertClientSessionCurrent(session);
+  const rows = catalog?.currencies;
   if (!Array.isArray(rows))
     throw Error("Não foi possível consultar as moedas desta conta.");
   return [
     ...new Map(
       rows
-        .filter((row) => row.currencyId && row.currencyIsoCode)
+        .filter((row) => row?.id && row.value && row.label)
         .map((row) => [
-          row.currencyId,
-          { value: row.currencyId, label: row.currencyIsoCode },
+          row.id,
+          { value: row.id, label: row.label, code: row.value },
         ]),
     ).values(),
   ];
