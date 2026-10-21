@@ -17,6 +17,13 @@ Nenhum campo, ação, limite de arquivo ou metadado HTTP novo. Tipos, país, arq
 - [x] Troca de sessão impede envio após validação e notificações/recarga de resposta antiga.
 - [x] Última consulta documental prevalece; erro e bloqueios reais não liberam upload.
 - [x] Suíte completa com 231 testes, lint, build e diff-check do lote aprovados.
-- [ ] Publicação e reteste visual desktop/mobile em homologação.
+- [x] Publicação 60c799d / [pipeline 39530256286](https://github.com/WillTbn/Strategy-analytics-v2/actions/runs/39530256286) aprovada.
+- [x] Na conta do usuário: cinco documentos preservados, progresso 100%, três aprovados/um enviado/um rejeitado; motivo de reprovação continuou visível.
+- [x] Novo envio: tipo obrigatório e arquivo obrigatório recusados antes da escrita; troca RG/CNH verificada. Cancelar limpou tipo, arquivo e datas.
+- [x] Substituição: emissão existente retomada, envio sem arquivo recusado e cancelado. Reabrir novo envio não reutilizou os dados do documento rejeitado.
+- [x] Desktop 1366 px/mobile 390 px: documento e diálogo com largura útil/rolagem 378/378 px. Viewport restaurado e todos os diálogos fechados.
+- [x] Evidências cliente-envio-documentos-formulario-hml.png e cliente-envio-documentos-formulario-mobile-hml.png.
+
+Nenhum novo upload, substituição, aprovação/reprovação ou link temporário foi solicitado no reteste visual. Concorrência nas orientações por país e escritas atrasadas foram verificadas automaticamente, sem induzir falha do servidor.
 
 Envios, falhas e concorrência foram exercitados em testes controlados; não foram enviados documentos adicionais ao backend nesta rodada. O vínculo/metadados do replace e a regra CNH continuam pendências separadas; esta correção não altera nem contorna o guard de perfil/documentos.
