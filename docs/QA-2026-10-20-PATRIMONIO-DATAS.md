@@ -6,7 +6,11 @@ Correção complementar do perfil (QA 8), reutilizando os campos e o padrão vis
 - [x] Prazo em meses opcional: vazio permitido; informado exige inteiro maior que zero, em conformidade com o mínimo já definido no input.
 - [x] Prazo indeterminado limpa vencimento/meses ocultos; datas bissextas e valores decimais preservados.
 - [x] Quatro testes novos; os três cenários de rejeição falhavam antes da correção. Suíte completa com 247 testes aprovados.
-- [ ] Lint, build, publicação e revisão desktop/mobile em homologação.
+- [x] Lint, build e diff da alteração aprovados. Publicação 117b421 (inclui 4a8bd8a), pipeline 39532851194 concluída com testes, build, upload e ativação aprovados.
+- [x] Conta do Jorge em homologação: prazo 0 mostra “Informe um prazo maior que zero”; corrigir para 12 e limpar remove o erro; 1,5 mostra “Informe um número inteiro válido”. Datas 29/02/2024 e 29/02/2028 aceitas nos inputs. Formulário descartado sem gravação.
+- [x] Desktop 1366 px e mobile 390 px conferidos no formulário existente. Mobile: documento 378 px; editor clientWidth/scrollWidth 317/317 px, sem overflow horizontal. Ausência de moeda mantém Salvar bloqueado; não houve criação de patrimônio.
+
+Evidências: `cliente-investimento-prazo-validacao-hml.png` e `cliente-investimento-prazo-validacao-mobile-hml.png`, na pasta de evidências desta conversa.
 
 Nenhum campo, ação ou regra de negócio de cronologia adicionada. Não se impõe data passada/futura ou relação entre início e vencimento sem contrato confirmado. Criação integrada na conta do Jorge continua bloqueada pelo currencyId indisponível para conta sem carteira. Os testes do payload são controlados e não criam patrimônio fictício.
 
