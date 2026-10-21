@@ -306,14 +306,35 @@ com identificadores de teste e arquivo marcado como fictício e sem validade.
 
 O RG de teste existente foi atualizado e o CPF de teste foi gravado; os novos
 arquivos foram mantidos para conferência. Não houve aprovação documental nem
-submissão final do onboarding. O campo CPF voltou vazio na etapa 5, mas sua
+submissão final do onboarding. Nesta primeira rodada, o campo CPF voltou vazio na etapa 5, mas sua
 persistência foi confirmada pelo valor mascarado no perfil; não se registra
-aprovação da retomada desse campo no formulário.
+aprovação da retomada nessa versão. A pendência foi resolvida no reteste abaixo.
 
 Evidência funcional pela interface, sem captura de payloads, códigos HTTP ou
 IDs de correlação. Capturas locais desta sessão: `qa-data-expedicao-persistida.png`
 e `qa-documentos-data-perfil.png` (não versionadas). Esta rodada valida o cenário
 CPF + RG com data; não abrange passaporte, validade ou todos os tipos documentais.
+
+## Retomada do CPF — reteste em 21/10/2026
+
+Ambiente: https://hml.strategyanalytics.com.br/cadastro/etapa-5.
+Versão publicada: `a7fa18d`.
+[Deploy concluído com sucesso](https://github.com/WillTbn/Strategy-analytics-v2/actions/runs/39629809580).
+
+- [x] Ao reabrir a etapa 5, o CPF fictício salvo aparece mascarado como indicação
+  no campo, acompanhado da orientação de manutenção ou alteração.
+- [x] Continuar sem preencher um novo CPF avançou para a etapa 6.
+- [x] Após navegação completa para reabrir a etapa 5, o CPF salvo permaneceu
+  indicado; a data de expedição do RG permaneceu 15/01/2025.
+- [x] CPF inválido de teste foi bloqueado com mensagem no campo, antes da gravação.
+- [x] Rascunho inválido descartado e página recarregada ao final.
+
+Resolvida a pendência de apresentação do CPF na retomada. O valor mascarado é
+uma indicação do registro salvo, não um novo valor submetido: deixar a entrada
+vazia mantém o CPF. Não foi testada nesta rodada a troca por outro CPF válido.
+Evidência funcional pela UI; nenhum payload ou status HTTP foi capturado.
+Captura local não versionada: `qa-cpf-retomada-publicada.png`.
+Lint, build e 259 testes automatizados aprovados antes da publicação.
 
 ## Bugs de backend encontrados no portal
 
