@@ -15,7 +15,11 @@ O salvamento profissional continua pelo serviço clientApi existente, preservand
 - [x] Campo de texto e estilo reutilizados do próprio formulário.
 - [x] 207 testes existentes aprovados, incluindo mudança só de ocupação, preservação de metadados, ocupação vazia, validação financeira antes do lote, retry parcial e troca de sessão.
 - [x] Lint, build e diff-check do lote aprovados.
-- [ ] Publicação em homologação e reteste visual desktop/mobile.
-- [ ] Salvamento de valor fictício e restauração do valor original, conferindo que o financeiro não mudou.
+- [x] Publicação a5104f2, [pipeline 39527846327](https://github.com/WillTbn/Strategy-analytics-v2/actions/runs/39527846327) aprovada. Homologação desktop 1366 px e mobile 390 px; largura útil/rolagem 378/378 px, sem overflow. Viewport restaurado.
+- [x] Na conta do usuário, ocupação vazia recusada antes do envio; valor fictício salvo, exibido e confirmado após recarga. Valor original restaurado pelo formulário.
+- [x] Leitura administrativa independente confirmou ocupação restaurada, empregador/vigência/isCurrent preservados e histórico financeiro integralmente igual ao início. Não foi criado registro financeiro.
+- [x] Reabertura sem alterações mantém Salvar desabilitado; Descartar encerra a edição sem gravar.
+
+Evidências: cliente-ocupacao-editavel-hml.png e cliente-ocupacao-editavel-mobile-hml.png na pasta de visualizações da sessão.
 
 É correção independente do backend. Não solicitar catálogo de ocupações para liberar esse campo; não modifica as pendências de currencyId, documentos ou envio final do cadastro.
