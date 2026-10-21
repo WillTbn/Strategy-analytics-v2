@@ -1,6 +1,6 @@
 <template>
   <q-page class="WalletPage q-ma-lg">
-    <div class="row q-gutter-md justify-around">
+    <div class="row q-gutter-x-md justify-around">
       <div :class="dashboard.communication_left ? 'col-12 col-lg-9' : 'col-12'">
         <balancecurrent-layout
           :home="home.state"
@@ -87,11 +87,10 @@ onScopeDispose(() => {
 
 <style scoped lang="sass">
 .WalletPage
-  margin-top: -80px
   min-width: 0
 @media (max-width: 599px)
   .WalletPage
-    margin-top: 0
+    margin-top: 16px
     margin-left: 16px
     margin-right: 16px
   .WalletPage :deep(.tool)

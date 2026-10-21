@@ -1,10 +1,8 @@
 <template>
   <div class="WalletView">
-    <q-page-container>
-      <router-view v-slot="{ Component }">
-        <component :is="Component" :key="route.name"></component>
-      </router-view>
-    </q-page-container>
+    <router-view v-slot="{ Component }">
+      <component :is="Component" :key="route.name"></component>
+    </router-view>
   </div>
 </template>
 <script setup>

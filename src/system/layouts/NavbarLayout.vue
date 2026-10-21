@@ -1,5 +1,5 @@
 <template>
-  <q-header class="q-ma-md q-pa-sm bg-transparent">
+  <q-header class="portal-header bg-transparent">
     <q-toolbar :class="nav" class="portal-navbar">
       <q-btn flat :to="{ name: 'inicio' }">
         <svg-logo />
@@ -19,9 +19,11 @@
         <q-item-section class="gt-md"> {{ list.name }}</q-item-section>
       </q-item>
       <q-space class="gt-sm" />
-      <hours-banner v-if="navbar.clock" />
-      <options-icons :theme="navbar.theme" :adm="data.role_id !== 3" />
-      <avatar-menu v-if="data.account" :avatar="data.account.avatar" />
+      <div class="portal-navbar-actions">
+        <hours-banner v-if="navbar.clock" />
+        <options-icons :theme="navbar.theme" :adm="data.role_id !== 3" />
+        <avatar-menu v-if="data.account" :avatar="data.account.avatar" />
+      </div>
       <!-- {{ navbar.clock }} -->
     </q-toolbar>
     <drawer-theme />
@@ -100,6 +102,18 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.portal-header {
+  padding: 24px 24px 0;
+}
+.portal-navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.portal-navbar-actions :deep(.OptionsIcons) {
+  margin: 0;
+}
 .control-text {
   text-overflow: ellipsis;
   overflow: hidden;
@@ -124,6 +138,9 @@ export default defineComponent({
   border-radius: 13px;
 }
 @media (max-width: 599px) {
+  .portal-header {
+    padding: 16px 16px 0;
+  }
   .portal-navbar {
     flex-wrap: wrap;
     justify-content: center;
