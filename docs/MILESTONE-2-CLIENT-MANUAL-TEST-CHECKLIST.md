@@ -286,6 +286,35 @@ Não foram testados aqui documentos anexos aos bens, todos os estados de
 financiamento/contemplação, falhas de rede ou moedas inativas em homologação.
 Nenhum erro de backend foi observado nestes cenários.
 
+## Documentos com data de expedição — homologação em 21/10/2026
+
+Ambiente: https://hml.strategyanalytics.com.br. Versão publicada: `e4a788b`.
+Teste na conta da sessão do usuário, após autorização explícita para utilizá-la,
+com identificadores de teste e arquivo marcado como fictício e sem validade.
+
+- [x] Etapa 5: preenchidos CPF de teste e RG fictício com expedição em
+  **15/01/2025**, mantendo os demais campos do formulário como carregados.
+- [x] Selecionado `qa-documento-data-ficticio.png` para frente e verso.
+- [x] Continuar concluiu a gravação e avançou para a etapa 6, sem o erro de
+  data de expedição indevidamente aplicada ao CPF.
+- [x] Após navegação completa para reabrir a etapa 5, RG mascarado e data
+  **15/01/2025** persistiram, com indicação de arquivos já enviados.
+- [x] Em Dados Pessoais do perfil, CPF e RG apareceram mascarados e a data de
+  expedição permaneceu **15/01/2025**.
+- [x] Em Documentação, os dois novos arquivos apareceram como RG, com status
+  **Enviado**; a lista passou de cinco para sete arquivos.
+
+O RG de teste existente foi atualizado e o CPF de teste foi gravado; os novos
+arquivos foram mantidos para conferência. Não houve aprovação documental nem
+submissão final do onboarding. O campo CPF voltou vazio na etapa 5, mas sua
+persistência foi confirmada pelo valor mascarado no perfil; não se registra
+aprovação da retomada desse campo no formulário.
+
+Evidência funcional pela interface, sem captura de payloads, códigos HTTP ou
+IDs de correlação. Capturas locais desta sessão: `qa-data-expedicao-persistida.png`
+e `qa-documentos-data-perfil.png` (não versionadas). Esta rodada valida o cenário
+CPF + RG com data; não abrange passaporte, validade ou todos os tipos documentais.
+
 ## Bugs de backend encontrados no portal
 
 |  Nº | Seção/fluxo                         | Passos para reproduzir                                               | Endpoint                                                                                                        | HTTP | Request ID / Correlation ID      | Situação                                                                                        |
