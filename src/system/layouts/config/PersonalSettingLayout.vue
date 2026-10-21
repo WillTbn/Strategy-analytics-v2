@@ -81,7 +81,38 @@
       >
         {{ saveError }}
       </div>
-      <div v-if="editing === section.key" class="row q-col-gutter-md q-mt-sm">
+      <div v-if="editing === 'trusted' && section.key === 'trusted'">
+        <div
+          v-for="(contact, index) in draft.contacts"
+          :key="contact.id || index"
+          class="row q-col-gutter-md q-mt-sm"
+        >
+          <label-form
+            v-for="field in section.editFields"
+            :key="field.key"
+            :class-name="fieldClass(section.key, field.key)"
+            :text-label="field.title"
+          >
+            <q-input
+              v-model="contact[field.key]"
+              outlined
+              dense
+              dark
+              :type="field.key === 'phoneNumber' ? 'tel' : 'text'"
+              :aria-label="
+                draft.contacts.length > 1
+                  ? field.title + ' ' + (index + 1)
+                  : field.title
+              "
+              :disable="saving"
+            />
+          </label-form>
+        </div>
+      </div>
+      <div
+        v-else-if="editing === section.key"
+        class="row q-col-gutter-md q-mt-sm"
+      >
         <label-form
           v-for="field in section.editFields"
           :key="field.key"
@@ -149,6 +180,8 @@ import {
   updateClientProfessionalProfile,
   updateClientFinancialProfile,
   updateClientTrustedContact,
+  createClientTrustedContact,
+  getClientTrustedContacts,
 } from "src/services/clientProfileService";
 import { getApiErrorMessage } from "src/services/clientAuthService";
 import {
@@ -161,6 +194,10 @@ import {
   basicProfileDraft,
   locationProfilePatch,
 } from "src/services/profileEdit";
+import {
+  trustedContactsDraft,
+  saveTrustedContacts,
+} from "src/services/profileTrustedEdit";
 const profile = useClientProfile({ full: true });
 const selectFields = new Set([
   "gender",
@@ -222,7 +259,8 @@ const editing = ref(null),
   draft = reactive({});
 let original = "",
   fullProfile = null,
-  jobBaseline = null;
+  jobBaseline = null,
+  trustedBaseline = null;
 const changed = computed(() => JSON.stringify(draft) !== original);
 const discard = () => {
   if (saving.value) return;
@@ -302,7 +340,6 @@ const editable = (section) =>
     (r) => r.state.value && !r.state.loading && !r.state.error,
   ) &&
   section.key !== "document" &&
-  (section.key !== "trusted" || profile.trusted.state.value?.length === 1) &&
   (section.key !== "job" ||
     Boolean(
       profile.professional.state.value?.id && profile.financial.state.value?.id,
@@ -312,9 +349,7 @@ const editHint = (section) =>
     ? "A edição depende da validação do documento de identificação."
     : section.key === "document"
       ? "Os dados documentais são consultados na API. Atualizações ficam na aba Documentação."
-      : section.key === "trusted" && profile.trusted.state.value?.length !== 1
-        ? "A edição de múltiplos contatos e o cadastro sem vínculo definido aguardam o contrato do fluxo."
-        : "Aguarde o carregamento ou conclua a edição atual.";
+      : "Aguarde o carregamento ou conclua a edição atual.";
 const edit = async (section) => {
   if (!editable(section)) return;
   saving.value = true;
@@ -345,11 +380,12 @@ const edit = async (section) => {
           ].map((k) => [k, profile.financial.state.value[k]]),
         ),
       };
-    else
-      values = {
-        name: profile.trusted.state.value[0].name,
-        phoneNumber: profile.trusted.state.value[0].phoneNumber,
-      };
+    else {
+      const contacts = await getClientTrustedContacts();
+      assertClientSessionCurrent(session);
+      trustedBaseline = contacts.map((contact) => ({ ...contact }));
+      values = { contacts: trustedContactsDraft(contacts) };
+    }
     if (section.key === "job")
       jobBaseline = {
         professional: { ...profile.professional.state.value },
@@ -386,14 +422,10 @@ const save = async (section) => {
       });
     }
     if (section.key === "trusted") {
-      const contact = profile.trusted.state.value[0];
-      if (!draft.name?.trim() || !draft.phoneNumber?.trim())
-        throw new Error("Informe o nome e o telefone do contato.");
-      await updateClientTrustedContact(contact.id, {
-        name: draft.name.trim(),
-        phoneNumber: draft.phoneNumber.trim(),
-        relationship: contact.relationship,
-        email: contact.email,
+      await saveTrustedContacts(trustedBaseline, draft.contacts, {
+        create: createClientTrustedContact,
+        update: updateClientTrustedContact,
+        assertSession: () => assertClientSessionCurrent(session),
       });
     }
     if (!isClientSessionCurrent(session)) return;
