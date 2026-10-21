@@ -17,6 +17,12 @@ Na abertura, os contatos são relidos antes de formar o rascunho. Escritas usam 
 - [x] Troca de sessão interrompe escritas seguintes.
 - [x] Renderização do template real para zero/dois contatos: apenas nome e telefone, Salvar/Descartar existentes.
 - [x] 207 testes, lint e build locais aprovados.
-- [ ] Reteste visual e integrado da versão publicada.
+- [x] Publicação funcional 2591a8b, [pipeline 39526079478](https://github.com/WillTbn/Strategy-analytics-v2/actions/runs/39526079478) concluída com sucesso.
+- [x] Conta do usuário em homologação: lista vazia abre Editar, nome sem telefone e telefone inválido impedem envio; descarte limpa erro/rascunho e reabertura permanece vazia. Nenhum contato foi criado nessa conta.
+- [x] Desktop 1366 px e mobile 390 px: mesmos campos/ações; mobile com clientWidth/scrollWidth 378/378 px. Viewport restaurado.
+- [x] Teste integrado do adaptador com a API de homologação do Cláudio: criação sem relacionamento, edição e leitura confirmadas; contato descartável removido e lista original preservada.
+- [ ] Reteste manual de lista múltipla em conta aprovada pelo QA. Comportamento já coberto automaticamente, inclusive template real, preservação de metadados e falha parcial.
+
+Evidências: cliente-contatos-primeiro-editor-hml.png e cliente-contatos-primeiro-editor-mobile-hml.png na pasta de visualizações da sessão.
 
 Concorrência/falhas são verificadas por respostas controladas em testes, sem induzir falhas no backend. Persistência da declaração de ausência de contatos e envio final do cadastro continuam pendências reais separadas; não foram simulados.
