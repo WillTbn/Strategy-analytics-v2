@@ -51,6 +51,7 @@ const labels = {
   Male: "Masculino",
   Female: "Feminino",
   Other: "Outro",
+  PreferNotToSay: "Prefiro não informar",
   NotInformed: NOT_INFORMED,
   Single: "Solteiro(a)",
   Married: "Casado(a)",
@@ -85,6 +86,17 @@ export function identityApproved(summary = {}, progress = {}) {
       (document.status || document.documentStatus) === "Approved",
   );
 }
+const nationalityLabel = (personal, catalog) => {
+  const ids = personal.nationalityCountryIds;
+  if (!ids?.length) return text(personal.nationality);
+  const names = ids
+    .map((id) =>
+      catalog.countries?.find((country) => country.id === id)?.name?.trim(),
+    )
+    .filter(Boolean);
+  if (names.length !== ids.length) names.push("Descrição indisponível");
+  return names.join(", ");
+};
 export function profileFields(
   summary = {},
   professional = {},
@@ -110,17 +122,7 @@ export function profileFields(
       catalog.maritalStatuses?.find((o) => o.value === personal.maritalStatus)
         ?.label || translated(personal.maritalStatus),
     ),
-    field(
-      "Nacionalidade",
-      personal.nationalityCountryIds?.length
-        ? text(
-            personal.nationalityCountryIds
-              .map((id) => catalog.countries?.find((c) => c.id === id)?.name)
-              .filter(Boolean)
-              .join(", "),
-          )
-        : text(personal.nationality),
-    ),
+    field("Nacionalidade", nationalityLabel(personal, catalog)),
     field(
       "Naturalidade (Cidade, UF)",
       text(join([personal.birthCity, personal.birthState])),
