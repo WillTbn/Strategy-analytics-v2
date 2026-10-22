@@ -16,7 +16,10 @@ export async function register(payload, idempotencyKey) {
  * @returns {Promise<{ accessToken: string, refreshToken: string, expiresAt: string, user: object }>}
  */
 export async function login({ email, password }) {
-  const { data } = await clientApi.post("/api/v1/auth/login", { email, password });
+  const { data } = await clientApi.post("/api/v1/auth/login", {
+    email,
+    password,
+  });
   return data?.data ?? data;
 }
 
@@ -43,7 +46,11 @@ export async function clientPing() {
 }
 
 export async function refresh(refreshToken) {
-  const { data } = await clientApi.post("/api/v1/auth/refresh", { refreshToken }, { skipAuthRefresh: true });
+  const { data } = await clientApi.post(
+    "/api/v1/auth/refresh",
+    { refreshToken },
+    { skipAuthRefresh: true },
+  );
   return data?.data ?? data;
 }
 
@@ -65,21 +72,51 @@ export async function logout(refreshToken) {
  * @param {string} fallback
  * @returns {string}
  */
-export function getApiErrorMessage(error, fallback = "Não foi possível entrar. Verifique suas credenciais.") {
+export function getApiErrorMessage(
+  error,
+  fallback = "Não foi possível entrar. Verifique suas credenciais.",
+) {
   const status = error?.response?.status;
-  const code = error?.response?.data?.code || error?.response?.data?.errors?.[0]?.code || "";
-  if (status === 409) return code.toLowerCase().includes("requirement") ? "O requisito documental mudou. Atualize a tela e tente novamente." : "Os dados foram alterados em outra operação. Atualize a tela e tente novamente.";
-  if (status === 422) return code.toLowerCase().includes("file") ? "O arquivo enviado não atende aos requisitos." : "Revise os dados informados e tente novamente.";
-  if (status === 503 || code.toLowerCase().includes("storage")) return "O armazenamento está temporariamente indisponível. Tente novamente mais tarde.";
+  const code =
+    error?.response?.data?.code ||
+    error?.response?.data?.errors?.[0]?.code ||
+    "";
+  if (code === "bank_account.holder_identification_missing")
+    return "Cadastre seu documento fiscal no perfil antes de salvar a conta bancária.";
+  if (code === "onboarding.profile_locked_under_review")
+    return "Seu cadastro está em análise. Aguarde a validação do documento de identificação para editar.";
+  if (status === 409)
+    return code.toLowerCase().includes("requirement")
+      ? "O requisito documental mudou. Atualize a tela e tente novamente."
+      : "Os dados foram alterados em outra operação. Atualize a tela e tente novamente.";
+  if (status === 422)
+    return code.toLowerCase().includes("file")
+      ? "O arquivo enviado não atende aos requisitos."
+      : "Revise os dados informados e tente novamente.";
+  if (status === 503 || code.toLowerCase().includes("storage"))
+    return "O armazenamento está temporariamente indisponível. Tente novamente mais tarde.";
   if (error?.response?.status === 403) {
     const payload = error.response?.data?.data ?? error.response?.data ?? {};
-    const action = payload.requiredAction || payload.requiredStep || payload.onboardingStep;
-    const labels = { Deposit: "Faça o depósito inicial para continuar.", ConfirmEmail: "Confirme seu e-mail para continuar.", ConfirmPhone: "Confirme seu telefone para continuar.", CompleteProfile: "Complete seu perfil para continuar." };
-    if (action) return labels[action] || `Conclua a etapa de onboarding “${action}” para continuar.`;
+    const action =
+      payload.requiredAction || payload.requiredStep || payload.onboardingStep;
+    const labels = {
+      Deposit: "Faça o depósito inicial para continuar.",
+      ConfirmEmail: "Confirme seu e-mail para continuar.",
+      ConfirmPhone: "Confirme seu telefone para continuar.",
+      CompleteProfile: "Complete seu perfil para continuar.",
+    };
+    if (action)
+      return (
+        labels[action] ||
+        `Conclua a etapa de onboarding “${action}” para continuar.`
+      );
   }
   const errors = error?.response?.data?.errors;
   if (Array.isArray(errors) && errors.length) {
-    const message = errors.map((e) => e.message).filter(Boolean).join(" ");
+    const message = errors
+      .map((e) => e.message)
+      .filter(Boolean)
+      .join(" ");
     if (message.includes("not linked to a customer profile")) {
       return "Seu usuário ainda não está vinculado a um perfil de cliente. Entre em contato com o suporte.";
     }

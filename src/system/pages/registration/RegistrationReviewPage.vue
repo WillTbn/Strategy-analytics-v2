@@ -16,6 +16,7 @@
       "
       ><registration-review-step
         :snapshot="snapshot"
+        :submission="registrationContext.status?.submission"
         :busy="busy"
         integrated
         @validated="save"

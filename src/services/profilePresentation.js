@@ -203,3 +203,7 @@ export function profileFields(
     ],
   };
 }
+
+export function profileEditingAllowed(onboarding) {
+  return onboarding?.submission?.profileEditingLocked === false;
+}

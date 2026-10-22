@@ -66,18 +66,24 @@ export function registrationReviewSections(snapshot) {
   const fileText =
     document?.type === "Passaporte"
       ? files[`${document.type}:passport`]
-        ? document.savedDocuments?.[document.type]?.files?.[`${document.type}:passport`] === files[`${document.type}:passport`]
+        ? document.savedDocuments?.[document.type]?.files?.[
+            `${document.type}:passport`
+          ] === files[`${document.type}:passport`]
           ? "Página de dados enviada"
           : "Página de dados aguardando envio"
         : ""
       : join([
           files[`${document?.type}:front`]
-            ? document.savedDocuments?.[document.type]?.files?.[`${document.type}:front`] === files[`${document.type}:front`]
+            ? document.savedDocuments?.[document.type]?.files?.[
+                `${document.type}:front`
+              ] === files[`${document.type}:front`]
               ? "Frente enviada"
               : "Frente aguardando envio"
             : "",
           files[`${document?.type}:back`]
-            ? document.savedDocuments?.[document.type]?.files?.[`${document.type}:back`] === files[`${document.type}:back`]
+            ? document.savedDocuments?.[document.type]?.files?.[
+                `${document.type}:back`
+              ] === files[`${document.type}:back`]
               ? "Verso enviado"
               : "Verso aguardando envio"
             : "",
@@ -111,12 +117,6 @@ export function registrationReviewSections(snapshot) {
       const value = reviewMoney(employment[key]);
       return value ? `${label} ${value}` : "";
     }),
-    employment.primaryCurrencyCode
-      ? `moeda principal ${choice(employment.primaryCurrencyCode, catalog.currencies)}`
-      : "",
-    employment.secondaryCurrencyCode
-      ? `moeda secundária ${choice(employment.secondaryCurrencyCode, catalog.currencies)}`
-      : "",
   ]);
   const contactsText =
     contacts.noContact === true

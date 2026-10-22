@@ -1,3 +1,4 @@
+import { countryName } from "./countryNames.js";
 import { currentProfilePatch } from "./profileEdit.js";
 import { parseRegistrationAmount } from "./registrationEmployment.js";
 import { calendarDate, documentVariants } from "./registrationDocuments.js";
@@ -196,10 +197,16 @@ export function contactRegistrationPayload(current, draft) {
     email: current?.email ?? null,
   };
 }
-export const brazilianStates = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO"
-  .split(" ").map((value) => ({ value, label: value }));
+export const brazilianStates =
+  "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO"
+    .split(" ")
+    .map((value) => ({ value, label: value }));
 export function registrationRegionOptions(variant, value) {
-  return variant === "br" ? brazilianStates : value ? [{ value, label: value }] : [];
+  return variant === "br"
+    ? brazilianStates
+    : value
+      ? [{ value, label: value }]
+      : [];
 }
 export function registrationCatalog(catalog, profile, professional) {
   const existing = (options, value) =>
@@ -212,12 +219,12 @@ export function registrationCatalog(catalog, profile, professional) {
     ),
     nationalities: (catalog.countries || []).map((c) => ({
       value: c.id,
-      label: c.name,
+      label: countryName(c, profile.preferences?.languageCode),
       isoCode: c.isoCode,
     })),
     countries: (catalog.countries || []).map((c) => ({
       value: c.id,
-      label: c.name,
+      label: countryName(c, profile.preferences?.languageCode),
       isoCode: c.isoCode,
     })),
     occupations: existing(catalog.occupations, professional?.occupation),
@@ -245,8 +252,14 @@ export function documentRegistrationPayload(
     const value = nullable(mapped[field.code]);
     if (field.required && !value)
       throw new Error(`O documento exige ${field.label}.`);
-    if (value && Number.isInteger(field.maxLength) && value.length > field.maxLength)
-      throw new Error(`${field.label} deve ter no máximo ${field.maxLength} caracteres.`);
+    if (
+      value &&
+      Number.isInteger(field.maxLength) &&
+      value.length > field.maxLength
+    )
+      throw new Error(
+        `${field.label} deve ter no máximo ${field.maxLength} caracteres.`,
+      );
     if (value) data[field.code] = value;
   }
   if (!(definition.fields || []).length)

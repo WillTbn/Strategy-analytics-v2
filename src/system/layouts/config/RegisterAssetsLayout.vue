@@ -100,12 +100,7 @@
                 type="submit"
                 form="asset-editor-form"
                 :loading="saving"
-                :disable="
-                  !draft ||
-                  !currencyAvailable ||
-                  currencies.state.loading ||
-                  !!currencies.state.error
-                "
+                :disable="!draft"
               /></div
           ></q-card-section>
           <q-card-section
@@ -118,35 +113,6 @@
                 <p v-if="saveError" class="text-negative" role="alert">
                   {{ saveError }}
                 </p>
-                <resource-state
-                  :state="currencies.state"
-                  @retry="loadCurrencies"
-                  ><label-form text-label="Moeda"
-                    ><q-select
-                      v-model="currencyId"
-                      :options="currencyOptions"
-                      emit-value
-                      map-options
-                      dark
-                      outlined
-                      dense
-                      :disable="saving || !!selected"
-                      :rules="[required]"
-                      aria-label="Moeda"
-                  /></label-form>
-                  <p v-if="!currencyOptions.length" class="text-grey">
-                    Nenhuma moeda disponível para cadastrar patrimônio nesta
-                    conta.
-                  </p>
-                  <p
-                    v-else-if="currencyId && !currencyAvailable"
-                    class="text-negative"
-                    role="alert"
-                  >
-                    A moeda deste patrimônio não está ativa. Não é possível
-                    salvar alterações.
-                  </p></resource-state
-                >
                 <div
                   v-for="section in formSections"
                   :key="section.title"
@@ -340,31 +306,12 @@ const fieldRules = (f) => [
 ];
 const rowsFor = (section) =>
   (assets.state.data || []).filter((item) => item.assetType === section.type);
-const currencyOptions = computed(() => {
-  const options = [...(currencies.state.data || [])];
-  if (
-    selected.value?.currencyId &&
-    !options.some((option) => option.value === selected.value.currencyId)
-  )
-    options.push({
-      value: selected.value.currencyId,
-      label: "Moeda do patrimônio atual (indisponível)",
-      disable: true,
-    });
-  return options;
-});
-const currencyAvailable = computed(
-  () =>
-    !currencies.state.loading &&
-    !currencies.state.error &&
-    (currencies.state.data || []).some(
-      (option) => option.value === currencyId.value,
-    ),
-);
 const amount = (item) => {
-  const code = (currencies.state.data || []).find(
-    (option) => option.value === item.currencyId,
-  )?.code;
+  const code =
+    item.currencyCode ||
+    (currencies.state.data || []).find(
+      (option) => option.value === item.currencyId,
+    )?.code;
   return code
     ? money(item.declaredValue, code)
     : `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(Number(item.declaredValue))} (moeda não informada)`;
@@ -413,8 +360,6 @@ async function save() {
   saving.value = true;
   saveError.value = "";
   try {
-    if (!currencyAvailable.value)
-      throw new Error("Selecione uma moeda ativa para salvar o patrimônio.");
     const payload = assetPayload(
       draft.value,
       selectedSection.value.type,

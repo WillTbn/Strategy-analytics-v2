@@ -185,7 +185,7 @@ test("late details after disposal cannot reopen a banking form or publish a noti
   });
   await edit;
   assert.equal(h.model.formDialog.value, false);
-  assert.equal(h.model.form.holderName, "");
+  assert.equal(h.model.form.holderName, undefined);
   assert.equal(h.notifications.length, 0);
 });
 test("changing session during validation prevents any write", async () => {
@@ -208,8 +208,6 @@ test("successful save clears sensitive form fields and unlocks only after refres
   await h.ready();
   h.model.openCreate();
   Object.assign(h.model.form, {
-    holderName: "Pessoa fictícia QA",
-    holderDocument: "00000000000",
     accountNumber: "0000001",
     pixKey: "qa@example.com",
   });
@@ -220,7 +218,7 @@ test("successful save clears sensitive form fields and unlocks only after refres
   h.writes[0].resolve({ id: "created" });
   await flush();
   assert.equal(h.model.formDialog.value, false);
-  assert.equal(h.model.form.holderDocument, "");
+  assert.equal(h.model.form.holderDocument, undefined);
   assert.equal(h.model.form.accountNumber, "");
   assert.equal(h.model.form.pixKey, null);
   assert.equal(h.model.saving.value, true);
@@ -330,7 +328,7 @@ test("existing fields are disabled during submission without introducing new act
   });
   app.component("QIcon", { render: () => null });
   const html = await renderToString(app);
-  assert.equal((html.match(/<(?:input|select)\b/g) || []).length, 11);
+  assert.equal((html.match(/<(?:input|select)\b/g) || []).length, 8);
   for (const tag of html.match(/<(?:input|select)\b[^>]*>/g) || [])
     assert.match(tag, /disabled/);
   assert.match(html, />Salvar<\/button>/);

@@ -62,3 +62,16 @@ export function registrationLoginDestination(userId, next, storage) {
     registrationResumePath(next) || readRegistrationStep(userId, storage);
   return path ? { path } : { name: "inicio" };
 }
+
+export function clearRegistrationStep(userId, storage) {
+  const key = keyFor(userId);
+  if (!key) return false;
+  try {
+    const target = storage ?? window.localStorage;
+    target.removeItem(key);
+    target.removeItem(key.replace(":v2:", ":v1:"));
+    return true;
+  } catch {
+    return false;
+  }
+}

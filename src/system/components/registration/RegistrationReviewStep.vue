@@ -20,7 +20,7 @@
           class="edit"
           label="Editar"
           :aria-label="`Editar ${section.title}`"
-          :disable="busy"
+          :disable="busy || locked"
           @click="emit('edit', section)"
         />
       </section>
@@ -36,7 +36,7 @@
           :aria-describedby="
             confirmationError ? 'review-confirmation-error' : undefined
           "
-          :disabled="busy"
+          :disabled="busy || locked"
         /><span>Confirmo que as informações são verdadeiras.</span></label
       >
       <p
@@ -55,14 +55,14 @@
         no-caps
         class="back"
         label="Voltar"
-        :disable="busy"
+        :disable="busy || locked"
         @click="emit('back')"
       /><q-btn
         type="submit"
         no-caps
         unelevated
         class="send"
-        :disable="busy"
+        :disable="busy || locked"
         :loading="busy"
         ><span class="icon"
           ><img src="/system/icons/auth/enter.svg" alt="" /></span
@@ -81,8 +81,10 @@ const props = defineProps({
   snapshot: { type: Object, required: true },
   busy: Boolean,
   integrated: Boolean,
+  submission: { type: Object, default: null },
 });
 const emit = defineEmits(["edit", "back", "validated"]);
+const locked = computed(() => props.submission?.profileEditingLocked === true);
 const sections = computed(() => registrationReviewSections(props.snapshot));
 const confirmed = ref(false),
   confirmationError = ref(""),
@@ -98,7 +100,7 @@ watch(
   { deep: true },
 );
 const submit = async () => {
-  if (props.busy) return;
+  if (props.busy || locked.value) return;
   notice.value = "";
   confirmationError.value = "";
   if (!confirmed.value) {
@@ -108,7 +110,7 @@ const submit = async () => {
     return;
   }
   if (props.integrated) {
-    emit("validated");
+    emit("validated", { truthfulnessConfirmed: true });
     return;
   }
   const issues = registrationReviewIssues(props.snapshot);

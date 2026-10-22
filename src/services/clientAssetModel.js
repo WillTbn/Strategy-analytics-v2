@@ -177,7 +177,6 @@ export function assetDraft(asset, type) {
 }
 export function assetPayload(draft, type, currencyId, existing) {
   if (!detailKey[type]) throw new Error("Tipo de patrimônio inválido.");
-  if (!currencyId) throw new Error("Selecione uma moeda disponível.");
   for (const field of assetFormSections(type).flatMap(
     (section) => section.fields,
   )) {
@@ -256,7 +255,7 @@ export function assetPayload(draft, type, currencyId, existing) {
   const payload = {
     nickname,
     declaredValue: numeric("declaredValue"),
-    currencyId,
+    ...(existing?.currencyId ? { currencyId: existing.currencyId } : {}),
     status,
     [detailKey[type]]: detail,
   };

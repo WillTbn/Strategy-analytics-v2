@@ -6,7 +6,10 @@ import {
   getClientTrustedContacts,
   getClientDocumentProgress,
   getPreferenceCatalog,
+  getClientPreferences,
 } from "src/services/clientProfileService";
+import { localizedCountryCatalog } from "src/services/countryNames";
+import { getOnboardingStatus } from "src/services/clientAccountService";
 import { getApiErrorMessage } from "src/services/clientAuthService";
 import {
   captureClientSession,
@@ -14,6 +17,7 @@ import {
 } from "src/services/clientApi";
 import {
   identityApproved,
+  profileEditingAllowed,
   profileFields,
 } from "src/services/profilePresentation";
 
@@ -48,8 +52,21 @@ export default function useClientProfile({ full = false } = {}) {
     load();
     return { state, load };
   };
-  const catalog = resource(getPreferenceCatalog, "as opções do perfil");
-  const summary = resource(getClientProfileSummary, "os dados pessoais");
+  const catalog = resource(async () => {
+    const [catalog, preferences] = await Promise.all([
+      getPreferenceCatalog(),
+      getClientPreferences(),
+    ]);
+    return localizedCountryCatalog(catalog, preferences.languageCode);
+  }, "as opções do perfil");
+  const summary = resource(async () => {
+    if (!full) return getClientProfileSummary();
+    const [data, status] = await Promise.all([
+      getClientProfileSummary(),
+      getOnboardingStatus(),
+    ]);
+    return { ...data, submission: status.submission };
+  }, "os dados pessoais");
   const professional = resource(
     getClientProfessionalProfile,
     "a atividade trabalhista",
@@ -70,9 +87,13 @@ export default function useClientProfile({ full = false } = {}) {
       catalog.state.value || {},
     ),
   );
-  const approved = computed(() =>
-    identityApproved(summary.state.value || {}, progress?.state.value || {}),
-  );
+  const approved = computed(() => {
+    if (full) return profileEditingAllowed(summary.state.value);
+    return identityApproved(
+      summary.state.value || {},
+      progress?.state.value || {},
+    );
+  });
   return {
     summary,
     catalog,

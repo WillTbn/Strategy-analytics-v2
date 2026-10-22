@@ -1,3 +1,5 @@
+import { useUserStore } from "src/stores/user";
+import { clearRegistrationStep } from "src/services/registrationResume";
 import {
   hydrateRegistrationDocuments,
   canReuseRegistrationDocument,
@@ -12,6 +14,7 @@ import {
   getClientProfessionalProfile,
   getClientFinancialProfile,
   getClientTrustedContacts,
+  getClientTrustedContactDeclaration,
   listClientDocumentTypes,
   getClientDocumentDataDefinition,
 } from "src/services/clientProfileService";
@@ -31,7 +34,6 @@ import {
   addressRegistrationPatch,
   registrationAddressValues,
   professionalRegistrationPayload,
-  registrationPreferencesPayload,
   financialRegistrationPayload,
   contactRegistrationPayload,
   registrationCatalog,
@@ -78,6 +80,12 @@ const message = (error) => {
   if (status === 401) return "Entre na sua conta para continuar o cadastro.";
   if (status === 403)
     return "Esta operação não está disponível para sua conta. Seus dados foram mantidos; entre em contato com seu assessor.";
+  if (
+    error?.response?.data?.errors?.some(
+      (item) => item.code === "onboarding.profile_locked_under_review",
+    )
+  )
+    return "Seu cadastro está em análise. Aguarde a validação do documento de identificação para editar.";
   if (status === 409)
     return "Os dados ou requisitos mudaram. Confira a etapa e tente novamente.";
   if (status === 429)
@@ -147,7 +155,11 @@ export function useRegistrationFlow(step) {
         optionalProfile(getClientProfessionalProfile),
         optionalProfile(getClientFinancialProfile),
       );
-    if (step === 6 || step === 7) requests.push(getClientTrustedContacts());
+    if (step === 6 || step === 7)
+      requests.push(
+        getClientTrustedContacts(),
+        getClientTrustedContactDeclaration(),
+      );
     const results = await Promise.allSettled(requests);
     assertClientSessionCurrent(session);
     if (!active) return;
@@ -155,6 +167,15 @@ export function useRegistrationFlow(step) {
       results[0].status === "fulfilled" ? results[0].value || {} : {};
     registrationContext.status =
       results[1].status === "fulfilled" ? results[1].value : null;
+    if (registrationContext.status?.submission?.profileEditingLocked) {
+      notify(
+        "Seu cadastro foi enviado e está em análise. Aguarde a validação do documento de identificação para editar.",
+      );
+      if (step !== 7) {
+        await router.replace("/cadastro/etapa-7");
+        return;
+      }
+    }
     const professional =
       (step === 4 || step === 5 || step === 7) &&
       results[2]?.status === "fulfilled"
@@ -200,8 +221,12 @@ export function useRegistrationFlow(step) {
         hydrated.add(`documents:${variant}`);
       }
       documentCatalog.value = {
-        region: registrationRegionOptions(variant, documentDrafts[variant].values.region),
-        issuerRegion: registrationRegionOptions(variant,
+        region: registrationRegionOptions(
+          variant,
+          documentDrafts[variant].values.region,
+        ),
+        issuerRegion: registrationRegionOptions(
+          variant,
           documentDrafts[variant].details[documentDrafts[variant].type]
             ?.issuerRegion,
         ),
@@ -240,12 +265,15 @@ export function useRegistrationFlow(step) {
       } else readErrors.financial = true;
     }
     if (step === 6 || step === 7) {
-      const result = results.at(-1);
-      if (result.status === "fulfilled") {
+      const result = results.at(-2),
+        declaration = results.at(-1);
+      if (result.status === "fulfilled" && declaration.status === "fulfilled") {
         if (!hydrated.has(6)) {
           const contacts = result.value || [];
           trustedContactsDraft.value = {
-            noContact: false,
+            noContact:
+              declaration.value?.hasNoTrustedContact === true &&
+              !contacts.length,
             contacts: contacts.length
               ? contacts.map((c) => ({
                   id: c.id,
@@ -271,20 +299,14 @@ export function useRegistrationFlow(step) {
       if (step !== 7) throw new Error(text);
       notify(text);
     } else if (hadReadErrors) notify("");
-    if (
-      step === 5 &&
-      (!professional ||
-        !results[3]?.value ||
-        !profile.preferences?.primaryCurrencyCode ||
-        !profile.preferences?.secondaryCurrencyCode)
-    ) {
+    if (step === 5 && (!professional || !results[3]?.value)) {
       await router.replace("/cadastro/etapa-4");
       return;
     }
     ready.value = true;
     revision.value++;
   };
-  const save = async () => {
+  const save = async (confirmation) => {
     if (busy.value) return;
     busy.value = true;
     notify("");
@@ -296,6 +318,13 @@ export function useRegistrationFlow(step) {
       if (profile.customerId !== owner || !isClientSessionCurrent(ownerSession))
         throw new Error(
           "A sessão mudou. Recarregue para continuar com os dados salvos da sua conta.",
+        );
+      const status = await getOnboardingStatus();
+      assertClientSessionCurrent(session);
+      if (!active) return;
+      if (step !== 7 && status?.submission?.profileEditingLocked)
+        throw new Error(
+          "Seu cadastro está em análise. Aguarde a validação do documento de identificação para editar.",
         );
       const write = async (...args) => {
         assertClientSessionCurrent(session);
@@ -375,7 +404,8 @@ export function useRegistrationFlow(step) {
             (draft.type === "Passaporte" && t.code === "PASSAPORTE"),
         );
         const saveDocument = async (documentType, attachments = []) => {
-          if (documentType.code !== "CPF") assertRegistrationDocumentNumber(draft);
+          if (documentType.code !== "CPF")
+            assertRegistrationDocumentNumber(draft);
           const definition = await getClientDocumentDataDefinition(
             documentType.id,
             profile.preferences.countryId,
@@ -385,7 +415,7 @@ export function useRegistrationFlow(step) {
             draft,
             variant,
           );
-          for (const file of attachments) {
+          for (const [index, file] of attachments.entries()) {
             assertClientSessionCurrent(session);
             const upload = await registrationUpload(
               file,
@@ -395,6 +425,9 @@ export function useRegistrationFlow(step) {
                 issuedOn: payload.issuedOn,
                 expiresOn: payload.expiresOn,
                 metadata: payload.data,
+                ...(draft.type !== "Passaporte"
+                  ? { side: index === 0 ? "Front" : "Back" }
+                  : {}),
               },
               profile.customerId,
             );
@@ -464,12 +497,7 @@ export function useRegistrationFlow(step) {
         const today = new Date().toISOString().slice(0, 10),
           draft = employmentDraft.value;
         const p = professionalRegistrationPayload(professional, draft, today),
-          f = financialRegistrationPayload(financial, draft, today),
-          preferences = registrationPreferencesPayload(
-            profile,
-            draft,
-            catalog.value,
-          );
+          f = financialRegistrationPayload(financial, draft, today);
         const savePart = async (method, path, body) => {
           const signature = JSON.stringify([
             session.version,
@@ -482,11 +510,6 @@ export function useRegistrationFlow(step) {
         };
         await savePart("put", "/api/v1/client/profile/professional-profile", p);
         await savePart("put", "/api/v1/client/profile/financial-profile", f);
-        await savePart(
-          "patch",
-          "/api/v1/client/profile/preferences",
-          preferences,
-        );
       }
 
       if (step === 6) {
@@ -497,8 +520,11 @@ export function useRegistrationFlow(step) {
             throw new Error(
               "Você já possui contatos cadastrados. Eles foram mantidos. Revise os contatos antes de continuar.",
             );
-          registrationContext.notices[7] =
-            "Sua escolha de não informar contatos ainda não foi salva. Entre em contato com seu assessor para registrar essa informação.";
+          await write(
+            "put",
+            "/api/v1/client/profile/trusted-contacts/declaration",
+            { hasNoTrustedContact: true },
+          );
         } else {
           const contacts = draft.contacts.filter(
             (c) => c.name?.trim() || c.phoneNumber?.trim(),
@@ -520,17 +546,33 @@ export function useRegistrationFlow(step) {
             );
             assertClientSessionCurrent(session);
             if (!c.id) {
-              if (!result?.id) throw new Error("Não foi possível confirmar o contato salvo. Tente novamente.");
+              if (!result?.id)
+                throw new Error(
+                  "Não foi possível confirmar o contato salvo. Tente novamente.",
+                );
               c.id = result.id;
             }
           }
         }
       }
       if (step === 7) {
-        registrationContext.status = await getOnboardingStatus();
-        throw new Error(
-          "O envio para análise ainda não está disponível. Seu cadastro não foi enviado. Entre em contato com seu assessor para concluir.",
+        if (confirmation?.truthfulnessConfirmed !== true)
+          throw new Error("Confirme as informações antes de enviar.");
+        const submission = await write(
+          "post",
+          "/api/v1/client/onboarding/submit",
+          { truthfulnessConfirmed: true },
         );
+        assertClientSessionCurrent(session);
+        if (!active) return;
+        registrationContext.status = {
+          ...registrationContext.status,
+          submission,
+        };
+        clearRegistrationStep(useUserStore().data?.id);
+        notify("Cadastro enviado para análise.");
+        await router.push("/system/config/profile");
+        return;
       }
       assertClientSessionCurrent(session);
       if (!active) return;

@@ -75,7 +75,7 @@ test("free-text occupation is required, employer optional, and both currencies c
   const draft = newRegistrationEmployment();
   assert.deepEqual(
     Object.keys(validateRegistrationEmployment(draft, options)),
-    ["occupation", "primaryCurrencyCode", "secondaryCurrencyCode"],
+    ["occupation"],
   );
   Object.assign(draft, {
     occupation: "Analista",
@@ -87,11 +87,12 @@ test("free-text occupation is required, employer optional, and both currencies c
     validateRegistrationEmployment({ ...draft, employerName: "" }, options),
     {},
   );
-  assert.ok(
+  assert.equal(
     validateRegistrationEmployment(
       { ...draft, secondaryCurrencyCode: "INVALID" },
       options,
     ).secondaryCurrencyCode,
+    undefined,
   );
   assert.ok(
     validateRegistrationEmployment({ ...draft, occupation: "   " }, options)

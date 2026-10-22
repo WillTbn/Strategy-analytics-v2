@@ -49,6 +49,8 @@ async function harness({ allowWrites = false } = {}) {
     },
   };
   const exports = {
+    useUserStore: () => ({ data: { id: "user" } }),
+    clearRegistrationStep: () => {},
     ref,
     reactive,
     onMounted: (fn) => mounted.push(fn),
@@ -65,10 +67,12 @@ async function harness({ allowWrites = false } = {}) {
         { value: "USD", label: "Dólar Americano" },
       ],
     }),
-    getOnboardingStatus: async () => ({}),
+    getOnboardingStatus: async () => responses.onboarding || {},
     getClientProfessionalProfile: read("professional"),
     getClientFinancialProfile: read("financial"),
     getClientTrustedContacts: read("contacts"),
+    getClientTrustedContactDeclaration: async () =>
+      responses.declaration || { hasNoTrustedContact: false },
     listClientDocumentTypes: async () => responses.types || [],
     getClientDocumentDataDefinition: async () => ({}),
     captureClientSession: () => sessionVersion,
@@ -78,8 +82,11 @@ async function harness({ allowWrites = false } = {}) {
       if (!allowWrites) throw Error("Unexpected write");
       writes.push({ method, path, body });
       if (responses.failWrite === path) throw Error("Write failed");
-      if (path.endsWith('/trusted-contacts') && method === 'post') {
-        const created = { ...body, id: `contact-${responses.contacts.length + 1}` };
+      if (path.endsWith("/trusted-contacts") && method === "post") {
+        const created = {
+          ...body,
+          id: `contact-${responses.contacts.length + 1}`,
+        };
         responses.contacts.push(created);
         return created;
       }
@@ -153,24 +160,26 @@ test("review hydrates successful financial data independently from a failed prof
   assert.equal(h.trustedContactsDraft.value.contacts[0].id, "contact");
 });
 
-test('new contacts use POST and retain IDs on partial failure and retry', async () => {
+test("new contacts use POST and retain IDs on partial failure and retry", async () => {
   const h = await harness({ allowWrites: true });
-  h.responses.contacts = [{ id: 'existing', name: 'Existing', phoneNumber: '11999990000' }];
+  h.responses.contacts = [
+    { id: "existing", name: "Existing", phoneNumber: "11999990000" },
+  ];
   const flow = await h.mount(6);
   h.trustedContactsDraft.value.contacts = [
-    { name: 'New', phoneNumber: '11999990001' },
-    { id: 'existing', name: 'Edited', phoneNumber: '11999990002' },
+    { name: "New", phoneNumber: "11999990001" },
+    { id: "existing", name: "Edited", phoneNumber: "11999990002" },
   ];
-  h.responses.failWrite = '/api/v1/client/profile/trusted-contacts/existing';
+  h.responses.failWrite = "/api/v1/client/profile/trusted-contacts/existing";
   await flow.save();
-  assert.equal(h.writes[0].method, 'post');
-  assert.equal(h.writes[0].path, '/api/v1/client/profile/trusted-contacts');
+  assert.equal(h.writes[0].method, "post");
+  assert.equal(h.writes[0].path, "/api/v1/client/profile/trusted-contacts");
   assert.ok(h.trustedContactsDraft.value.contacts[0].id);
   h.responses.failWrite = null;
   await flow.save();
-  assert.equal(h.writes.filter(w => w.method === 'post').length, 1);
-  assert.ok(h.writes.every(w => !w.path.includes('undefined')));
-  assert.equal(h.destinations.at(-1), '/cadastro/etapa-7');
+  assert.equal(h.writes.filter((w) => w.method === "post").length, 1);
+  assert.ok(h.writes.every((w) => !w.path.includes("undefined")));
+  assert.equal(h.destinations.at(-1), "/cadastro/etapa-7");
 });
 
 test("failed review reads preserve drafts and report all failed sections together", async () => {
@@ -256,31 +265,27 @@ test("new stage 4 writes professional, financial and both preferences before ent
   await flow.save();
   assert.deepEqual(
     h.writes.map((call) => call.path.split("/").at(-1)),
-    ["professional-profile", "financial-profile", "preferences"],
+    ["professional-profile", "financial-profile"],
   );
   assert.equal(h.writes[0].body.occupation, "Analista QA");
   assert.equal(h.writes[0].body.employerName, "Empresa QA");
   assert.equal(h.writes[0].body.isCurrent, true);
   assert.equal(h.writes[1].body.householdMonthlyIncome, null);
   assert.equal(h.writes[1].body.declaredNetWorth, "0.00");
-  assert.equal(h.writes[2].body.primaryCurrencyCode, "BRL");
-  assert.equal(h.writes[2].body.secondaryCurrencyCode, "USD");
-  assert.equal(h.writes[2].body.countryId, "BR-id");
   assert.equal(h.destinations.at(-1), "/cadastro/etapa-5");
 });
-test("incomplete preferences fail preflight without saving professional or financial data", async () => {
+test("server-defaulted currencies do not block professional step or cause a preference write", async () => {
   const h = await harness({ allowWrites: true });
   h.profile.preferences.secondaryCurrencyCode = null;
   const flow = await h.mount(4);
   await flow.save();
-  assert.equal(h.writes.length, 0);
-  assert.equal(h.destinations.length, 0);
-  assert.match(h.state.notices[4], /duas moedas/);
+  assert.equal(h.writes.length, 2);
+  assert.equal(h.destinations.at(-1), "/cadastro/etapa-5");
 });
-test("a preference write failure keeps the new stage and drafts; retry resumes without invented defaults", async () => {
+test("a financial write failure keeps drafts and retry skips confirmed professional data", async () => {
   const h = await harness({ allowWrites: true });
   const flow = await h.mount(4);
-  h.responses.failWrite = "/api/v1/client/profile/preferences";
+  h.responses.failWrite = "/api/v1/client/profile/financial-profile";
   await flow.save();
   assert.equal(h.destinations.length, 0);
   assert.equal(h.employmentDraft.value.occupation, "Atividade existente");
@@ -294,11 +299,11 @@ test("a preference write failure keeps the new stage and drafts; retry resumes w
   );
   assert.equal(
     h.writes.filter((call) => call.path.endsWith("/financial-profile")).length,
-    1,
+    2,
   );
   assert.equal(
     h.writes.filter((call) => call.path.endsWith("/preferences")).length,
-    2,
+    0,
   );
 });
 test("a resumed documents deep link returns to stage 4 if professional prerequisites are missing", async () => {
@@ -354,4 +359,42 @@ test("stage five restores masked document fields and reuses confirmed evidence w
   assert.equal(h.destinations.at(-1), "/cadastro/etapa-6");
   assert.equal(h.writes.length, 1);
   assert.equal(h.writes[0].path, "/api/v1/client/profile");
+});
+
+test("no trusted contact declaration persists and restores on another session", async () => {
+  const h = await harness({ allowWrites: true });
+  h.responses.contacts = [];
+  h.responses.declaration = { hasNoTrustedContact: true };
+  const flow = await h.mount(6);
+  assert.equal(h.trustedContactsDraft.value.noContact, true);
+  await flow.save();
+  assert.equal(h.writes.length, 1);
+  assert.equal(
+    h.writes[0].path,
+    "/api/v1/client/profile/trusted-contacts/declaration",
+  );
+  assert.equal(h.writes[0].body.hasNoTrustedContact, true);
+  assert.equal(h.destinations.at(-1), "/cadastro/etapa-7");
+});
+test("final submission requires explicit truthfulness and sends only the confirmed flag", async () => {
+  const h = await harness({ allowWrites: true });
+  const flow = await h.mount(7);
+  await flow.save();
+  assert.equal(h.writes.length, 0);
+  await flow.save({ truthfulnessConfirmed: true });
+  assert.equal(h.writes.length, 1);
+  assert.equal(h.writes[0].path, "/api/v1/client/onboarding/submit");
+  assert.equal(
+    JSON.stringify(h.writes[0].body),
+    '{"truthfulnessConfirmed":true}',
+  );
+  assert.equal(h.destinations.at(-1), "/system/config/profile");
+});
+test("official profile lock prevents writes and preserves registration drafts", async () => {
+  const h = await harness({ allowWrites: true });
+  const flow = await h.mount(4);
+  h.responses.onboarding = { submission: { profileEditingLocked: true } };
+  await flow.save();
+  assert.equal(h.writes.length, 0);
+  assert.match(h.state.notices[4], /análise/);
 });

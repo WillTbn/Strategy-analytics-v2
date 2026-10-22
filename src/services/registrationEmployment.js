@@ -25,8 +25,6 @@ export const employmentFields = [
     kind: "money",
     placeholder: "R$ 0,00",
   },
-  { key: "primaryCurrencyCode", label: "Moeda principal", kind: "select" },
-  { key: "secondaryCurrencyCode", label: "Moeda secundária", kind: "select" },
 ];
 export function newRegistrationEmployment(value = {}) {
   return {
@@ -35,8 +33,6 @@ export function newRegistrationEmployment(value = {}) {
     individualMonthlyIncome: String(value.individualMonthlyIncome ?? ""),
     householdMonthlyIncome: String(value.householdMonthlyIncome ?? ""),
     declaredNetWorth: String(value.declaredNetWorth ?? ""),
-    primaryCurrencyCode: value.primaryCurrencyCode ?? null,
-    secondaryCurrencyCode: value.secondaryCurrencyCode ?? null,
   };
 }
 export function parseRegistrationAmount(value) {
@@ -52,12 +48,13 @@ export function parseRegistrationAmount(value) {
 export function validateRegistrationEmployment(
   draft,
   currencies = [],
-  required = ["occupation", "primaryCurrencyCode", "secondaryCurrencyCode"],
+  required = ["occupation"],
 ) {
   const errors = {};
   if (required.includes("occupation") && !String(draft.occupation ?? "").trim())
     errors.occupation = "Informe sua ocupação.";
   for (const key of ["primaryCurrencyCode", "secondaryCurrencyCode"]) {
+    if (!required.includes(key)) continue;
     if (!draft[key] && required.includes(key))
       errors[key] = "Selecione a moeda.";
     else if (

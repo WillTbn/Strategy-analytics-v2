@@ -30,18 +30,6 @@
       :disabled="busy"
       :error="errors.declaredNetWorth"
     />
-    <div class="income-row">
-      <registration-field
-        v-for="field in employmentFields.slice(5)"
-        :key="field.key"
-        :ref="(el) => (controls[field.key] = el)"
-        v-model="form[field.key]"
-        :field="field"
-        :options="currencies"
-        :disabled="busy"
-        :error="errors[field.key]"
-      />
-    </div>
     <p v-if="notice" class="notice" role="status">{{ notice }}</p>
     <footer>
       <q-btn
@@ -78,11 +66,7 @@ const props = defineProps({
   currencies: { type: Array, default: () => [] },
   requiredFields: {
     type: Array,
-    default: () => [
-      "occupation",
-      "primaryCurrencyCode",
-      "secondaryCurrencyCode",
-    ],
+    default: () => ["occupation"],
   },
   busy: Boolean,
 });

@@ -157,8 +157,5 @@ test("review presents authorized professional additions and links to the new bus
   const sections = registrationReviewSections(snapshot);
   assert.equal(sections[3].path, "/cadastro/etapa-4");
   assert.equal(sections[1].path, "/cadastro/etapa-5");
-  assert.match(
-    sections[3].text,
-    /Analista.*Empresa QA.*moeda principal Real.*moeda secundária Dólar/,
-  );
+  assert.match(sections[3].text, /Analista.*Empresa QA/);
 });

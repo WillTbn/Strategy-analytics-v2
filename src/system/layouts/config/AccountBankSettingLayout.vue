@@ -167,43 +167,6 @@
               /></label-form>
               <label-form
                 class-name="col-12 col-md-4"
-                text-label="Tipo de titular"
-                ><q-select
-                  :disable="saving"
-                  v-model="form.holderType"
-                  :options="holderTypes"
-                  emit-value
-                  map-options
-                  outlined
-                  dense
-                  dark
-                  :rules="requiredRules"
-              /></label-form>
-              <label-form
-                class-name="col-12 col-md-4"
-                text-label="Nome do titular"
-                ><q-input
-                  :disable="saving"
-                  v-model.trim="form.holderName"
-                  outlined
-                  dense
-                  dark
-                  :rules="requiredRules"
-              /></label-form>
-              <label-form
-                class-name="col-12 col-md-4"
-                text-label="Documento do titular"
-                ><q-input
-                  :disable="saving"
-                  v-model.trim="form.holderDocument"
-                  outlined
-                  dense
-                  dark
-                  :placeholder="editingId ? `Atual: ${masks.document}` : ''"
-                  :rules="requiredRules"
-              /></label-form>
-              <label-form
-                class-name="col-12 col-md-4"
                 text-label="Tipo de chave Pix"
                 ><q-select
                   :disable="saving"
@@ -323,9 +286,6 @@ const empty = () => ({
   accountNumber: "",
   accountDigit: null,
   accountType: "Checking",
-  holderType: "Individual",
-  holderName: "",
-  holderDocument: "",
   pixKey: null,
   pixKeyType: null,
   isPrimary: false,
@@ -336,10 +296,6 @@ const accountTypes = [
     { label: "Conta corrente", value: "Checking" },
     { label: "Conta poupança", value: "Savings" },
     { label: "Conta de pagamento", value: "Payment" },
-  ],
-  holderTypes = [
-    { label: "Pessoa física", value: "Individual" },
-    { label: "Pessoa jurídica", value: "Organization" },
   ],
   pixTypes = [
     { label: "CPF/CNPJ", value: "Document" },
@@ -427,16 +383,12 @@ const openEdit = async (account) => {
       accountNumber: "",
       accountDigit: d.accountDigit,
       accountType: d.accountType,
-      holderType: d.holderType,
-      holderName: d.holderName,
-      holderDocument: "",
       pixKey: null,
       pixKeyType: d.pixKeyType,
       isPrimary: d.isPrimary,
     });
     Object.assign(masks, {
       account: d.accountNumberMasked || "Mascarada",
-      document: d.holderDocumentMasked || "Mascarado",
       pix: d.pixKeyMasked || "Não informado",
     });
     formDialog.value = true;
