@@ -83,83 +83,97 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in group.rows" :key="row.key">
-              <td>
-                {{ row.name }}
-                <div
-                  v-if="row.isIndividuallyRequired"
-                  class="text-caption text-grey-5"
+            <template v-for="row in group.rows" :key="row.key">
+              <tr
+                v-for="(attachment, fileIndex) in row.documents.length
+                  ? row.documents
+                  : [null]"
+                :key="attachment?.id || row.key"
+              >
+                <td
+                  v-if="fileIndex === 0"
+                  :rowspan="Math.max(row.documents.length, 1)"
                 >
-                  Obrigatório
-                </div>
-              </td>
-              <td>
-                <span class="document-filename">{{
-                  row.document?.fileName ||
-                  row.document?.originalFileName ||
-                  row.document?.file?.originalFileName ||
-                  row.document?.file?.fileName ||
-                  (row.document
-                    ? "Arquivo protegido"
-                    : "Nenhum arquivo anexado")
-                }}</span>
-                <div v-if="row.document?.rejectionReason" class="text-negative">
-                  {{ row.document.rejectionReason }}
-                </div>
-              </td>
-              <td>
-                <q-badge
-                  outline
-                  :color="statusColor(row.status)"
-                  :label="statusLabel(row.status)"
-                />
-              </td>
-              <td>{{ formatUpdatedAt(row.updatedAt) }}</td>
-              <td>
-                <div class="row no-wrap items-center q-gutter-xs">
-                  <template v-if="row.document">
+                  {{ row.name }}
+                  <div
+                    v-if="row.isIndividuallyRequired"
+                    class="text-caption text-grey-5"
+                  >
+                    Obrigatório
+                  </div>
+                </td>
+                <td>
+                  <span class="document-filename">{{
+                    attachment?.fileName ||
+                    attachment?.originalFileName ||
+                    attachment?.file?.originalFileName ||
+                    attachment?.file?.fileName ||
+                    (attachment
+                      ? "Arquivo protegido"
+                      : "Nenhum arquivo anexado")
+                  }}</span>
+                  <div v-if="attachment?.rejectionReason" class="text-negative">
+                    {{ attachment.rejectionReason }}
+                  </div>
+                </td>
+                <td>
+                  <q-badge
+                    outline
+                    :color="statusColor(attachment?.status || row.status)"
+                    :label="statusLabel(attachment?.status || row.status)"
+                  />
+                </td>
+                <td>
+                  {{
+                    formatUpdatedAt(attachment?.updatedAtUtc || row.updatedAt)
+                  }}
+                </td>
+                <td>
+                  <div class="row no-wrap items-center q-gutter-xs">
+                    <template v-if="attachment">
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        color="primary"
+                        icon="download"
+                        :aria-label="`Baixar ${row.name}`"
+                        @click="download(attachment)"
+                      />
+                      <q-btn
+                        flat
+                        round
+                        dense
+                        color="primary"
+                        icon="link"
+                        :aria-label="`Abrir ${row.name}`"
+                        @click="temporaryUrl(attachment)"
+                      />
+                      <q-btn
+                        v-if="isRejected(attachment?.status || row.status)"
+                        flat
+                        dense
+                        no-caps
+                        color="primary"
+                        label="Upload de arquivo"
+                        :disable="saving"
+                        @click="openReplace(attachment)"
+                      />
+                    </template>
                     <q-btn
-                      flat
-                      round
-                      dense
-                      color="primary"
-                      icon="download"
-                      :aria-label="`Baixar ${row.name}`"
-                      @click="download(row.document)"
-                    />
-                    <q-btn
-                      flat
-                      round
-                      dense
-                      color="primary"
-                      icon="link"
-                      :aria-label="`Abrir ${row.name}`"
-                      @click="temporaryUrl(row.document)"
-                    />
-                    <q-btn
-                      v-if="isRejected(row.status)"
+                      v-else-if="!row.isWaived && row.documentTypeId"
                       flat
                       dense
                       no-caps
                       color="primary"
                       label="Upload de arquivo"
                       :disable="saving"
-                      @click="openReplace(row.document)"
+                      @click="openRequirementUpload(row)"
                     />
-                  </template>
-                  <q-btn
-                    v-else-if="!row.isWaived && row.documentTypeId"
-                    flat
-                    dense
-                    no-caps
-                    color="primary"
-                    label="Upload de arquivo"
-                    :disable="saving"
-                    @click="openRequirementUpload(row)"
-                  />
-                </div>
-              </td>
-            </tr>
+                  </div>
+                </td>
+              </tr>
+            </template>
             <tr v-if="!group.rows.length">
               <td colspan="5" class="text-grey">
                 Nenhum requisito neste grupo.
@@ -304,6 +318,7 @@ import {
 import useNotify from "src/composables/useNotify";
 import { getApiErrorMessage } from "src/services/clientAuthService";
 import {
+  getClientProfile,
   downloadClientDocument,
   getClientDocumentDataDefinition,
   getClientDocumentOverview,
@@ -327,6 +342,7 @@ const loading = ref(true),
   types = ref([]),
   overview = ref({}),
   progress = ref({}),
+  profile = ref(null),
   definition = ref(null);
 const blank = () => ({
     documentTypeId: null,
@@ -339,7 +355,12 @@ const blank = () => ({
   form = reactive(blank());
 const collection = (v) => (Array.isArray(v) ? v : v?.items || v?.data || []);
 const documentGroups = computed(() =>
-  profileDocumentGroups(documents.value, overview.value, progress.value),
+  profileDocumentGroups(
+    documents.value,
+    overview.value,
+    progress.value,
+    profile.value,
+  ),
 );
 const currentLevelNumber = computed(() => {
   const level = progress.value.currentLevel;
@@ -437,20 +458,23 @@ const load = async () => {
   guardBlocked.value = "";
   overview.value = {};
   progress.value = {};
+  profile.value = null;
   documents.value = [];
   types.value = [];
   try {
-    const [o, p, d, t] = await Promise.all([
+    const [o, p, d, t, customerProfile] = await Promise.all([
       getClientDocumentOverview(),
       getClientDocumentProgress(),
       listClientDocuments({ page: 1, pageSize: 100 }),
       listClientDocumentTypes(),
+      getClientProfile(),
     ]);
     if (!latest()) return;
     overview.value = o || {};
     progress.value = p || {};
     documents.value = profileDocumentRows(collection(d), o);
     types.value = collection(t);
+    profile.value = customerProfile;
   } catch (e) {
     if (!latest()) return;
     const block = onboardingBlockMessage(e);
@@ -548,6 +572,36 @@ const save = async () => {
   try {
     if (!(await formRef.value.validate()) || !current(session)) return;
     const replacement = replacing.value;
+    if (replacement?.providedDocumentId) {
+      const [latestProfile, latestOverview] = await Promise.all([
+        getClientProfile(),
+        getClientDocumentOverview(),
+      ]);
+      if (!current(session)) return;
+      const identity = latestProfile?.identificationDocuments?.documents?.find(
+        (item) =>
+          item.documentTypeId === replacement.documentTypeId &&
+          item.source === "ProvidedDocument",
+      );
+      const files = (latestOverview?.sections || [])
+        .flatMap((section) => section.items || [])
+        .flatMap((item) =>
+          item.files?.length
+            ? item.files
+            : item.document
+              ? [item.document]
+              : [],
+        );
+      if (
+        identity?.documentId !== replacement.providedDocumentId ||
+        !files.some(
+          (file) => file.id === replacement.id && file.status === "Rejected",
+        )
+      )
+        throw new Error(
+          "Este documento mudou. Feche o envio e recarregue a seção antes de tentar novamente.",
+        );
+    }
     const data = new FormData();
     data.append("file", form.file);
     if (form.issuedOn) data.append("issuedOn", form.issuedOn);
@@ -616,6 +670,7 @@ onScopeDispose(() => {
   types.value = [];
   overview.value = {};
   progress.value = {};
+  profile.value = null;
 });
 load();
 </script>

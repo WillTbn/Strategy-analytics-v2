@@ -93,3 +93,20 @@ test("alternative identification requirements never label each alternative as in
   assert.equal(rows[2].isIndividuallyRequired, true); // independent obligations still shown
   assert.equal(overview.sections[0].items[0].alternativeGroup, undefined);
 });
+
+
+test("front and back retain their identities and side metadata in one current document group", () => {
+ const files=[{id:"front",status:"Rejected",fileName:"frente.png"},{id:"back",status:"Rejected",fileName:"verso.png"}];
+ const overview={sections:[{code:"identity",items:[{documentTypeId:"rg",documentId:"back",document:{id:"back",providedDocumentId:"current"},files:[{id:"front",side:"Front",providedDocumentId:"current",status:"Rejected"},{id:"back",side:"Back",providedDocumentId:"current",status:"Rejected"}],status:"Rejected",latestReview:{documentId:"back",status:"Rejected",notes:"Reenvie o teste"}}]}]};
+ const enriched=profileDocumentRows(files,overview);assert.equal(enriched[0].side,"Front");assert.equal(enriched[1].providedDocumentId,"current");
+ const rows=profileDocumentGroups(enriched,overview,{}, {identificationDocuments:{documents:[{source:"ProvidedDocument",documentTypeId:"rg",documentId:"current"}]}})[0].rows;
+ assert.equal(rows.length,1);assert.deepEqual(rows[0].documents.map(d=>d.id),["front","back"]);
+ assert.equal(rows[0].documents[1].rejectionReason,"Reenvie o teste");
+});
+test("superseded identity files never reappear as actionable ungrouped uploads",()=>{
+ const overview={sections:[{code:"identity",items:[{documentTypeId:"rg",documentId:"old",document:{id:"old",providedDocumentId:"previous",status:"Rejected"},files:[{id:"old",providedDocumentId:"previous",status:"Rejected"}]},{documentTypeId:"rg",documentId:"current-file",document:{id:"current-file",providedDocumentId:"current",status:"Rejected"},files:[{id:"current-file",providedDocumentId:"current",status:"Rejected"}]}]}]};
+ const files=[{id:"old",status:"Rejected"},{id:"orphan-historical",documentTypeId:"rg",status:"Rejected"},{id:"current-file",status:"Rejected"}];
+ const progress={sections:[{categoryCode:"identity",requirements:[{documentId:"old",documentTypeId:"rg"}]}]};
+ const groups=profileDocumentGroups(files,overview,progress,{identificationDocuments:{documents:[{source:"ProvidedDocument",documentTypeId:"rg",documentId:"current"}]}});
+ assert.equal(groups.length,1);assert.equal(groups[0].rows.length,1);assert.equal(groups[0].rows[0].document.id,"current-file");
+});

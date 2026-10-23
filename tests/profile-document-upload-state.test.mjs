@@ -44,6 +44,7 @@ async function harness() {
     "getClientDocumentProgress",
     "listClientDocuments",
     "listClientDocumentTypes",
+    "getClientProfile",
   ];
   const services = {
     ...Object.fromEntries(methods.map((key) => [key, () => queue(reads, key)])),
@@ -68,7 +69,7 @@ async function harness() {
     },
     "src/services/documentPresentation": {
       profileDocumentRows,
-  profileDocumentGroups,
+      profileDocumentGroups,
       documentReplacementValues,
     },
     "src/services/onboardingBlock": { onboardingBlockMessage },
@@ -107,6 +108,7 @@ async function harness() {
     reads[offset].resolve({ totalDocuments: 0 });
     reads[offset + 1].resolve({ percentage: 100 });
     reads[offset + 2].resolve([]);
+    reads[offset + 4].resolve({ identificationDocuments: { documents: [] } });
     reads[offset + 3].resolve([
       { id: "type", name: "RG", countries: [{ id: "br", name: "Brasil" }] },
     ]);
@@ -198,8 +200,8 @@ test("closing a dialog invalidates definitions, including old errors", async () 
 test("a superseded load cannot publish old documents or clear a newer failure", async () => {
   const h = await harness(),
     retry = h.model.load();
-  h.reads[4].reject(Error("latest failure"));
-  for (let i = 5; i < 8; i++) h.reads[i].resolve([]);
+  h.reads[5].reject(Error("latest failure"));
+  for (let i = 6; i < 10; i++) h.reads[i].resolve([]);
   await retry;
   h.settle(0);
   await flush();
@@ -240,7 +242,7 @@ test("successful upload clears the file and closes before refreshing", async () 
   assert.equal(h.model.form.file, null);
   assert.equal(h.model.dialog.value, false);
   assert.equal(h.model.saving.value, true);
-  h.settle(4);
+  h.settle(5);
   await request;
   assert.equal(h.model.saving.value, false);
   assert.equal(h.notifications.length, 1);
@@ -260,18 +262,129 @@ test("leaving the view suppresses late upload notifications and refreshes", asyn
   h.writes[0].resolve({ id: "new" });
   await flush();
   assert.equal(h.notifications.length, 0);
-  assert.equal(h.reads.length, 4);
+  assert.equal(h.reads.length, 5);
   assert.equal(h.model.form.file, null);
   await request;
 });
 
 test("upload from a requirement preserves its identity in the multipart request", async () => {
- const h = await harness(); await h.ready();
- h.model.openRequirementUpload({documentTypeId:"type",requirementId:"identity-back"});
- h.model.form.file = {name:"verso-ficticio.png",type:"image/png",size:10};
- h.model.formRef.value = {validate:async()=>true,resetValidation(){}};
- const saving = h.model.save(); await flush();
- assert.ok(h.writes[0].value.data.fields.some(([key,value])=>key==="requirementId" && value==="identity-back"));
- h.writes[0].reject(Error("test failure")); await saving;
- assert.equal(h.model.form.requirementId,"identity-back");
+  const h = await harness();
+  await h.ready();
+  h.model.openRequirementUpload({
+    documentTypeId: "type",
+    requirementId: "identity-back",
+  });
+  h.model.form.file = {
+    name: "verso-ficticio.png",
+    type: "image/png",
+    size: 10,
+  };
+  h.model.formRef.value = { validate: async () => true, resetValidation() {} };
+  const saving = h.model.save();
+  await flush();
+  assert.ok(
+    h.writes[0].value.data.fields.some(
+      ([key, value]) => key === "requirementId" && value === "identity-back",
+    ),
+  );
+  h.writes[0].reject(Error("test failure"));
+  await saving;
+  assert.equal(h.model.form.requirementId, "identity-back");
+});
+
+test("replacement preflight rejects historical or already approved identity without losing the selected file", async () => {
+  for (const stale of [true, false]) {
+    const h = await harness();
+    await h.ready();
+    h.model.openReplace({
+      id: "back",
+      documentTypeId: "rg",
+      providedDocumentId: "current",
+      status: "Rejected",
+    });
+    h.model.form.file = { name: "ficticio.png" };
+    h.model.formRef.value = {
+      validate: async () => true,
+      resetValidation() {},
+    };
+    const request = h.model.save();
+    await flush();
+    h.reads[5].resolve({
+      identificationDocuments: {
+        documents: [
+          {
+            source: "ProvidedDocument",
+            documentTypeId: "rg",
+            documentId: stale ? "new-version" : "current",
+          },
+        ],
+      },
+    });
+    h.reads[6].resolve({
+      sections: [
+        {
+          items: [
+            {
+              files: [{ id: "back", status: stale ? "Rejected" : "Approved" }],
+            },
+          ],
+        },
+      ],
+    });
+    await request;
+    assert.equal(h.writes.length, 0);
+    assert.equal(h.model.form.file.name, "ficticio.png");
+    assert.equal(h.model.dialog.value, true);
+    assert.match(h.notifications[0], /documento mudou/);
+  }
+});
+test("replacement of the current rejected side uses that file ID after preflight", async () => {
+  const h = await harness();
+  await h.ready();
+  h.model.openReplace({
+    id: "back",
+    documentTypeId: "rg",
+    providedDocumentId: "current",
+    status: "Rejected",
+    issuedOn: "2025-01-01",
+  });
+  h.model.form.file = { name: "verso.png" };
+  h.model.formRef.value = { validate: async () => true, resetValidation() {} };
+  const request = h.model.save();
+  await flush();
+  h.reads[5].resolve({
+    identificationDocuments: {
+      documents: [
+        {
+          source: "ProvidedDocument",
+          documentTypeId: "rg",
+          documentId: "current",
+        },
+      ],
+    },
+  });
+  h.reads[6].resolve({
+    sections: [
+      {
+        items: [
+          {
+            files: [
+              { id: "front", status: "Rejected" },
+              { id: "back", status: "Rejected" },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+  await flush();
+  assert.equal(h.writes.length, 1);
+  assert.equal(h.writes[0].value.id, "back");
+  assert.ok(
+    h.writes[0].value.data.fields.some(
+      ([key, value]) => key === "issuedOn" && value === "2025-01-01",
+    ),
+  );
+  h.writes[0].reject(Error("Keep draft"));
+  await request;
 });

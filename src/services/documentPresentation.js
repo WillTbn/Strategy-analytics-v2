@@ -5,9 +5,14 @@ export function profileDocumentRows(documents, overview) {
   );
   return documents.map((document) => {
     const matches = items.filter(
-      (item) => (item.documentId || item.document?.id) === document.id,
+      (item) =>
+        (item.documentId || item.document?.id) === document.id ||
+        item.files?.some((file) => file.id === document.id),
     );
     const item = matches.length === 1 ? matches[0] : null;
+    const canonical =
+      item?.files?.find((file) => file.id === document.id) ||
+      (item?.document?.id === document.id ? item.document : null);
     const review = item?.latestReview;
     const notes =
       item?.status === "Rejected" &&
@@ -17,6 +22,8 @@ export function profileDocumentRows(documents, overview) {
         : null;
     return {
       ...document,
+      ...canonical,
+      fileName: document.fileName || canonical?.file?.fileName,
       rejectionReason:
         document.status === "Rejected"
           ? document.rejectionReason || notes || ""
@@ -37,11 +44,41 @@ export function profileDocumentGroups(
   documents = [],
   overview = {},
   progress = {},
+  profile = null,
 ) {
-  const seen = new Set();
+  const seen = new Set(),
+    suppressed = new Set();
+  const currentProvided = new Map(
+    (profile?.identificationDocuments?.documents || [])
+      .filter(
+        (item) =>
+          item.source === "ProvidedDocument" &&
+          item.documentTypeId &&
+          item.documentId,
+      )
+      .map((item) => [item.documentTypeId, item.documentId]),
+  );
   const source = (overview.sections || []).map((section) => ({
     ...section,
-    items: [...(section.items || [])],
+    items: (section.items || []).filter((item) => {
+      const files = item.files?.length
+        ? item.files
+        : item.document
+          ? [item.document]
+          : [];
+      const providedId =
+        item.document?.providedDocumentId || files[0]?.providedDocumentId;
+      const historical =
+        providedId &&
+        currentProvided.has(item.documentTypeId) &&
+        currentProvided.get(item.documentTypeId) !== providedId;
+      for (const file of files) {
+        seen.add(file.id);
+        if (historical) suppressed.add(file.id);
+      }
+      if (item.documentId && historical) suppressed.add(item.documentId);
+      return !historical;
+    }),
   }));
   for (const section of progress.sections || []) {
     let group = source.find(
@@ -58,6 +95,7 @@ export function profileDocumentGroups(
       source.push(group);
     }
     for (const requirement of section.requirements || []) {
+      if (suppressed.has(requirement.documentId)) continue;
       const existing = group.items.findIndex((item) =>
         requirement.requirementId
           ? item.requirementId === requirement.requirementId
@@ -87,10 +125,17 @@ export function profileDocumentGroups(
       const document =
         documents.find((doc) => doc.id === id) || item.document || null;
       if (document?.id) seen.add(document.id);
+      const attachments = (
+        item.files?.length ? item.files : document ? [document] : []
+      ).map((file) => {
+        seen.add(file.id);
+        return documents.find((candidate) => candidate.id === file.id) || file;
+      });
       return {
         ...item,
         key: item.requirementId || id || `${index}-${rowIndex}`,
         document,
+        documents: attachments,
         isIndividuallyRequired:
           item.isRequired === true && !item.alternativeGroup,
         status: document?.status || item.status || "Pending",
@@ -101,7 +146,8 @@ export function profileDocumentGroups(
     }),
   }));
   for (const document of documents) {
-    if (seen.has(document.id)) continue;
+    if (seen.has(document.id) || currentProvided.has(document.documentTypeId))
+      continue;
     let group = groups.find(
       (group) => document.categoryId && group.key === document.categoryId,
     );
@@ -122,6 +168,7 @@ export function profileDocumentGroups(
     group.rows.push({
       key: document.id,
       document,
+      documents: [document],
       documentTypeId: document.documentTypeId,
       name: document.documentTypeName || "Documento",
       status: document.status,
