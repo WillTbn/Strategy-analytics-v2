@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import vm from "node:vm";
 import { readFile } from "node:fs/promises";
 import { ref, reactive } from "vue";
+import * as consentRules from "../src/services/registrationConsentRules.js";
 import * as resumeDocuments from "../src/services/registrationDocumentResume.js";
 import * as integration from "../src/services/registrationIntegration.js";
 import { newRegistrationPersonal } from "../src/services/registrationPersonal.js";
@@ -68,6 +69,21 @@ async function harness({ allowWrites = false } = {}) {
       ],
     }),
     getOnboardingStatus: async () => responses.onboarding || {},
+    getOnboardingConsents: async () => {
+      if (responses.consents instanceof Error) throw responses.consents;
+      return (
+        responses.consents || {
+          context: "Onboarding",
+          items: ["terms-of-use", "privacy-policy"].map((code) => ({
+            code,
+            kind: "Agreement",
+            versionId: code,
+            status: "Accepted",
+            content: { body: "Texto atual", locale: "pt-BR" },
+          })),
+        }
+      );
+    },
     getClientProfessionalProfile: read("professional"),
     getClientFinancialProfile: read("financial"),
     getClientTrustedContacts: read("contacts"),
@@ -94,12 +110,32 @@ async function harness({ allowWrites = false } = {}) {
       if (path.endsWith("/financial-profile")) responses.financial = body;
       if (path.endsWith("/preferences"))
         profile.preferences = { ...profile.preferences, ...body };
+      if (path.endsWith("/onboarding/submit"))
+        return (
+          responses.submission || {
+            status: "Submitted",
+            submittedAtUtc: "2026-10-22T20:00:00Z",
+            profileEditingLocked: true,
+          }
+        );
+      if (path.endsWith("/consents/decisions")) {
+        responses.consents = {
+          ...responses.consents,
+          items: responses.consents.items.map((item) =>
+            body.decisions.some((d) => d.versionId === item.versionId)
+              ? { ...item, status: "Accepted" }
+              : item,
+          ),
+        };
+        return responses.consents;
+      }
       return body;
     },
     registrationUpload: async () => {
       throw Error("Unexpected upload");
     },
     resetRegistrationUploads: () => {},
+    ...consentRules,
     ...integration,
     ...resumeDocuments,
     ...drafts,
@@ -388,7 +424,7 @@ test("final submission requires explicit truthfulness and sends only the confirm
     JSON.stringify(h.writes[0].body),
     '{"truthfulnessConfirmed":true}',
   );
-  assert.equal(h.destinations.at(-1), "/system/config/profile");
+  assert.equal(h.destinations.at(-1), "/cadastro/enviado");
 });
 test("official profile lock prevents writes and preserves registration drafts", async () => {
   const h = await harness({ allowWrites: true });
@@ -397,4 +433,92 @@ test("official profile lock prevents writes and preserves registration drafts", 
   await flow.save();
   assert.equal(h.writes.length, 0);
   assert.match(h.state.notices[4], /análise/);
+});
+
+const pendingConsents = () => ({
+  context: "Onboarding",
+  isSatisfied: false,
+  items: ["terms-of-use", "privacy-policy", "marketing-communications"].map(
+    (code) => ({
+      code,
+      kind: code === "marketing-communications" ? "Consent" : "Agreement",
+      versionId: code,
+      status: "Pending",
+      content: { body: "Texto atual", locale: "pt-BR" },
+    }),
+  ),
+});
+test("guard consent flag never bypasses actual versioned acceptance", async () => {
+  const h = await harness({ allowWrites: true });
+  h.responses.onboarding = { requiredConsentsCompleted: true };
+  h.responses.consents = pendingConsents();
+  const flow = await h.mount(7);
+  await flow.save({ truthfulnessConfirmed: true });
+  assert.equal(h.writes.length, 0);
+  assert.match(h.state.notices[7], /aceite/);
+});
+test("explicit consent saves only legal agreements before submission", async () => {
+  const h = await harness({ allowWrites: true });
+  h.responses.consents = pendingConsents();
+  const flow = await h.mount(7);
+  await flow.save({
+    truthfulnessConfirmed: true,
+    consentAcceptance: {
+      accepted: true,
+      versionIds: ["terms-of-use", "privacy-policy"],
+    },
+  });
+  assert.equal(h.writes.length, 2);
+  assert.equal(h.writes[0].path, "/api/v1/client/consents/decisions");
+  assert.deepEqual(
+    h.writes[0].body.decisions.map((d) => d.versionId),
+    ["terms-of-use", "privacy-policy"],
+  );
+  assert.equal(h.responses.consents.items[2].status, "Pending");
+  assert.equal(h.destinations.at(-1), "/cadastro/enviado");
+});
+test("a policy version changed after reading requires a fresh acceptance", async () => {
+  const h = await harness({ allowWrites: true });
+  h.responses.consents = pendingConsents();
+  const flow = await h.mount(7);
+  h.responses.consents.items[0].versionId = "new-version";
+  await flow.save({
+    truthfulnessConfirmed: true,
+    consentAcceptance: {
+      accepted: true,
+      versionIds: ["terms-of-use", "privacy-policy"],
+    },
+  });
+  assert.equal(h.writes.length, 0);
+  assert.match(h.state.notices[7], /termos atuais/);
+});
+test("failed requirements read never submits and keeps review drafts", async () => {
+  const h = await harness({ allowWrites: true });
+  const flow = await h.mount(7);
+  h.responses.consents = Error("Consulta indisponível");
+  await flow.save({ truthfulnessConfirmed: true });
+  assert.equal(h.writes.length, 0);
+  assert.equal(h.destinations.length, 0);
+});
+test("unconfirmed submission never navigates to success", async () => {
+  const h = await harness({ allowWrites: true });
+  h.responses.submission = { status: "NotSubmitted" };
+  const flow = await h.mount(7);
+  await flow.save({ truthfulnessConfirmed: true });
+  assert.equal(h.destinations.length, 0);
+  assert.match(h.state.notices[7], /confirmar o envio/);
+});
+test("an already locked submitted registration is never submitted twice", async () => {
+  const h = await harness({ allowWrites: true });
+  const flow = await h.mount(7);
+  h.responses.onboarding = {
+    submission: {
+      status: "Submitted",
+      submittedAtUtc: "2026-10-22T20:00:00Z",
+      profileEditingLocked: true,
+    },
+  };
+  await flow.save({ truthfulnessConfirmed: true });
+  assert.equal(h.writes.length, 0);
+  assert.equal(h.destinations.at(-1), "/cadastro/enviado");
 });

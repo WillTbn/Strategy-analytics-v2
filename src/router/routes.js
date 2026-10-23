@@ -358,6 +358,7 @@ routes.splice(
   },
   {
     path: "/cadastro/enviado",
+    meta: { auth: true },
     component: () =>
       import("../system/pages/registration/RegistrationSubmittedPage.vue"),
   },

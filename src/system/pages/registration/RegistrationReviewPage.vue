@@ -16,6 +16,7 @@
       "
       ><registration-review-step
         :snapshot="snapshot"
+        :consents="registrationContext.consents"
         :submission="registrationContext.status?.submission"
         :busy="busy"
         integrated

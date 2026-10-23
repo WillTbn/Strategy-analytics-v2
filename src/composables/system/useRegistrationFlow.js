@@ -1,3 +1,8 @@
+import { getOnboardingConsents } from "src/services/registrationConsents";
+import {
+  onboardingConsentPayload,
+  confirmedOnboardingSubmission,
+} from "src/services/registrationConsentRules";
 import { useUserStore } from "src/stores/user";
 import { clearRegistrationStep } from "src/services/registrationResume";
 import {
@@ -60,6 +65,7 @@ export const registrationContext = reactive({
   catalog: {},
   profile: null,
   status: null,
+  consents: null,
   notices: {},
   readErrors: {},
 });
@@ -143,6 +149,7 @@ export function useRegistrationFlow(step) {
       activeDocumentVariant.value = null;
       registrationContext.notices = {};
       registrationContext.readErrors = {};
+      registrationContext.consents = null;
     }
     registrationContext.profile = profile;
     const email = profile.contacts?.find(
@@ -160,9 +167,16 @@ export function useRegistrationFlow(step) {
         getClientTrustedContacts(),
         getClientTrustedContactDeclaration(),
       );
+    if (step === 7)
+      requests.push(
+        getOnboardingConsents(profile.preferences?.languageCode || "pt-BR"),
+      );
     const results = await Promise.allSettled(requests);
     assertClientSessionCurrent(session);
     if (!active) return;
+    if (step === 7)
+      registrationContext.consents =
+        results.at(-1).status === "fulfilled" ? results.at(-1).value : null;
     const base =
       results[0].status === "fulfilled" ? results[0].value || {} : {};
     registrationContext.status =
@@ -171,6 +185,12 @@ export function useRegistrationFlow(step) {
       notify(
         "Seu cadastro foi enviado e está em análise. Aguarde a validação do documento de identificação para editar.",
       );
+      if (
+        confirmedOnboardingSubmission(registrationContext.status.submission)
+      ) {
+        await router.replace("/cadastro/enviado");
+        return;
+      }
       if (step !== 7) {
         await router.replace("/cadastro/etapa-7");
         return;
@@ -265,8 +285,8 @@ export function useRegistrationFlow(step) {
       } else readErrors.financial = true;
     }
     if (step === 6 || step === 7) {
-      const result = results.at(-2),
-        declaration = results.at(-1);
+      const result = results[step === 7 ? 4 : 2],
+        declaration = results[step === 7 ? 5 : 3];
       if (result.status === "fulfilled" && declaration.status === "fulfilled") {
         if (!hydrated.has(6)) {
           const contacts = result.value || [];
@@ -556,8 +576,37 @@ export function useRegistrationFlow(step) {
         }
       }
       if (step === 7) {
+        if (
+          confirmedOnboardingSubmission(status?.submission) &&
+          status.submission.profileEditingLocked
+        ) {
+          await router.push("/cadastro/enviado");
+          return;
+        }
         if (confirmation?.truthfulnessConfirmed !== true)
           throw new Error("Confirme as informações antes de enviar.");
+        const requirements = await getOnboardingConsents(
+          profile.preferences?.languageCode || "pt-BR",
+        );
+        assertClientSessionCurrent(session);
+        if (!active) return;
+        registrationContext.consents = requirements;
+        const consentPayload = onboardingConsentPayload(
+          requirements,
+          confirmation.consentAcceptance,
+        );
+        if (consentPayload) {
+          const updated = await write(
+            "post",
+            "/api/v1/client/consents/decisions",
+            consentPayload,
+          );
+          assertClientSessionCurrent(session);
+          if (!active) return;
+          registrationContext.consents = updated;
+          if (onboardingConsentPayload(updated, null))
+            throw new Error("Não foi possível confirmar o aceite dos termos.");
+        }
         const submission = await write(
           "post",
           "/api/v1/client/onboarding/submit",
@@ -569,9 +618,13 @@ export function useRegistrationFlow(step) {
           ...registrationContext.status,
           submission,
         };
+        if (!confirmedOnboardingSubmission(submission))
+          throw new Error(
+            "Não foi possível confirmar o envio. Recarregue a etapa para consultar o cadastro.",
+          );
         clearRegistrationStep(useUserStore().data?.id);
         notify("Cadastro enviado para análise.");
-        await router.push("/system/config/profile");
+        await router.push("/cadastro/enviado");
         return;
       }
       assertClientSessionCurrent(session);

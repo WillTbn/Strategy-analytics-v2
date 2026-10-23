@@ -1,8 +1,8 @@
 <template>
   <div>
-    <aside class="preview-note" role="status">
-      Referência visual de homologação do estado enviado — esta tela não
-      comprova nem executa envio de cadastro.
+    <aside v-if="!submission" class="preview-note" role="status">
+      {{ error || "Consultando o envio do cadastro…" }}
+      <q-btn v-if="error" flat no-caps label="Tentar novamente" @click="load" />
     </aside>
     <registration-shell
       :step="7"
@@ -13,7 +13,7 @@
         --registration-background-angle: 209.1858deg;
         --registration-card-angle: 214.6656deg;
       "
-      ><div class="submitted">
+      ><div v-if="submission" class="submitted">
         <img
           class="status-icon"
           src="/system/icons/auth/submitted.svg"
@@ -24,9 +24,12 @@
           Recebemos seus dados e seu documento. Vamos avisar por e-mail quando o
           documento for validado.
         </p>
-        <p>
+        <p v-if="submission.profileEditingLocked">
           Até lá, você já pode acessar a Área do Cliente. Os dados do perfil
           aparecem como pendentes e não podem ser alterados.
+        </p>
+        <p v-else>
+          Você já pode acessar a Área do Cliente e consultar seu perfil.
         </p>
         <q-btn no-caps unelevated class="access" to="/system/dashboard"
           ><span class="icon"
@@ -38,6 +41,39 @@
   </div>
 </template>
 <script setup>
+import { ref, onMounted, onBeforeUnmount } from "vue";
+import { useRouter } from "vue-router";
+import { getOnboardingStatus } from "src/services/clientAccountService";
+import {
+  captureClientSession,
+  assertClientSessionCurrent,
+} from "src/services/clientApi";
+import { confirmedOnboardingSubmission } from "src/services/registrationConsentRules";
+const submission = ref(null),
+  error = ref("");
+const router = useRouter();
+let active = true;
+onBeforeUnmount(() => {
+  active = false;
+});
+async function load() {
+  error.value = "";
+  const session = captureClientSession();
+  try {
+    const status = await getOnboardingStatus();
+    assertClientSessionCurrent(session);
+    if (!active) return;
+    if (!confirmedOnboardingSubmission(status?.submission)) {
+      await router.replace("/cadastro/etapa-7");
+      return;
+    }
+    submission.value = status.submission;
+  } catch {
+    if (active)
+      error.value = "Não foi possível consultar o envio. Tente novamente.";
+  }
+}
+onMounted(load);
 import RegistrationShell from "src/system/components/registration/RegistrationShell.vue";
 </script>
 <style scoped>

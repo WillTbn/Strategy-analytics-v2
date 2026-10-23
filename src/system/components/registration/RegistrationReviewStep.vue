@@ -25,6 +25,12 @@
         />
       </section>
     </div>
+    <registration-consent-acceptance
+      v-if="integrated"
+      v-model="consentAcceptance"
+      :requirements="consents"
+      :disabled="busy || locked"
+    />
     <div>
       <label class="confirmation"
         ><input
@@ -73,6 +79,8 @@
 </template>
 <script setup>
 import { computed, nextTick, ref, watch } from "vue";
+import RegistrationConsentAcceptance from "./RegistrationConsentAcceptance.vue";
+import { onboardingConsentPayload } from "src/services/registrationConsentRules";
 import {
   registrationReviewIssues,
   registrationReviewSections,
@@ -82,10 +90,12 @@ const props = defineProps({
   busy: Boolean,
   integrated: Boolean,
   submission: { type: Object, default: null },
+  consents: { type: Object, default: null },
 });
 const emit = defineEmits(["edit", "back", "validated"]);
 const locked = computed(() => props.submission?.profileEditingLocked === true);
 const sections = computed(() => registrationReviewSections(props.snapshot));
+const consentAcceptance = ref({ accepted: false, versionIds: [] });
 const confirmed = ref(false),
   confirmationError = ref(""),
   notice = ref(""),
@@ -110,7 +120,16 @@ const submit = async () => {
     return;
   }
   if (props.integrated) {
-    emit("validated", { truthfulnessConfirmed: true });
+    try {
+      onboardingConsentPayload(props.consents, consentAcceptance.value);
+    } catch (error) {
+      notice.value = error.message;
+      return;
+    }
+    emit("validated", {
+      truthfulnessConfirmed: true,
+      consentAcceptance: consentAcceptance.value,
+    });
     return;
   }
   const issues = registrationReviewIssues(props.snapshot);
