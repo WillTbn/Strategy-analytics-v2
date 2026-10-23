@@ -47,3 +47,9 @@ Limite desta rodada: a visualização agrupada dos dois arquivos e a remoção d
 Evidências desta rodada: cadastro-enviado-hml.png; perfil-bloqueado-apos-envio-hml.png; rg-reprovado-motivo-hml.png; cadastro-confirmado-nova-sessao-hml.png. Pasta de evidências da conversa. O reteste identificou uma indicação visual incorreta de Passaporte obrigatório, apesar de o RG aprovado satisfazer o grupo IDENTITY. O front foi corrigido para usar alternativeGroup na indicação individual, sem criar campos/ações ou alterar o layout. Obrigações independentes continuam identificadas. 284 testes aprovados, incluindo alternativa versus obrigação independente.
 
 Após aprovação do RG, a Área do Cliente exibiu 100% de progresso, sem aprovação da CNH ou passaporte. GET progress confirmou 1/1 requisito, alternativeGroup=IDENTITY para RG/CNH/passaporte e countsAsComplete=true para o RG. Não é mais bloqueio de obrigatoriedade exclusiva de CNH.
+
+## Encerramento do reteste — 23/10/2026
+
+Ajuste visual 76d2b06 publicado: pipeline 39892601211 concluída com sucesso em testes/lint/build/upload/ativação. Na versão publicada, Documentação manteve 100% com RG aprovado e o passaporte deixou de aparecer como obrigação individual. Evidência adicional: rg-aprovado-progresso-100-hml.png. Perfil liberado registrado em perfil-liberado-apos-aprovacao-hml.png. Sem novos campos ou ações.
+
+Concluído o cenário integrado de envio, bloqueio e desbloqueio após análise. Não equivale à aprovação de todo o QA: continuam separados o agrupamento/visualização de arquivos e o reenvio pelo controle do perfil. O roteiro não alterou a conta pessoal do usuário, contratos ou transações.
