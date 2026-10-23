@@ -58,7 +58,7 @@ export function profileDocumentGroups(
       source.push(group);
     }
     for (const requirement of section.requirements || []) {
-      const existing = group.items.some((item) =>
+      const existing = group.items.findIndex((item) =>
         requirement.requirementId
           ? item.requirementId === requirement.requirementId
           : requirement.documentId
@@ -66,7 +66,16 @@ export function profileDocumentGroups(
             : !item.documentId &&
               item.documentTypeId === requirement.documentTypeId,
       );
-      if (!existing) group.items.push(requirement);
+      if (existing < 0) group.items.push(requirement);
+      else
+        group.items[existing] = {
+          ...group.items[existing],
+          isRequired:
+            requirement.isRequired ?? group.items[existing].isRequired,
+          alternativeGroup:
+            requirement.alternativeGroup ??
+            group.items[existing].alternativeGroup,
+        };
     }
   }
   const groups = source.map((section, index) => ({
@@ -82,6 +91,8 @@ export function profileDocumentGroups(
         ...item,
         key: item.requirementId || id || `${index}-${rowIndex}`,
         document,
+        isIndividuallyRequired:
+          item.isRequired === true && !item.alternativeGroup,
         status: document?.status || item.status || "Pending",
         name:
           item.documentTypeName || document?.documentTypeName || "Documento",

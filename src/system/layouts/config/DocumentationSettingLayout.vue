@@ -86,7 +86,10 @@
             <tr v-for="row in group.rows" :key="row.key">
               <td>
                 {{ row.name }}
-                <div v-if="row.isRequired" class="text-caption text-grey-5">
+                <div
+                  v-if="row.isIndividuallyRequired"
+                  class="text-caption text-grey-5"
+                >
                   Obrigatório
                 </div>
               </td>

@@ -45,3 +45,51 @@ test('pending progress requirements are merged even when the overview contains e
  assert.equal(rows.length,2);assert.equal(rows[1].document,null);assert.equal(rows[1].name,'Verso');
  assert.equal(overview.sections[0].items.length,1);
 });
+
+test("alternative identification requirements never label each alternative as individually mandatory", () => {
+  const overview = {
+    sections: [
+      {
+        code: "identity",
+        name: "Identificação",
+        items: [
+          { documentId: "rg-approved", documentTypeId: "rg", isRequired: true },
+          { documentTypeId: "passport", isRequired: true },
+        ],
+      },
+    ],
+  };
+  const progress = {
+    sections: [
+      {
+        categoryCode: "identity",
+        requirements: [
+          {
+            documentId: "rg-approved",
+            documentTypeId: "rg",
+            isRequired: true,
+            alternativeGroup: "IDENTITY",
+          },
+          {
+            documentTypeId: "passport",
+            isRequired: true,
+            alternativeGroup: "IDENTITY",
+          },
+          { documentTypeId: "address", isRequired: true },
+        ],
+      },
+    ],
+  };
+  const rows = profileDocumentGroups(
+    [{ id: "rg-approved", status: "Approved" }],
+    overview,
+    progress,
+  )[0].rows;
+  assert.equal(rows[0].document.status, "Approved");
+  assert.equal(rows[0].alternativeGroup, "IDENTITY");
+  assert.equal(rows[0].isIndividuallyRequired, false);
+  assert.equal(rows[1].isIndividuallyRequired, false);
+  assert.equal(rows[1].isRequired, true); // preserve the API's group membership
+  assert.equal(rows[2].isIndividuallyRequired, true); // independent obligations still shown
+  assert.equal(overview.sections[0].items[0].alternativeGroup, undefined);
+});
