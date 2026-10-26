@@ -24,6 +24,18 @@
         ></template
       ></q-select
     >
+    <money-input
+      v-else-if="field.kind === 'money'"
+      ref="control"
+      v-bind="style"
+      :model-value="modelValue"
+      model-format="localized"
+      :aria-label="field.ariaLabel || field.label"
+      :disable="disabled"
+      :error="!!error"
+      :error-message="error"
+      @update:model-value="emit('update:modelValue', $event)"
+    />
     <q-input
       ref="control"
       v-else
@@ -64,6 +76,7 @@
 </template>
 <script setup>
 import { ref } from "vue";
+import MoneyInput from "src/system/components/form/MoneyInput.vue";
 import LabelField from "src/system/components/form/LabelField.vue";
 import { inputWhite } from "src/Utils/ViewInput";
 import { formatRegistrationInput } from "src/services/registrationInputFormatting";

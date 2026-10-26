@@ -4,6 +4,8 @@
     <registration-shell :step="1" title="Criar conta"
       ><registration-account-step
         :busy="busy"
+        :email-confirmed="emailConfirmed"
+        @email-change="emailConfirmed = false"
         @validated="submit"
         @review-terms="
           notice =
@@ -33,6 +35,7 @@ import {
 import { pendingEmail } from "src/composables/system/usePendingEmail";
 const router = useRouter(),
   busy = ref(false),
+  emailConfirmed = ref(false),
   notice = ref("");
 let attempt = null,
   active = true;
@@ -40,6 +43,7 @@ const submit = async (form) => {
   if (busy.value) return;
   busy.value = true;
   notice.value = "";
+  emailConfirmed.value = false;
   const payload = registrationPayload(form),
     signature = JSON.stringify(payload);
   if (!attempt || attempt.signature !== signature)
@@ -59,6 +63,14 @@ const submit = async (form) => {
     if (!active) return;
     if (error.response?.status >= 400 && error.response.status < 500)
       attempt = null;
+    if (
+      error.response?.data?.errors?.some(
+        (item) => item.code === "email_already_confirmed",
+      )
+    ) {
+      emailConfirmed.value = true;
+      return;
+    }
     notice.value = identityErrorMessage(
       error,
       "Não foi possível criar a conta. Confira os dados e tente novamente.",

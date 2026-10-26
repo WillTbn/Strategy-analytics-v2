@@ -11,7 +11,10 @@
         :disable="list.inative"
         v-ripple
         :to="list.toName"
-        class="text-white"
+        class="portal-nav-item"
+        active-class="portal-nav-item--active"
+        exact
+        :aria-label="list.name"
       >
         <!-- :active-class="dark ? 'bg-dark' : 'bg-primary'" -->
         <component :is="list.icon" class="q-mr-lg-sm" />
@@ -104,6 +107,29 @@ export default defineComponent({
 <style scoped>
 .portal-header {
   padding: 24px 24px 0;
+}
+.portal-nav-item {
+  color: #666666;
+  font-size: 20px;
+  font-weight: 500;
+  border-radius: 4px;
+  border-bottom: 3px solid transparent;
+}
+.portal-nav-item > :deep(svg) {
+  color: #fff;
+}
+.portal-nav-item--active {
+  color: #fff;
+  border-bottom-color: #00a3ff;
+  background: linear-gradient(
+    190.35deg,
+    rgba(255, 255, 255, 0.16),
+    rgba(255, 255, 255, 0.04) 50%,
+    rgba(255, 255, 255, 0.01)
+  );
+}
+.portal-navbar {
+  overflow: visible;
 }
 .portal-navbar-actions {
   display: flex;

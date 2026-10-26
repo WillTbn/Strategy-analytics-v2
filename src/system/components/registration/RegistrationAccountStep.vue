@@ -19,15 +19,26 @@
     <label-field label-input="E-mail"
       ><q-input
         v-model="form.email"
+        @update:model-value="emit('email-change')"
         v-bind="fieldStyle"
         aria-label="E-mail"
         placeholder="seu@email.com"
         type="email"
         autocomplete="email"
         :disable="busy"
-        :error="!!errors.email"
+        :error="emailConfirmed || !!errors.email"
         :error-message="errors.email"
-    /></label-field>
+        ><template v-if="emailConfirmed" #error
+          ><span role="alert"
+            >Este e-mail já tem uma conta confirmada.
+            <router-link :to="{ name: 'login' }"
+              >Entre na sua conta</router-link
+            >
+            ou use Esqueci minha senha</span
+          ></template
+        ></q-input
+      ></label-field
+    >
     <div class="registration-account__residence">
       <p id="residence-label">País de residência</p>
       <p class="registration-account__help">
@@ -168,8 +179,13 @@ import {
   residenceChoices,
   validateRegistrationAccount,
 } from "src/services/registrationSteps";
-const props = defineProps({ busy: Boolean });
-const emit = defineEmits(["validated", "review-terms", "review-privacy"]);
+const props = defineProps({ busy: Boolean, emailConfirmed: Boolean });
+const emit = defineEmits([
+  "validated",
+  "review-terms",
+  "review-privacy",
+  "email-change",
+]);
 const form = reactive(newRegistrationAccount());
 const errors = ref({});
 const formRef = ref(null);
@@ -246,6 +262,10 @@ onBeforeUnmount(() => {
 .registration-account__error {
   color: #ffb4bd;
   font-size: 12px;
+}
+.registration-account :deep(.q-field__messages a) {
+  color: inherit;
+  text-decoration: underline;
 }
 .registration-account__error {
   margin: 8px 0 0;

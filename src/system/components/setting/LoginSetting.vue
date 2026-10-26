@@ -33,6 +33,7 @@
             flat
             color="primary"
             label="Deslogar"
+            class="session-logout"
             size="sm"
             :disable="Boolean(revoking)"
             :loading="revoking === props.row.sessionId"
@@ -122,6 +123,39 @@ load();
 <style scoped>
 .login-setting {
   min-width: 0;
+}
+.login-setting :deep(thead tr) {
+  height: 40px;
+  background: rgba(240, 240, 240, 0.08);
+}
+.login-setting :deep(th) {
+  height: 40px;
+  color: #fafafa;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px;
+}
+.login-setting :deep(th:not(:last-child)) {
+  border-right: 0.5px solid rgba(255, 255, 255, 0.2);
+}
+.login-setting :deep(tbody td) {
+  height: 48px;
+  padding: 8px;
+  color: #dbdbdb;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+.login-setting :deep(th:last-child),
+.login-setting :deep(td:last-child) {
+  width: 92px;
+}
+.session-logout {
+  width: 76px;
+  min-height: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 6px;
+  font-size: 14px !important;
 }
 :deep(.equipment-cell) {
   max-width: 180px;

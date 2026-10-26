@@ -127,7 +127,22 @@
                       :key="field.key"
                       :text-label="field.label"
                       class-name="col-12 col-sm-6 col-lg-4"
-                      ><q-input
+                      ><component
+                        :is="
+                          [
+                            'declaredValue',
+                            'initialAmount',
+                            'amountPaid',
+                            'releasedCredit',
+                          ].includes(field.key)
+                            ? MoneyInput
+                            : QInput
+                        "
+                        :currency="
+                          currencies.state.data?.find(
+                            (item) => item.value === currencyId,
+                          )?.code || 'BRL'
+                        "
                         v-model="draft[field.key]"
                         :type="field.type"
                         dark
@@ -198,7 +213,12 @@
                     "
                     text-label="Restante para quitação"
                     class="q-mt-md"
-                    ><q-input
+                    ><money-input
+                      :currency="
+                        currencies.state.data?.find(
+                          (item) => item.value === currencyId,
+                        )?.code || 'BRL'
+                      "
                       v-model="draft.remainingBalance"
                       type="number"
                       min="0"
@@ -233,6 +253,8 @@
   </div>
 </template>
 <script setup>
+import { QInput } from "quasar";
+import MoneyInput from "src/system/components/form/MoneyInput.vue";
 import { computed, onScopeDispose, ref } from "vue";
 import AssetDocumentGallery from "src/system/components/profile/AssetDocumentGallery.vue";
 import LabelForm from "src/system/components/form/LabelForm.vue";

@@ -137,8 +137,17 @@
               API.</q-tooltip
             >
           </q-select>
-          <q-input
+          <component
             v-else
+            :is="
+              [
+                'individualMonthlyIncome',
+                'householdMonthlyIncome',
+                'declaredNetWorth',
+              ].includes(field.key)
+                ? MoneyInput
+                : QInput
+            "
             v-model="draft[field.key]"
             outlined
             dense
@@ -169,6 +178,8 @@
 </template>
 <script setup>
 import { computed, reactive, ref } from "vue";
+import { QInput } from "quasar";
+import MoneyInput from "src/system/components/form/MoneyInput.vue";
 import { saveProfileJob, profileJobChanges } from "src/services/profileJobEdit";
 import useClientProfile from "src/composables/system/useClientProfile";
 import ProfileFields from "src/system/components/setting/ProfileFields.vue";

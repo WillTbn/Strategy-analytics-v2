@@ -18,13 +18,17 @@ defineProps({
 });
 const url = ref(""),
   failed = ref(false);
+const emit = defineEmits(["loaded"]);
 let active = true;
 onScopeDispose(() => {
   active = false;
 });
 getAvatarUrl()
   .then((value) => {
-    if (active) url.value = value?.url || "";
+    if (active) {
+      url.value = value?.url || "";
+      emit("loaded", url.value);
+    }
   })
   .catch(() => {
     /* No avatar is a valid empty state. */

@@ -47,8 +47,9 @@
       /></resource-state>
       <q-form class="q-mt-md" @submit="confirm"
         ><label class="text-weight-medium">Valor do saque</label
-        ><q-input
-          v-model.number="amount"
+        ><money-input
+          v-model="amount"
+          :currency="wallet?.currencyIsoCode || 'BRL'"
           outlined
           dense
           type="number"
@@ -77,6 +78,7 @@
   ></q-page>
 </template>
 <script setup>
+import MoneyInput from "src/system/components/form/MoneyInput.vue";
 import { computed, ref } from "vue";
 import { useQuasar } from "quasar";
 import TitlePage from "../../components/TitlePage.vue";
@@ -115,9 +117,20 @@ const loadAccounts = () =>
       ).data?.filter((a) => a.status === "Active") || [],
   );
 function confirm() {
-  if (!wallet.value?.currencyId || wallet.value.type !== "Free" || !bankId.value || busy.value || success.value) return;
+  if (
+    !wallet.value?.currencyId ||
+    wallet.value.type !== "Free" ||
+    !bankId.value ||
+    busy.value ||
+    success.value
+  )
+    return;
   const requestedAmount = Number(amount.value);
-  if (!Number.isFinite(requestedAmount) || requestedAmount <= 0 || requestedAmount > Number(wallet.value.available)) {
+  if (
+    !Number.isFinite(requestedAmount) ||
+    requestedAmount <= 0 ||
+    requestedAmount > Number(wallet.value.available)
+  ) {
     error.value = "Informe um valor positivo dentro do saldo disponível.";
     return;
   }

@@ -1,82 +1,97 @@
 <template>
-  <q-banner
-    class="hours-banner text-white q-py-md-md"
-    dense
-    style="text-wrap-mode: nowrap"
+  <div
+    class="hours-banner"
+    role="timer"
+    :aria-label="`${day} ${timeLabel} ${offset}`"
   >
-    <span class="text-inter-20-400">
-      <!-- {{ getNameDay }}
-      <span style="color: gray">|</span> -->
-      <!-- {{ getHours }} : {{ getMinutes }} -->
-      {{ getNewTime }}
-      <span class="text-grey text-inter-12-400"> {{ timezone.fuso }}</span>
-    </span>
-  </q-banner>
+    <span>{{ day }}</span>
+    <span class="hours-banner__divider" aria-hidden="true" />
+    <div class="hours-banner__time">
+      <span
+        ><template v-for="(part, index) in timeParts" :key="index"
+          ><span v-if="index" class="hours-banner__colon">:</span
+          >{{ part }}</template
+        ></span
+      >
+      <small>{{ offset }}</small>
+    </div>
+  </div>
 </template>
-<script>
-import { defineComponent, ref, computed } from "vue";
-import { useStoreLayout } from "src/stores/layoutStore";
+<script setup>
+import { computed, onScopeDispose, ref } from "vue";
 import { storeToRefs } from "pinia";
-
-export default defineComponent({
-  name: "HoursBanner",
-  setup() {
-    const storeLayout = useStoreLayout();
-    const { system, optionsTimeZone } = storeToRefs(storeLayout);
-    const timezone = computed(() => {
-      return optionsTimeZone.value.find(
-        (e) => e.label == system.value.time_zone,
-      );
-    });
-    const time = ref(new Date());
-    setInterval(() => {
-      time.value = new Date();
-    }, 10000);
-    let days = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SAB"];
-    // const getNameDay = computed(() => {
-    //   return days[time.value.getDay()];
-    // });
-    const getNewTime = computed(() => {
-      if (!timezone.value) return "--:--";
-      return time.value.toLocaleTimeString(timezone.value.sigla, {
-        timeZone: timezone.value.value,
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-      });
-      const nyTime = new Date(
-        time.value.toLocaleString(timezone.value.sigla, {
-          timeZone: timezone.value.value,
-        }),
-      );
-      const hours = nyTime.getHours().toString().padStart(2, "0");
-      const minutes = nyTime.getMinutes().toString().padStart(2, "0");
-
-      return `${hours}:${minutes}`;
-    });
-    const getMinutes = computed(() => {
-      return time.value.getMinutes().toString().padStart(2, "0");
-    });
-    const getHours = computed(() => {
-      return time.value.getHours().toString().padStart(2, "0");
-    });
-    return { getMinutes, getHours, system, timezone, getNewTime };
-  },
-});
+import { useStoreLayout } from "src/stores/layoutStore";
+const { system, optionsTimeZone } = storeToRefs(useStoreLayout());
+const now = ref(new Date());
+const timer = setInterval(() => {
+  now.value = new Date();
+}, 1000);
+onScopeDispose(() => clearInterval(timer));
+const zone = computed(
+  () =>
+    optionsTimeZone.value.find(
+      (item) =>
+        item.label === system.value.time_zone ||
+        item.value === system.value.time_zone,
+    )?.value || "America/Sao_Paulo",
+);
+const timeLabel = computed(() =>
+  new Intl.DateTimeFormat("pt-BR", {
+    timeZone: zone.value,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).format(now.value),
+);
+const timeParts = computed(() => timeLabel.value.split(":"));
+const day = computed(() =>
+  new Intl.DateTimeFormat("pt-BR", { timeZone: zone.value, weekday: "short" })
+    .format(now.value)
+    .replace(".", "")
+    .toUpperCase(),
+);
+const offset = computed(
+  () =>
+    `(${new Intl.DateTimeFormat("en-US", { timeZone: zone.value, timeZoneName: "shortOffset" }).formatToParts(now.value).find((part) => part.type === "timeZoneName")?.value || "GMT"})`,
+);
 </script>
-<style>
+<style scoped>
 .hours-banner {
-  width: 122;
-  height: 43;
-  gap: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 179px;
+  width: 179px;
+  height: 51px;
+  gap: 8px;
+  padding: 4px 12px;
+  border: 1px solid rgba(240, 240, 240, 0.16);
   border-radius: 4px;
-  padding: 8px;
-
-  background: linear-gradient(
-    202.99deg,
-    rgba(255, 255, 255, 0.16) 0.52%,
-    rgba(255, 255, 255, 0.04) 50%,
-    rgba(255, 255, 255, 0.01) 99.48%
-  );
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(40px);
+  font-size: 20px;
+  white-space: nowrap;
+}
+.hours-banner__divider {
+  width: 1px;
+  height: 12px;
+  background: rgba(152, 152, 152, 0.32);
+}
+.hours-banner__time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 23px;
+  font-variant-numeric: tabular-nums;
+}
+.hours-banner__time small {
+  font-size: 12px;
+  line-height: 14px;
+  color: #989898;
+}
+.hours-banner__colon {
+  color: #989898;
 }
 </style>
