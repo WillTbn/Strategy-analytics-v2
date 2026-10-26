@@ -30,14 +30,22 @@
         v-for="(item, index) in options"
         :key="index"
       >
-        <component :is="componentsMap[item.component]" />
+        <component
+          :is="componentsMap[item.component]"
+          v-bind="
+            item.value === 'bank'
+              ? { startWithCreate: route.query.action === 'add' }
+              : {}
+          "
+        />
       </q-tab-panel>
     </q-tab-panels>
   </q-page>
 </template>
 
 <script setup>
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 import TitlePage from "src/system/components/TitlePage.vue";
 import PersonalSettingLayout from "src/system/layouts/config/PersonalSettingLayout.vue";
 import DocumentationSettingLayout from "src/system/layouts/config/DocumentationSettingLayout.vue";
@@ -56,6 +64,7 @@ defineComponent({
   name: "ProfilePage",
 });
 
+const route = useRoute();
 const tab = ref("personal");
 
 const options = [
@@ -85,6 +94,13 @@ const options = [
     component: "TermsContractLayouts",
   },
 ];
+watch(
+  () => route.query.tab,
+  (value) => {
+    if (options.some((option) => option.value === value)) tab.value = value;
+  },
+  { immediate: true },
+);
 </script>
 
 <style scoped>

@@ -1,6 +1,18 @@
 <template>
   <div class="wallet-total col-md-auto col-xs-12" :aria-busy="loading">
-    <p class="wallet-total-title">Carteira Total</p>
+    <p class="wallet-total-title">
+      Carteira Total<q-icon
+        name="info_outline"
+        size="20px"
+        class="q-ml-sm"
+        tabindex="0"
+        aria-label="Sobre a Carteira Total"
+        ><q-tooltip
+          >Depósito + Strategy + Patrimônio, convertidos pela cotação diária
+          para exibição na moeda principal.</q-tooltip
+        ></q-icon
+      >
+    </p>
     <div
       class="text-h3 text-weight-bolder"
       style="line-height: 2rem; margin-top: 1.5rem"
@@ -22,9 +34,6 @@
         <IconEye v-if="dashboard.view_wallet_value" /><IconEyeOff v-else />
       </q-btn>
       <br />
-      <b v-if="empty" class="empty-usd"
-        >{{ dashboard.view_wallet_value ? "••••" : "USD 0.00" }}<br
-      /></b>
       <b
         v-for="amount in empty
           ? []
@@ -60,7 +69,7 @@
       <q-btn
         class="btn-pattern-transparent"
         no-caps
-        @click="unavailable('Depósito')"
+        @click="operation = 'deposit'"
         ><IconArrowDown
           width="24"
           height="24"
@@ -70,14 +79,17 @@
       <q-btn
         class="btn-pattern-transparent"
         no-caps
-        @click="unavailable('Transferência')"
+        @click="operation = 'transfer'"
         ><IconTransfer
           width="24"
           height="24"
           class="btn-pattern-transparent-icon"
         />Transferência</q-btn
       >
-      <q-btn class="btn-pattern-transparent" no-caps :to="{ name: 'Saque' }"
+      <q-btn
+        class="btn-pattern-transparent"
+        no-caps
+        @click="operation = 'withdrawal'"
         ><IconArrowUp
           width="24"
           height="24"
@@ -85,6 +97,22 @@
         />Saque</q-btn
       >
     </div>
+    <q-dialog
+      :model-value="!!operation"
+      @update:model-value="!$event && (operation = null)"
+    >
+      <wallet-operation
+        v-if="operation"
+        :key="operation"
+        :mode="operation"
+        :model="walletModel"
+        @close="operation = null"
+        @completed="
+          operation = null;
+          $emit('retry');
+        "
+      />
+    </q-dialog>
   </div>
 </template>
 <script setup>
@@ -95,9 +123,9 @@ import {
   IconEye,
   IconEyeOff,
 } from "@tabler/icons-vue";
-import { watch } from "vue";
+import { ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useQuasar } from "quasar";
+import WalletOperation from "./WalletOperation.vue";
 import useStorage from "src/composables/system/useStorage";
 import { useStoreLayout } from "src/stores/layoutStore";
 import { storeToRefs } from "pinia";
@@ -106,9 +134,10 @@ const storeLayout = useStoreLayout();
 const { dashboard } = storeToRefs(storeLayout);
 const { setSystemViewValues } = useStorage();
 const route = useRoute(),
-  router = useRouter(),
-  $q = useQuasar();
+  router = useRouter();
+const operation = ref(null);
 defineProps({
+  walletModel: { type: Object, default: null },
   amounts: { type: Array, default: () => [] },
   loading: Boolean,
   error: String,
@@ -119,16 +148,11 @@ const viewValues = async () => {
   storeLayout.setToggleViewWalletValues();
   await setSystemViewValues();
 };
-const unavailable = (action) =>
-  $q.notify({
-    message: `${action} ainda não está disponível pelo portal.`,
-    type: "info",
-  });
 watch(
   () => route.query.modal,
   async (modal) => {
     if (modal !== "deposit") return;
-    unavailable("Depósito");
+    operation.value = "deposit";
     const query = { ...route.query };
     delete query.modal;
     await router.replace({ query });

@@ -14,6 +14,7 @@
           }}</q-tooltip></q-btn
         >
       </div>
+      <p v-if="subtitle" class="balance-subtitle">{{ subtitle }}</p>
       <div class="row justify-between items-center q-mt-lg">
         <div class="col-lg-auto col-12" style="display: flex; align-items: end">
           <div style="line-height: 1rem">
@@ -21,9 +22,6 @@
               {{
                 loading ? "…" : viewValues ? "••••" : amountLabel(amounts[0])
               }}
-            </p>
-            <p v-if="empty" class="empty-usd">
-              {{ viewValues ? "••••" : "(USD 0.00)" }}
             </p>
             <p
               v-for="amount in empty ? [] : amounts.slice(1)"
@@ -39,7 +37,7 @@
                   ? "Carregando"
                   : error
                     ? "Consulta indisponível"
-                    : "Conversão indisponível"
+                    : "Saldo por carteira indisponível"
               }}
             </p>
           </div>
@@ -71,6 +69,7 @@ import { numericValue } from "src/services/walletPresentation";
 import { computed } from "vue";
 const props = defineProps({
   title: String,
+  subtitle: String,
   colorItem: String,
   description: String,
   amounts: { type: Array, default: () => [] },

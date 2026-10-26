@@ -17,8 +17,10 @@ const descriptor = parse(
 const flush = async () => {
   for (let i = 0; i < 12; i++) await Promise.resolve();
 };
-async function harness() {
-  const context = vm.createContext({}),
+async function harness(startWithCreate = false) {
+  const context = vm.createContext({
+      defineProps: () => ({ startWithCreate }),
+    }),
     lists = [],
     catalogs = [],
     details = [],

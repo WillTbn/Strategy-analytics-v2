@@ -269,6 +269,9 @@ import {
   updateClientBankAccount,
 } from "src/services/clientProfileService";
 
+const props = defineProps({
+  startWithCreate: { type: Boolean, default: false },
+});
 const { successNotify, errorNotify } = useNotify();
 const accounts = ref([]),
   banks = ref([]),
@@ -475,7 +478,9 @@ onScopeDispose(() => {
   archiveTarget.value = null;
   archiveDialog.value = false;
 });
-load();
+load().then(() => {
+  if (props.startWithCreate && active) openCreate();
+});
 </script>
 <style scoped>
 .bank-accounts-layout {

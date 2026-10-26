@@ -3,6 +3,7 @@
     <q-card-section class="col-12 row q-mb-sm justify-between">
       <wallet-total
         :amounts="totals"
+        :wallet-model="walletModel"
         :empty="empty"
         :loading="
           home.loading ||
@@ -30,39 +31,42 @@
       class="col-12 col-lg-10 row q-gutter-md justify-center q-mt-xs-lg q-mt-md-none"
     >
       <balance-items
-        title="Saldo Investido"
+        title="Carteira de Depósito"
+        subtitle="Disponível para saque · 1 dia útil"
         color-item="invested-color"
         :empty="empty"
-        :show-comparison="showComparison"
-        :amounts="investments"
+        :show-comparison="false"
+        :amounts="depositAmounts"
         :loading="home.loading"
         :error="home.error"
         @retry="$emit('retry-home')"
-        description="Capital alocado em contratos, separado por moeda. A posição atual ainda não está disponível."
+        description="Entrada e saída de dinheiro, sem rendimento. Saque para conta do mesmo titular e na mesma moeda, em até 1 dia útil."
         :view-values="dashboard.view_wallet_value"
       />
       <balance-items
-        title="Saldo Investível"
+        title="Carteira Strategy"
+        :subtitle="strategySubtitle"
         color-item="investable-color"
         :empty="empty"
-        :show-comparison="showComparison"
-        :amounts="investable"
+        :show-comparison="false"
+        :amounts="strategyAmounts"
         :loading="home.loading"
         :error="home.error"
         @retry="$emit('retry-home')"
-        description="Saldo disponível das carteiras Livre e Aplicada, separado por moeda."
+        :description="YIELD_DESCRIPTION"
         :view-values="dashboard.view_wallet_value"
       />
       <balance-items
-        title="Saldo Base"
+        title="Patrimônio"
+        subtitle="Patrimônio declarado"
         color-item="base-color"
         :empty="empty"
-        :show-comparison="showComparison"
-        :amounts="banking"
+        :show-comparison="false"
+        :amounts="assetAmounts"
         :loading="wallets.loading"
         :error="wallets.error"
         @retry="$emit('retry-wallets')"
-        description="Saldo disponível da carteira Livre, descontados os valores reservados."
+        description="Bens declarados: imóveis, veículos, consórcios e investimentos externos. Compõe a Carteira Total, mas não é saldo disponível para saque."
         :view-values="dashboard.view_wallet_value"
       />
     </div>
@@ -73,18 +77,15 @@ import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useStoreLayout } from "src/stores/layoutStore";
 import {
-  summaryAmounts,
-  freeWalletAmounts,
-} from "src/services/walletPresentation";
+  YIELD_DESCRIPTION,
+  consolidatedWalletTotal,
+} from "src/services/walletModel";
 import BalanceItems from "src/system/components/wallet/BalanceItems.vue";
 import WalletTotal from "src/system/components/wallet/WalletTotal.vue";
 import ChartWallet from "src/system/components/ChartWallet.vue";
-import {
-  portfolioIsEmpty,
-  emptyAmounts,
-  comparisonIsVisible,
-} from "src/services/homePresentation";
+import { portfolioIsEmpty, emptyAmounts } from "src/services/homePresentation";
 const props = defineProps({
+  walletModel: { type: Object, default: null },
   home: { type: Object, required: true },
   wallets: { type: Object, required: true },
   deposits: {
@@ -101,34 +102,53 @@ const { dashboard } = storeToRefs(useStoreLayout());
 const empty = computed(() =>
   portfolioIsEmpty(props.home, props.wallets, props.deposits),
 );
-const showComparison = computed(
-  () =>
-    !empty.value &&
-    !props.profile.loading &&
-    comparisonIsVisible(
-      props.profile.data?.customerSinceUtc,
-      undefined,
-      props.profile.data?.preferences?.timeZoneId,
-    ),
+// This view model is supplied only by an explicitly validated API adapter.
+function amountsFor(type) {
+  const wallet = props.walletModel?.[type];
+  if (wallet?.total != null && props.walletModel?.principalCurrency)
+    return [
+      { currency: props.walletModel.principalCurrency, value: wallet.total },
+    ];
+  return (wallet?.currencies || []).map((row) => ({
+    currency: row.currency,
+    value: row.balance,
+  }));
+}
+const totals = computed(() => [
+  {
+    currency: props.walletModel?.principalCurrency,
+    value: consolidatedWalletTotal(props.walletModel),
+  },
+]);
+const depositAmounts = computed(() =>
+  props.walletModel ? amountsFor("deposit") : empty.value ? emptyAmounts() : [],
 );
-const totals = computed(() =>
-  empty.value
-    ? emptyAmounts()
-    : summaryAmounts(props.home.data, "currentPosition"),
+const strategyAmounts = computed(() =>
+  props.walletModel
+    ? amountsFor("strategy")
+    : empty.value
+      ? emptyAmounts()
+      : [],
 );
-const investments = computed(() =>
-  empty.value
-    ? emptyAmounts()
-    : summaryAmounts(props.home.data, "contractedCapital"),
-);
-const banking = computed(() =>
-  empty.value ? emptyAmounts() : freeWalletAmounts(props.wallets.data),
-);
-const investable = computed(() =>
-  empty.value
-    ? emptyAmounts()
-    : summaryAmounts(props.home.data, "availableBalance"),
-);
+const assetAmounts = computed(() => amountsFor("assets"));
+const strategySubtitle = computed(() => {
+  const contracts = props.home.data?.contracts;
+  if (contracts?.status !== "Available" || !Array.isArray(contracts.items))
+    return "Rendendo · contratos indisponíveis";
+  if (
+    contracts.items.length < Number(contracts.totalItems) ||
+    contracts.items.some((item) => !item.businessStatus?.code)
+  )
+    return "Rendendo · contratos indisponíveis";
+  const count = contracts.items.filter(
+    (item) => item.businessStatus?.code === "ACTIVE",
+  ).length;
+  return (
+    "Rendendo · " +
+    count +
+    (count === 1 ? " contrato ativo" : " contratos ativos")
+  );
+});
 </script>
 <style scoped lang="sass">
 .span-trans:hover
