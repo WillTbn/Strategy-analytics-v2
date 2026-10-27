@@ -25,8 +25,8 @@
       :key="section.key"
       class="tool profile-section q-mb-lg"
     >
-      <div class="row items-center q-gutter-sm">
-        <span class="text-weight-bold">{{ section.title }}</span>
+      <div class="profile-section-heading">
+        <h2>{{ section.title }}</h2>
         <q-badge
           v-if="profile.progress.state.value && !profile.approved.value"
           color="grey-4"
@@ -39,6 +39,8 @@
             dense
             no-caps
             color="primary"
+            class="profile-save"
+            icon="img:/system/profile-edit/check.svg"
             label="Salvar"
             :loading="saving"
             :disable="!changed"
@@ -48,6 +50,7 @@
             flat
             dense
             no-caps
+            class="profile-discard"
             label="Descartar"
             :disable="saving"
             @click="discard"
@@ -97,17 +100,32 @@
               v-model="contact[field.key]"
               outlined
               dense
-              dark
+              class="profile-edit-field"
               :type="field.key === 'phoneNumber' ? 'tel' : 'text'"
+              :placeholder="
+                field.key === 'phoneNumber' ? '(DDD) 00000-0000' : ''
+              "
               :aria-label="
                 draft.contacts.length > 1
                   ? field.title + ' ' + (index + 1)
                   : field.title
               "
               :disable="saving"
-            />
+              ><template v-if="field.key === 'phoneNumber'" #prepend
+                ><img src="/system/profile-edit/phone.svg" alt="" /></template
+            ></q-input>
           </label-form>
         </div>
+        <q-btn
+          flat
+          dense
+          no-caps
+          label="Adicionar"
+          icon="img:/system/profile-edit/plus.svg"
+          class="profile-add"
+          :disable="saving"
+          @click="addContact"
+        />
       </div>
       <div
         v-else-if="editing === section.key"
@@ -125,11 +143,13 @@
             :options="fieldOptions(field.key)"
             emit-value
             map-options
+            dropdown-icon="img:/system/profile-edit/chevron.svg"
+            :aria-label="field.title"
             :multiple="field.key === 'nationality'"
             :max-values="field.key === 'nationality' ? 3 : undefined"
             outlined
             dense
-            dark
+            class="profile-edit-field"
             :disable="saving || !fieldOptions(field.key).length"
           >
             <q-tooltip v-if="!fieldOptions(field.key).length"
@@ -137,6 +157,23 @@
               API.</q-tooltip
             >
           </q-select>
+          <q-input
+            v-else-if="field.key === 'birthDate'"
+            :model-value="displayBirthDate(draft.birthDate)"
+            @update:model-value="updateBirthDate"
+            outlined
+            dense
+            class="profile-edit-field"
+            mask="##/##/####"
+            placeholder="dd/mm/aaaa"
+            :aria-label="field.title"
+            :disable="saving"
+            inputmode="numeric"
+          >
+            <template #prepend
+              ><img src="/system/profile-edit/calendar.svg" alt=""
+            /></template>
+          </q-input>
           <component
             v-else
             :is="
@@ -151,12 +188,22 @@
             v-model="draft[field.key]"
             outlined
             dense
-            dark
+            class="profile-edit-field"
             :type="field.type || 'text'"
+            :aria-label="field.title"
+            :placeholder="fieldPlaceholder(field.key)"
             :disable="saving || field.readonly"
             :min="field.type === 'number' ? 0 : undefined"
             :maxlength="field.key === 'neighborhood' ? 120 : undefined"
-          />
+            ><template v-if="fieldIcon(field.key)" #prepend
+              ><img :src="fieldIcon(field.key)" alt="" /></template
+          ></component>
+          <span
+            v-if="field.key === 'householdMonthlyIncome'"
+            class="profile-field-help"
+            >Sua renda e de mais uma pessoa (cônjuge, pai/mãe, irmão, filho,
+            etc)</span
+          >
         </label-form>
       </div>
       <template
@@ -209,6 +256,34 @@ import {
   trustedContactsDraft,
   saveTrustedContacts,
 } from "src/services/profileTrustedEdit";
+import { appendRegistrationTrustedContact } from "src/services/registrationTrustedContacts";
+const displayBirthDate = (value) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || "");
+  return match ? match[3] + "/" + match[2] + "/" + match[1] : value;
+};
+const updateBirthDate = (value) => {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value || "");
+  draft.birthDate = match ? match[3] + "-" + match[2] + "-" + match[1] : value;
+};
+const fieldPlaceholder = (key) =>
+  ({
+    birthPlace: "ex: São José dos Campos, SP",
+    birthDate: "dd/mm/aaaa",
+    email: "seuemail@mail.com",
+    phone: "(DDD) 00000-0000",
+  })[key] || "";
+const fieldIcon = (key) =>
+  ({
+    birthDate: "/system/profile-edit/calendar.svg",
+    email: "/system/profile-edit/mail.svg",
+    phone: "/system/profile-edit/phone.svg",
+  })[key];
+const addContact = () => {
+  if (saving.value) return;
+  saveError.value = appendRegistrationTrustedContact(draft)
+    ? ""
+    : "Preencha o nome e um telefone válido antes de adicionar outro contato.";
+};
 const profile = useClientProfile({ full: true });
 const selectFields = new Set(["gender", "maritalStatus", "nationality"]);
 const fieldOptions = (key) => {
@@ -466,8 +541,83 @@ const save = async (section) => {
 </script>
 <style scoped>
 .profile-section {
-  padding: 24px;
+  padding: 16px 24px;
 }
+.profile-section-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  min-height: 32px;
+  margin-bottom: 24px;
+}
+.profile-section-heading h2 {
+  font-size: 17px;
+  line-height: 1.35;
+  font-weight: 700;
+  margin: 0;
+  color: #fafafa;
+}
+.profile-section-heading .q-btn,
+.profile-add {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0;
+  min-height: 32px;
+}
+.profile-section-heading :deep(.q-icon),
+.profile-add :deep(.q-icon) {
+  font-size: 16px;
+}
+.profile-discard {
+  color: #989898;
+}
+.profile-save {
+  color: #00a3ff;
+}
+.profile-add {
+  margin-top: 16px;
+  color: white;
+}
+.profile-section :deep(.label-form) {
+  gap: 8px !important;
+  align-content: start;
+}
+.profile-edit-field :deep(.q-field__control) {
+  background: #fff;
+  border-radius: 4px;
+  min-height: 40px;
+  color: #00a3ff;
+}
+.profile-edit-field :deep(.q-field__control:before) {
+  border-color: #dcdcdc;
+}
+.profile-edit-field :deep(.q-field__native),
+.profile-edit-field :deep(.q-field__input) {
+  color: #242424;
+  font-size: 14px;
+}
+.profile-edit-field :deep(input::placeholder) {
+  color: #989898;
+  opacity: 1;
+}
+.profile-edit-field :deep(.q-field__prepend),
+.profile-edit-field :deep(.q-field__append) {
+  height: 40px;
+  color: #989898;
+}
+.profile-edit-field :deep(.q-select__dropdown-icon) {
+  font-size: 16px;
+}
+.profile-edit-field :deep(img) {
+  display: block;
+}
+.profile-field-help {
+  color: #dcdcdc;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
 .pending-notice {
   display: flex;
   gap: 12px;

@@ -401,3 +401,14 @@ Lista consolidada: `strategy-control/docs/QA-2026-10-17-TRIAGEM.md`, lote 17 a 2
 |   1 | 15 — Perfil do cliente              | Entrar como Client e abrir `/system/config/profile`                  | `GET /api/v1/client/profile/*`                                                                                  |  200 | Revalidação visual em 05/08/2026 | Resolvido — usuário vinculado e perfil carregado                                                |
 |   2 | 19 — Arquivamento de conta bancária | Arquivar uma conta secundária, aguardar o sucesso e recarregar a aba | `POST /api/v1/client/profile/bank-accounts/{bankAccountId}/archive`; `GET /api/v1/client/profile/bank-accounts` |  200 | Validação visual em 05/08/2026   | Pendente — o arquivamento informa sucesso, mas a listagem continua devolvendo a conta arquivada |
 |   3 | 25 — Confirmação de e-mail          | Confirmar o e-mail autenticado com o código inválido `000000`        | `POST /api/v1/auth/email-confirmation/confirm`                                                                  |  200 | Validação visual em 11/08/2026   | Pendente — API informou sucesso; esclarecer regra para conta previamente confirmada             |
+
+
+## QA 106–109 — Perfil e cabeçalho — 27/10/2026
+
+Implementado e validado localmente. Publicação autorizada em 27/10/2026; a ativação deve ser confirmada no pipeline do commit desta entrega.
+
+- 106: ação Sair da conta movida do cabeçalho para o título do Perfil Resumido, outline 40 px com ícone do Figma. Encerramento da sessão e retorno a /login conferidos.
+- 107: removido GMT do relógio compartilhado; dia, separador e segundos preservados.
+- 108: ID e nível em flex, separados por 12 px, acima do nome; badge 62×27.
+- 109: ações Salvar/Descartar junto ao título, campos brancos de 40 px, labels com 8 px, ícones e placeholders; data em dd/mm/aaaa com envio ISO; texto de apoio da renda e inclusão de contatos. Tentativas parciais preservam IDs de contatos já criados para evitar duplicação.
+- Validação: 301 testes, lint, build e diff --check aprovados no código alterado. Conferência visual autenticada, revisão responsiva, edição/descarte e adição de linha sem gravação; nenhum dado de perfil foi salvo. Escritas de contatos e falha parcial verificadas em testes controlados.

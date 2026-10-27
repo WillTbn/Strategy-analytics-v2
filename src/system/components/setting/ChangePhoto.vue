@@ -1,6 +1,17 @@
 <template>
   <div class="change-photo tool">
-    <p class="text-weight-bolder text-h6">Perfil Resumido</p>
+    <div class="profile-heading">
+      <h1>Perfil Resumido</h1>
+      <q-btn
+        outline
+        no-caps
+        class="profile-signout"
+        :loading="loading"
+        @click="setLogout"
+      >
+        <img src="/system/profile-edit/log-out.svg" alt="" />Sair da conta
+      </q-btn>
+    </div>
     <profile-resource-state :resource="resource" />
     <q-card
       v-if="resource.state.value"
@@ -16,9 +27,14 @@
         />
         <div class="bio-info">
           <div class="profile-identity">
-            <span class="text-grey strategy-id"
+            <span class="strategy-id"
               >ID Strategy:
-              {{ resource.state.value.customerId || "Não informado" }}</span
+              {{
+                resource.state.value.customerId
+                  ? "#" +
+                    String(resource.state.value.customerId).replace(/^#/, "")
+                  : "Não informado"
+              }}</span
             >
             <q-badge
               v-if="resource.state.value.documentLevel != null"
@@ -56,6 +72,8 @@
 <script setup>
 import { IconCalendar, IconShare } from "@tabler/icons-vue";
 import { ref } from "vue";
+import useAuth from "src/composables/system/useAuth";
+const { setLogout, loading } = useAuth();
 import ProfileShareDialog from "./ProfileShareDialog.vue";
 const shareOpen = ref(false);
 const avatarUrl = ref("");
@@ -69,6 +87,46 @@ defineProps({
 });
 </script>
 <style scoped>
+.profile-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.profile-heading h1 {
+  font-size: 24px;
+  line-height: 1.5;
+  font-weight: 700;
+  margin: 0;
+}
+.profile-signout {
+  height: 40px;
+  min-height: 40px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  color: #dcdcdc;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+.profile-signout :deep(.q-btn__content) {
+  gap: 8px;
+}
+.profile-signout img {
+  display: block;
+}
+@media (max-width: 400px) {
+  .profile-heading {
+    gap: 8px;
+  }
+  .profile-heading h1 {
+    font-size: 18px;
+  }
+  .profile-signout {
+    padding: 8px;
+  }
+}
+
 .change-photo-card {
   border: 1px solid rgba(240, 240, 240, 0.16);
   backdrop-filter: blur(40px);
@@ -103,7 +161,8 @@ defineProps({
   );
 }
 .profile-level {
-  min-width: 62px;
+  width: 62px;
+  flex: 0 0 62px;
   height: 27px;
   justify-content: center;
   border: 1px solid #00a3ff;
@@ -130,12 +189,13 @@ defineProps({
   min-width: 0;
 }
 .profile-identity {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 62px;
+  display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 .strategy-id {
+  color: #989898;
+  font-weight: 400;
   font-size: 14px;
   overflow-wrap: anywhere;
 }

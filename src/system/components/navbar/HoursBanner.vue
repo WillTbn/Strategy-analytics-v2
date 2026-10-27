@@ -1,9 +1,5 @@
 <template>
-  <div
-    class="hours-banner"
-    role="timer"
-    :aria-label="`${day} ${timeLabel} ${offset}`"
-  >
+  <div class="hours-banner" role="timer" :aria-label="`${day} ${timeLabel}`">
     <span>{{ day }}</span>
     <span class="hours-banner__divider" aria-hidden="true" />
     <div class="hours-banner__time">
@@ -13,7 +9,6 @@
           >{{ part }}</template
         ></span
       >
-      <small>{{ offset }}</small>
     </div>
   </div>
 </template>
@@ -51,10 +46,6 @@ const day = computed(() =>
     .replace(".", "")
     .toUpperCase(),
 );
-const offset = computed(
-  () =>
-    `(${new Intl.DateTimeFormat("en-US", { timeZone: zone.value, timeZoneName: "shortOffset" }).formatToParts(now.value).find((part) => part.type === "timeZoneName")?.value || "GMT"})`,
-);
 </script>
 <style scoped>
 .hours-banner {
@@ -86,12 +77,8 @@ const offset = computed(
   line-height: 23px;
   font-variant-numeric: tabular-nums;
 }
-.hours-banner__time small {
-  font-size: 12px;
-  line-height: 14px;
-  color: #989898;
-}
 .hours-banner__colon {
   color: #989898;
+  margin: 0 4px;
 }
 </style>

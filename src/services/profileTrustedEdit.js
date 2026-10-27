@@ -16,7 +16,7 @@ export function trustedContactChanges(baseline, draft) {
   if (
     ids.some((id) => !id) ||
     new Set(ids).size !== ids.length ||
-    draft.length !== (baseline.length || 1) ||
+    draft.length < (baseline.length || 1) ||
     draft.some((contact, index) => contact.id !== baseline[index]?.id)
   )
     throw new Error("Os contatos mudaram. Descarte a edição e abra novamente.");
@@ -51,6 +51,7 @@ export async function saveTrustedContacts(baseline, draft, operations) {
       ? await operations.update(change.id, change.payload)
       : await operations.create(change.payload);
     operations.assertSession();
+    draft[change.index].id = change.id || result?.id;
     baseline[change.index] = {
       ...baseline[change.index],
       ...change.payload,

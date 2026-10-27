@@ -70,7 +70,7 @@ test("multiple contacts retain IDs and hidden metadata; unchanged rows are not r
   );
   assert.equal(baseline[0].phoneNumber, "+55 11 90000-0001");
 });
-test("all contacts are validated before any write; rows cannot be added, removed or rebound", async () => {
+test("all contacts are validated before any write; existing rows cannot be removed or rebound", async () => {
   const baseline = contacts(),
     draft = trustedContactsDraft(baseline);
   draft[0].name = "Edited QA";
@@ -90,7 +90,6 @@ test("all contacts are validated before any write; rows cannot be added, removed
   }
   for (const invalid of [
     trustedContactsDraft(baseline).slice(0, 1),
-    [...trustedContactsDraft(baseline), {}],
     trustedContactsDraft(baseline).reverse(),
   ])
     assert.throws(
@@ -197,6 +196,7 @@ test("the real profile template uses only the existing name/phone pair and secti
             ],
           },
         ],
+        addContact() {},
         fieldClass: () => "col-12 col-sm-6 col-md-6",
         save() {},
         discard() {},
@@ -241,9 +241,41 @@ test("the real profile template uses only the existing name/phone pair and secti
     assert.equal((html.match(/type="tel"/g) || []).length, values.length || 1);
     assert.match(html, />Salvar<\/button>/);
     assert.match(html, />Descartar<\/button>/);
-    assert.doesNotMatch(
-      html,
-      /relationship|Sibling|qa@example.com|Adicionar|Excluir/,
-    );
+    assert.doesNotMatch(html, /relationship|Sibling|qa@example.com|Excluir/);
   }
+});
+
+test("appended contacts preserve confirmed creates when retrying a later failure", async () => {
+  const baseline = contacts(),
+    draft = trustedContactsDraft(baseline);
+  draft.push(
+    { name: "Novo contato QA", phoneNumber: "+55 11 90000-0003" },
+    { name: "Outro contato QA", phoneNumber: "+55 11 90000-0004" },
+  );
+  const sent = [];
+  let fail = true;
+  const operations = {
+    assertSession() {},
+    async update() {
+      assert.fail("unchanged contacts must not be updated");
+    },
+    async create(payload) {
+      sent.push(payload.name);
+      if (payload.name === "Outro contato QA" && fail) throw Error("offline");
+      return { id: payload.name };
+    },
+  };
+  await assert.rejects(
+    saveTrustedContacts(baseline, draft, operations),
+    /offline/,
+  );
+  assert.equal(draft[2].id, baseline[2].id);
+  fail = false;
+  await saveTrustedContacts(baseline, draft, operations);
+  assert.deepEqual(sent, [
+    "Novo contato QA",
+    "Outro contato QA",
+    "Outro contato QA",
+  ]);
+  assert.deepEqual(trustedContactChanges(baseline, draft), []);
 });
