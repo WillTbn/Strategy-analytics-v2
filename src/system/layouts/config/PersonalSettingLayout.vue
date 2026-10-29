@@ -636,4 +636,20 @@ const save = async (section) => {
     padding: 16px;
   }
 }
+.profile-edit-field :deep(.q-field__control) {
+  height: 40px;
+  box-shadow: none !important;
+  border: 1px solid #dcdcdc;
+}
+.profile-edit-field :deep(.q-field__control:before),
+.profile-edit-field :deep(.q-field__control:after) {
+  display: none;
+}
+.profile-edit-field.q-field--error :deep(.q-field__control) {
+  border-color: var(--q-negative);
+}
+.profile-edit-field.q-field--focused :deep(.q-field__control) {
+  outline: 2px solid #00a3ff;
+  outline-offset: 2px;
+}
 </style>

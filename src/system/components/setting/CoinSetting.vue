@@ -14,6 +14,14 @@
             :aria-label="field.label"
             :disable="disabled"
             class="preference-select"
+            :class="{ 'preference-select--open': openField === field.key }"
+            popup-content-class="portal-preference-menu"
+            :popup-content-style="{ '--preference-menu-bg': menuBackground }"
+            :options-cover="false"
+            :menu-offset="[0, 4]"
+            behavior="menu"
+            @popup-show="openField = field.key"
+            @popup-hide="openField = null"
             outlined
             dense
             dark
@@ -23,6 +31,20 @@
             options-dense
             @update:model-value="emit('change', field.key, $event)"
           >
+            <template #option="scope">
+              <q-item
+                v-bind="scope.itemProps"
+                class="portal-preference-option"
+                :class="{
+                  'portal-preference-option--selected': scope.selected,
+                }"
+              >
+                <q-item-section>{{ scope.opt.label }}</q-item-section>
+                <q-item-section v-if="scope.selected" side
+                  ><q-icon name="check" size="16px"
+                /></q-item-section>
+              </q-item>
+            </template>
             <template #append
               ><img src="/img/preferences/chevron-down.svg" alt=""
             /></template>
@@ -33,6 +55,13 @@
   </div>
 </template>
 <script setup>
+import { computed, ref } from "vue";
+import { useStoreLayout } from "src/stores/layoutStore";
+const layout = useStoreLayout();
+const openField = ref(null);
+const menuBackground = computed(() =>
+  layout.system.theme === "bg-theme-2" ? "#171717f5" : "#0e1420f5",
+);
 import LabelForm from "src/system/components/form/LabelForm.vue";
 import { preferenceOptions } from "src/services/preferenceEditor";
 defineProps({
@@ -120,5 +149,63 @@ const groups = [
   .preference-fields {
     grid-template-columns: 1fr;
   }
+}
+.preference-select :deep(.q-field__control:after) {
+  display: none;
+}
+.preference-select :deep(.q-field__control:before) {
+  border: 1px solid #efefef29;
+}
+.preference-select :deep(.q-field__native),
+.preference-select :deep(.q-field__input) {
+  font-weight: 400;
+  color: #989898;
+}
+.preference-select--open :deep(.q-field__control:before) {
+  border-color: #efefef66;
+}
+.preference-select--open :deep(.q-field__native) {
+  color: white;
+}
+.preference-select :deep(.q-field__control) {
+  box-shadow: none;
+}
+</style>
+<style>
+.portal-preference-menu {
+  padding: 4px;
+  border: 1px solid #efefef29;
+  border-radius: 8px;
+  background:
+    linear-gradient(150deg, #ffffff29, #ffffff0a 50%, #ffffff03),
+    var(--preference-menu-bg, #0e1420f5);
+  backdrop-filter: blur(40px);
+  box-shadow: 0 8px 24px #00000052;
+}
+.portal-preference-menu .portal-preference-option {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font:
+    400 14px Inter,
+    sans-serif;
+  color: #ffffffd9;
+}
+.portal-preference-menu .portal-preference-option--selected {
+  background: #ffffff1f;
+  color: white;
+  font-weight: 500;
+}
+.portal-preference-menu .portal-preference-option:hover {
+  background: #ffffff14;
+}
+.portal-preference-menu .portal-preference-option {
+  border-bottom: 0;
+}
+.portal-preference-menu .q-item__section--side .q-icon {
+  color: #00a3ff;
+}
+.portal-preference-menu .q-item__section--side {
+  color: #00a3ff;
 }
 </style>

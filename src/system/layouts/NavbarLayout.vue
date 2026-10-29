@@ -23,7 +23,10 @@
       </q-item>
       <q-space class="gt-sm" />
       <div class="portal-navbar-actions">
-        <hours-banner v-if="navbar.clock" />
+        <hours-banner
+          v-if="navbar.clock"
+          :compact="['config', 'profile'].includes($route.name)"
+        />
         <options-icons :theme="navbar.theme" :adm="data.role_id !== 3" />
         <avatar-menu v-if="data.account" :avatar="data.account.avatar" />
       </div>
@@ -129,6 +132,11 @@ export default defineComponent({
   );
 }
 .portal-navbar {
+  height: 80px;
+  min-height: 80px;
+  padding: 16px 24px;
+  gap: 16px;
+  border-radius: 8px;
   overflow: visible;
 }
 .portal-navbar-actions {
@@ -168,6 +176,11 @@ export default defineComponent({
     padding: 16px 16px 0;
   }
   .portal-navbar {
+    height: 80px;
+    min-height: 80px;
+    padding: 16px 24px;
+    gap: 16px;
+    border-radius: 8px;
     flex-wrap: wrap;
     justify-content: center;
     height: auto;
