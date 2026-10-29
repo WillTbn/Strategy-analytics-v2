@@ -388,3 +388,50 @@ test("replacement of the current rejected side uses that file ID after preflight
   h.writes[0].reject(Error("Keep draft"));
   await request;
 });
+
+test("CPF and NIF use upload for new files and replace the exact file while preserving dates", async () => {
+  for (const code of ["CPF", "NIF"])
+    for (const replace of [false, true]) {
+      const h = await harness();
+      await h.ready();
+      h.model.types.value = [{ id: code, name: code, allowsFileUpload: true }];
+      if (replace)
+        h.model.openReplace({
+          id: "previous-" + code,
+          documentTypeId: code,
+          issuedOn: "2025-01-01",
+          expiresOn: "2027-01-01",
+        });
+      else
+        h.model.openRequirementUpload({
+          documentTypeId: code,
+          requirementId: "requirement",
+          allowedActions: ["Upload"],
+        });
+      h.model.form.file = { name: "qa-ficticio.pdf" };
+      h.model.formRef.value = {
+        validate: async () => true,
+        resetValidation() {},
+      };
+      const request = h.model.save();
+      await flush();
+      const write = h.writes[0].value,
+        fields = Object.fromEntries(write.data.fields);
+      assert.equal(write.kind, replace ? "replace" : "upload");
+      if (replace) {
+        assert.equal(write.id, "previous-" + code);
+        assert.equal(fields.issuedOn, "2025-01-01");
+        assert.equal(fields.expiresOn, "2027-01-01");
+        assert.equal(fields.documentTypeId, undefined);
+      } else {
+        assert.equal(fields.documentTypeId, code);
+        assert.equal(fields.requirementId, "requirement");
+      }
+      h.writes[0].resolve({ id: "new" });
+      await flush();
+      h.settle(5);
+      await request;
+      assert.equal(h.model.dialog.value, false);
+      assert.equal(h.model.form.file, null);
+    }
+});

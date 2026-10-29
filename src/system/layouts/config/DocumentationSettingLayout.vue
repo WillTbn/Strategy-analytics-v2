@@ -161,7 +161,7 @@
                       />
                     </template>
                     <q-btn
-                      v-else-if="!row.isWaived && row.documentTypeId"
+                      v-else-if="canUploadRow(row)"
                       flat
                       dense
                       no-caps
@@ -360,6 +360,7 @@ const documentGroups = computed(() =>
     overview.value,
     progress.value,
     profile.value,
+    types.value,
   ),
 );
 const currentLevelNumber = computed(() => {
@@ -390,11 +391,13 @@ const progressValue = computed(() =>
   ),
 );
 const typeOptions = computed(() =>
-  types.value.map((t) => ({
-    label: t.name || t.displayName || t.code || "Documento",
-    value: t.id,
-    source: t,
-  })),
+  types.value
+    .filter((t) => t.allowsFileUpload !== false)
+    .map((t) => ({
+      label: t.name || t.displayName || t.code || "Documento",
+      value: t.id,
+      source: t,
+    })),
 );
 const selectedType = computed(
   () => typeOptions.value.find((t) => t.value === form.documentTypeId)?.source,
@@ -511,8 +514,19 @@ const openUpload = () => {
   resetDialog();
   dialog.value = true;
 };
+const canUploadRow = (row) =>
+  Boolean(
+    row.documentTypeId &&
+      !row.isWaived &&
+      types.value.find((type) => type.id === row.documentTypeId)
+        ?.allowsFileUpload !== false &&
+      (!Array.isArray(row.allowedActions) ||
+        row.allowedActions.some(
+          (action) => String(action).toLowerCase() === "upload",
+        )),
+  );
 const openRequirementUpload = (row) => {
-  if (!canOpen()) return;
+  if (!canOpen() || !canUploadRow(row)) return;
   openUpload();
   form.documentTypeId = row.documentTypeId;
   form.requirementId = row.requirementId || null;
@@ -572,6 +586,12 @@ const save = async () => {
   try {
     if (!(await formRef.value.validate()) || !current(session)) return;
     const replacement = replacing.value;
+    if (
+      !replacement &&
+      types.value.find((type) => type.id === form.documentTypeId)
+        ?.allowsFileUpload === false
+    )
+      throw new Error("Este tipo de documento não permite envio de arquivo.");
     if (replacement?.providedDocumentId) {
       const [latestProfile, latestOverview] = await Promise.all([
         getClientProfile(),

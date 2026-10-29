@@ -45,6 +45,7 @@ export function profileDocumentGroups(
   overview = {},
   progress = {},
   profile = null,
+  catalog = [],
 ) {
   const seen = new Set(),
     suppressed = new Set();
@@ -173,6 +174,43 @@ export function profileDocumentGroups(
       name: document.documentTypeName || "Documento",
       status: document.status,
       updatedAt: document.updatedAtUtc || null,
+    });
+  }
+  // Optional fiscal uploads still belong in the profile even without a requirement.
+  for (const type of catalog) {
+    if (
+      !type.id ||
+      type.allowsFileUpload !== true ||
+      ![type.code, type.name].some((value) =>
+        ["CPF", "NIF"].includes(String(value || "").toUpperCase()),
+      ) ||
+      groups.some((group) =>
+        group.rows.some((row) => row.documentTypeId === type.id),
+      )
+    )
+      continue;
+    let group = groups.find(
+      (entry) =>
+        entry.key === type.categoryId || entry.name === type.categoryName,
+    );
+    if (!group) {
+      group = {
+        key: type.categoryId || `fiscal-${type.id}`,
+        name: type.categoryName || "Documentação fiscal",
+        order: groups.length,
+        rows: [],
+      };
+      groups.push(group);
+    }
+    group.rows.push({
+      key: `catalog-${type.id}`,
+      documentTypeId: type.id,
+      name: type.name || type.code,
+      documents: [],
+      document: null,
+      status: "Missing",
+      isIndividuallyRequired: false,
+      allowedActions: ["Upload"],
     });
   }
   return groups.sort((a, b) => a.order - b.order);

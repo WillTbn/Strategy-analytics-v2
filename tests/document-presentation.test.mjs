@@ -110,3 +110,67 @@ test("superseded identity files never reappear as actionable ungrouped uploads",
  const groups=profileDocumentGroups(files,overview,progress,{identificationDocuments:{documents:[{source:"ProvidedDocument",documentTypeId:"rg",documentId:"current"}]}});
  assert.equal(groups.length,1);assert.equal(groups[0].rows.length,1);assert.equal(groups[0].rows[0].document.id,"current-file");
 });
+
+test("optional CPF and NIF appear only with upload capability and never duplicate an overview row", () => {
+  const catalog = [
+    {
+      id: "cpf",
+      code: "CPF",
+      name: "CPF",
+      categoryId: "fiscal",
+      categoryName: "Fiscal",
+      allowsFileUpload: true,
+    },
+    {
+      id: "nif",
+      code: "NIF",
+      name: "NIF",
+      categoryId: "fiscal",
+      categoryName: "Fiscal",
+      allowsFileUpload: true,
+    },
+  ];
+  const groups = profileDocumentGroups([], {}, {}, null, catalog);
+  assert.deepEqual(
+    groups[0].rows.map((row) => row.name),
+    ["CPF", "NIF"],
+  );
+  assert.ok(
+    groups[0].rows.every(
+      (row) => !row.isIndividuallyRequired && row.documents.length === 0,
+    ),
+  );
+  const existing = {
+    sections: [
+      {
+        categoryId: "fiscal",
+        name: "Fiscal",
+        items: [
+          {
+            documentTypeId: "cpf",
+            documentTypeName: "CPF",
+            allowedActions: [],
+          },
+        ],
+      },
+    ],
+  };
+  const rows = profileDocumentGroups([], existing, {}, null, catalog).flatMap(
+    (group) => group.rows,
+  );
+  assert.equal(rows.filter((row) => row.documentTypeId === "cpf").length, 1);
+  assert.deepEqual(
+    rows.find((row) => row.documentTypeId === "cpf").allowedActions,
+    [],
+  );
+  assert.equal(
+    profileDocumentGroups(
+      [],
+      {},
+      {},
+      null,
+      catalog.map((type) => ({ ...type, allowsFileUpload: false })),
+    ).length,
+    0,
+  );
+});
