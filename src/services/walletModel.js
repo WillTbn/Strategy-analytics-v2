@@ -38,7 +38,7 @@ export const WALLET_TYPES = [
     key: "strategy",
     label: "Carteira Strategy",
     description:
-      "Valores em contratos e saldo parado rendendo. Transferência de volta para Depósito em até 30 dias corridos.",
+      "Valores em contratos e saldo parado. Transferência de volta para Depósito em até 30 dias corridos.",
   },
   {
     key: "assets",
@@ -50,11 +50,11 @@ export const WALLET_TYPES = [
     key: "total",
     label: "Carteira Total",
     description:
-      "Depósito + Strategy + Patrimônio. Conversão pela cotação diária, somente para exibição na moeda principal.",
+      "Depósito + Strategy + Patrimônio, por moeda. Moedas diferentes não são somadas.",
   },
 ];
 export const YIELD_DESCRIPTION =
-  "Saldo parado na Strategy: até 60 dias, 70% do índice; de 61 a 180 dias, 85%; acima de 180 dias, 100%. Cada entrada tem sua própria idade. Rendimento composto em dias úteis (base 252), a partir do primeiro dia útil seguinte à entrada. Índices por moeda sujeitos à confirmação.";
+  "Saldo parado na Strategy. Os rendimentos ainda não estão disponíveis.";
 export const finiteMoney = (value) =>
   value !== null &&
   value !== undefined &&
@@ -77,6 +77,7 @@ export function walletMoney(value, currency) {
 // Presentation-only model. No HTTP schema is inferred here. A future API adapter
 // must explicitly supply per-wallet balances, daily FX totals and instructions.
 export function walletRows(model, type) {
+  if (model?.source === "marco3") return model[type]?.currencies || [];
   return WALLET_CURRENCIES.map((currency) => {
     const row = model?.[type]?.currencies?.find(
       (row) => row.currency === currency.code,
@@ -90,6 +91,11 @@ export function walletRows(model, type) {
   });
 }
 export function walletBalance(model, type, currency) {
+  if (model?.source === "marco3")
+    return finiteMoney(
+      model[type]?.currencies?.find((row) => row.currency === currency)
+        ?.available,
+    );
   return (
     walletRows(model, type).find((row) => row.currency === currency)?.balance ??
     null

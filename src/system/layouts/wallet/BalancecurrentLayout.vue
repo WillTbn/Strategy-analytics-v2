@@ -7,9 +7,10 @@
         :empty="empty"
         :loading="
           home.loading ||
+          wallets.loading ||
           (deposits.loading && totals.every((amount) => amount.value === null))
         "
-        :error="home.error || deposits.error"
+        :error="home.error || wallets.error || deposits.error"
         @retry="$emit('retry-home')"
       />
       <chart-wallet
@@ -32,14 +33,15 @@
     >
       <balance-items
         title="Carteira de Depósito"
-        subtitle="Disponível para saque · 1 dia útil"
+        subtitle="Saldo disponível e reservado"
         color-item="invested-color"
         :empty="empty"
         :show-comparison="false"
         :amounts="depositAmounts"
-        :loading="home.loading"
-        :error="home.error"
-        @retry="$emit('retry-home')"
+        :details="depositDetails"
+        :loading="wallets.loading"
+        :error="wallets.error"
+        @retry="$emit('retry-wallets')"
         description="Entrada e saída de dinheiro, sem rendimento. Saque para conta do mesmo titular e na mesma moeda, em até 1 dia útil."
         :view-values="dashboard.view_wallet_value"
       />
@@ -50,8 +52,9 @@
         :empty="empty"
         :show-comparison="false"
         :amounts="strategyAmounts"
-        :loading="home.loading"
-        :error="home.error"
+        :details="strategyDetails"
+        :loading="home.loading || wallets.loading"
+        :error="home.error || wallets.error"
         @retry="$emit('retry-home')"
         :description="YIELD_DESCRIPTION"
         :view-values="dashboard.view_wallet_value"
@@ -76,14 +79,12 @@
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useStoreLayout } from "src/stores/layoutStore";
-import {
-  YIELD_DESCRIPTION,
-  consolidatedWalletTotal,
-} from "src/services/walletModel";
+import { YIELD_DESCRIPTION } from "src/services/walletModel";
+import { walletDisplayAmounts } from "src/services/portfolioProjection";
 import BalanceItems from "src/system/components/wallet/BalanceItems.vue";
 import WalletTotal from "src/system/components/wallet/WalletTotal.vue";
 import ChartWallet from "src/system/components/ChartWallet.vue";
-import { portfolioIsEmpty, emptyAmounts } from "src/services/homePresentation";
+import { emptyAmounts } from "src/services/homePresentation";
 const props = defineProps({
   walletModel: { type: Object, default: null },
   home: { type: Object, required: true },
@@ -99,9 +100,7 @@ const props = defineProps({
 });
 defineEmits(["retry-home", "retry-wallets"]);
 const { dashboard } = storeToRefs(useStoreLayout());
-const empty = computed(() =>
-  portfolioIsEmpty(props.home, props.wallets, props.deposits),
-);
+const empty = computed(() => props.walletModel?.empty === true);
 // This view model is supplied only by an explicitly validated API adapter.
 function amountsFor(type) {
   const wallet = props.walletModel?.[type];
@@ -114,12 +113,33 @@ function amountsFor(type) {
     value: row.balance,
   }));
 }
-const totals = computed(() => [
-  {
-    currency: props.walletModel?.principalCurrency,
-    value: consolidatedWalletTotal(props.walletModel),
-  },
-]);
+function detailsFor(type, fields) {
+  return (props.walletModel?.[type]?.currencies || []).flatMap((row) =>
+    fields.map(([key, label]) => ({
+      currency: row.currency,
+      value: row[key],
+      label,
+    })),
+  );
+}
+const depositDetails = computed(() =>
+  detailsFor("deposit", [
+    ["available", "Disponível"],
+    ["reserved", "Reservado"],
+  ]),
+);
+const strategyDetails = computed(() =>
+  detailsFor("strategy", [
+    ["contracted", "Em contratos"],
+    ["idle", "Parado"],
+  ]),
+);
+const totals = computed(() =>
+  walletDisplayAmounts(props.walletModel, "total").map((row) => ({
+    currency: row.currency,
+    value: row.balance,
+  })),
+);
 const depositAmounts = computed(() =>
   props.walletModel ? amountsFor("deposit") : empty.value ? emptyAmounts() : [],
 );
@@ -134,17 +154,17 @@ const assetAmounts = computed(() => amountsFor("assets"));
 const strategySubtitle = computed(() => {
   const contracts = props.home.data?.contracts;
   if (contracts?.status !== "Available" || !Array.isArray(contracts.items))
-    return "Rendendo · contratos indisponíveis";
+    return "Saldo parado e contratos";
   if (
     contracts.items.length < Number(contracts.totalItems) ||
     contracts.items.some((item) => !item.businessStatus?.code)
   )
-    return "Rendendo · contratos indisponíveis";
+    return "Saldo parado e contratos";
   const count = contracts.items.filter(
     (item) => item.businessStatus?.code === "ACTIVE",
   ).length;
   return (
-    "Rendendo · " +
+    "Saldo parado · " +
     count +
     (count === 1 ? " contrato ativo" : " contratos ativos")
   );

@@ -7,7 +7,8 @@
           :wallets="wallets.state"
           :deposits="deposits.state"
           :profile="profile.state"
-          @retry-home="loadHome"
+          :wallet-model="walletModel"
+          @retry-home="reloadBalances"
           @retry-wallets="loadWallets"
         />
         <resume-contracts-layout :state="home.state" @retry="loadHome" />
@@ -35,7 +36,8 @@ import { storeToRefs } from "pinia";
 import { useStoreLayout } from "src/stores/layoutStore";
 import { useFinanceResource } from "src/composables/useFinanceResource";
 import { financeGet } from "src/services/financeService";
-import { onScopeDispose } from "vue";
+import { projectClientWallets } from "src/services/portfolioProjection";
+import { computed, onScopeDispose } from "vue";
 import { getClientProfileSummary } from "src/services/clientProfileService";
 import { readHomeDepositHistory } from "src/services/homeDepositHistory";
 import {
@@ -48,6 +50,13 @@ const home = useFinanceResource();
 const wallets = useFinanceResource();
 const deposits = useFinanceResource();
 const profile = useFinanceResource();
+const walletModel = computed(() =>
+  projectClientWallets(
+    home.state.loading || home.state.error ? null : home.state.data,
+    wallets.state.loading || wallets.state.error ? null : wallets.state.data,
+    profile.state.data?.preferences?.primaryCurrencyCode || "BRL",
+  ),
+);
 let active = true;
 const loadHome = () => {
   const session = captureClientSession();
@@ -77,8 +86,8 @@ const loadHome = () => {
 };
 const loadWallets = () =>
   wallets.load(async () => (await financeGet("client/wallets")).data);
-loadHome();
-loadWallets();
+const reloadBalances = () => Promise.all([loadHome(), loadWallets()]);
+reloadBalances();
 onScopeDispose(() => {
   active = false;
   [home, wallets, deposits, profile].forEach((resource) => resource.reset());

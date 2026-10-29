@@ -31,7 +31,13 @@
               {{ viewValues ? "••••" : amountLabel(amount) }} · saldo em
               {{ amount.currency }}
             </p>
-            <p v-if="!empty && amounts.length < 2" class="text-weight-light">
+            <p
+              v-if="
+                !empty &&
+                !amounts.some((item) => numericValue(item.value) !== null)
+              "
+              class="text-weight-light"
+            >
               {{
                 loading
                   ? "Carregando"
@@ -48,6 +54,11 @@
         >
           {{ comparisonLabel }}
         </p>
+      </div>
+      <div v-if="!loading && !error" class="text-caption q-mt-sm">
+        <div v-for="detail in details" :key="detail.label + detail.currency">
+          {{ detail.label }}: {{ viewValues ? "••••" : amountLabel(detail) }}
+        </div>
       </div>
       <div v-if="error" role="alert" class="text-caption">
         {{ error }}
@@ -73,6 +84,7 @@ const props = defineProps({
   colorItem: String,
   description: String,
   amounts: { type: Array, default: () => [] },
+  details: { type: Array, default: () => [] },
   viewValues: Boolean,
   loading: Boolean,
   error: String,
