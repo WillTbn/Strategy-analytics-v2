@@ -1,12 +1,7 @@
 <template>
-  <div
-    class="hours-banner"
-    :class="{ 'hours-banner--compact': compact }"
-    role="timer"
-    :aria-label="`${day} ${timeLabel}`"
-  >
-    <span v-if="!compact">{{ day }}</span>
-    <span v-if="!compact" class="hours-banner__divider" aria-hidden="true" />
+  <div class="hours-banner" role="timer" :aria-label="`${day} ${timeLabel}`">
+    <span>{{ day }}</span>
+    <span class="hours-banner__divider" aria-hidden="true" />
     <div class="hours-banner__time">
       <span
         ><template v-for="(part, index) in timeParts" :key="index"
@@ -22,7 +17,6 @@ import { computed, onScopeDispose, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useStoreLayout } from "src/stores/layoutStore";
 const { system, optionsTimeZone } = storeToRefs(useStoreLayout());
-const props = defineProps({ compact: Boolean });
 const now = ref(new Date());
 const timer = setInterval(() => {
   now.value = new Date();
@@ -41,7 +35,7 @@ const timeLabel = computed(() =>
     timeZone: zone.value,
     hour: "2-digit",
     minute: "2-digit",
-    second: props.compact ? undefined : "2-digit",
+    second: "2-digit",
     hourCycle: "h23",
   }).format(now.value),
 );
@@ -70,6 +64,8 @@ const day = computed(() =>
   backdrop-filter: blur(40px);
   font-size: 20px;
   white-space: nowrap;
+  box-sizing: border-box;
+  box-shadow: 4px 4px 12px #0000003d;
 }
 .hours-banner__divider {
   width: 1px;
@@ -85,11 +81,6 @@ const day = computed(() =>
 }
 .hours-banner__colon {
   color: #989898;
-  margin: 0 4px;
-}
-.hours-banner--compact {
-  flex-basis: 122px;
-  width: 122px;
-  height: 43px;
+  margin: 0 2px;
 }
 </style>

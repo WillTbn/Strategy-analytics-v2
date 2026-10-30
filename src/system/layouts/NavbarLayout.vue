@@ -23,10 +23,7 @@
       </q-item>
       <q-space class="gt-sm" />
       <div class="portal-navbar-actions">
-        <hours-banner
-          v-if="navbar.clock"
-          :compact="['config', 'profile'].includes($route.name)"
-        />
+        <hours-banner v-if="navbar.clock" />
         <options-icons :theme="navbar.theme" :adm="data.role_id !== 3" />
         <avatar-menu v-if="data.account" :avatar="data.account.avatar" />
       </div>

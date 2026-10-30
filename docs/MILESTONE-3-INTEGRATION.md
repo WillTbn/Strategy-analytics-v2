@@ -39,3 +39,11 @@ Fonte de referência no repositório strategy-control: docs/Api/milestone-3-swag
 - Não houve criação, aprovação ou execução de movimentação financeira real durante esta validação.
 
 A homologação administrativa integrada foi executada em 10/10 e 12/10: rascunho criado/editado, depósito de R$ 1,00 criado e cancelado, observação gravada, patrimônio regravado sem alteração de valores, carteira/ledger/histórico/CSV conferidos. Veja docs/MILESTONE-3-MANUAL-TEST-CHECKLIST.md no repositório strategy-control para o resultado de cada cenário e as pendências. Aprovação/execução de novas movimentações e demais escritas não exercitadas não estão homologadas.
+
+## Reteste 30/10/2026 — item 120
+
+- Removida a variante compacta do relógio no Perfil resumido/completo, substituindo o trecho do item 110.
+- Conferido 179×51, dia, separador e segundos, sem GMT, em Home, Perfil resumido e Perfil completo.
+- Conferidos os três temas; preferência original Cinza e preto restaurada. Em 390 px, relógio inteiro, sem overflow interno.
+- Lint, build e 308 testes aprovados. A verificação de diff dos arquivos alterados de código passou; whitespace preexistente em PRODUCT.md e neste documento foi preservado.
+- Alteração local, sem commit/publicação nesta rodada.
