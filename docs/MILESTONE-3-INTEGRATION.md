@@ -47,3 +47,13 @@ A homologação administrativa integrada foi executada em 10/10 e 12/10: rascunh
 - Conferidos os três temas; preferência original Cinza e preto restaurada. Em 390 px, relógio inteiro, sem overflow interno.
 - Lint, build e 308 testes aprovados. A verificação de diff dos arquivos alterados de código passou; whitespace preexistente em PRODUCT.md e neste documento foi preservado.
 - Alteração local, sem commit/publicação nesta rodada.
+
+## Item 101 — características adicionais do imóvel — 01/11/2026
+
+- Implementado seletor com as oito opções sugeridas pelo backend e Personalizada, somente para imóvel, nos dois projetos.
+- Nome e valor obrigatórios, limites de 80/120 caracteres e máximo de cinco itens. Mensagens dos cinco códigos 400 traduzidas.
+- POST/PATCH usam realEstate.characteristics; PATCH envia lista completa, preserva ordem e envia [] ao remover todas.
+- Perfil da Área do Cliente usa /client/profile/assets. Este editor não depende de nova versão do Data Intake.
+- Validação integrada em homologação: Admin gravou opção padrão e portal a leu; portal gravou personalizada e Admin a leu; portal removeu toda a lista. Dados fictícios do teste removidos.
+- Verificação visual dos dois editores e bloqueio de campos vazios/limite de cinco no Admin. Lint e build passaram em ambos; Admin 208 testes e portal 311 testes passaram. Diff de src/tests sem erros de whitespace.
+- Alterações locais, ainda não publicadas nesta rodada.

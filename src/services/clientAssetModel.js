@@ -1,3 +1,7 @@
+import {
+  cloneCharacteristics,
+  characteristicsPayload,
+} from "./realEstateCharacteristics.js";
 import { calendarDate } from "./registrationDocuments.js";
 import { profileAmount } from "./profileJobEdit.js";
 // Only fields present in the profile's Figma asset editors belong in this projection.
@@ -167,6 +171,13 @@ export const assetFormSections = (type) => sections[type] || [];
 export function assetDraft(asset, type) {
   return {
     ...asset[detailKey[type]],
+    ...(type === "RealEstate"
+      ? {
+          characteristics: cloneCharacteristics(
+            asset.realEstate?.characteristics,
+          ),
+        }
+      : {}),
     nickname: asset.nickname || "",
     declaredValue: asset.declaredValue ?? null,
     remainingBalance:
@@ -198,6 +209,10 @@ export function assetPayload(draft, type, currencyId, existing) {
     return isAssetIntegerField(key) ? value : profileAmount(draft[key]);
   };
   const detail = {};
+  if (type === "RealEstate")
+    detail.characteristics = characteristicsPayload(
+      draft.characteristics ?? existing?.realEstate?.characteristics,
+    );
   // Preserve backend-supported metadata omitted from the designer's editor.
   if (type === "Vehicle" && existing?.vehicle)
     detail.color = existing.vehicle.color;

@@ -43,6 +43,17 @@
             /></q-item-section>
           </template>
           <div class="q-pa-md">
+            <dl v-if="item.realEstate?.characteristics?.length" class="q-mb-md">
+              <div
+                v-for="(characteristic, index) in item.realEstate
+                  .characteristics"
+                :key="index"
+                class="q-mb-sm"
+              >
+                <dt>{{ characteristic.name }}</dt>
+                <dd class="q-ml-none">{{ characteristic.value }}</dd>
+              </div>
+            </dl>
             <div class="text-weight-medium q-mb-sm">Documentos vinculados</div>
             <resource-state
               :state="documentsFor(item.id).state"
@@ -162,6 +173,12 @@
                     /></label-form>
                   </div>
                 </div>
+                <property-characteristics
+                  v-if="selectedSection.type === 'RealEstate'"
+                  v-model="draft.characteristics"
+                  :disabled="saving"
+                  class="q-mt-lg"
+                />
                 <div
                   class="q-mt-lg"
                   v-if="selectedSection.type === 'Investment'"
@@ -253,6 +270,7 @@
   </div>
 </template>
 <script setup>
+import PropertyCharacteristics from "src/system/components/profile/PropertyCharacteristics.vue";
 import { QInput } from "quasar";
 import MoneyInput from "src/system/components/form/MoneyInput.vue";
 import { computed, onScopeDispose, ref } from "vue";

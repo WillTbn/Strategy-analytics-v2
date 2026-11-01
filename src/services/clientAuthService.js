@@ -1,3 +1,4 @@
+import { characteristicErrors } from "./realEstateCharacteristics";
 import { clientApi } from "./clientApi";
 
 export async function register(payload, idempotencyKey) {
@@ -81,6 +82,7 @@ export function getApiErrorMessage(
     error?.response?.data?.code ||
     error?.response?.data?.errors?.[0]?.code ||
     "";
+  if (characteristicErrors[code]) return characteristicErrors[code];
   if (code === "bank_account.holder_identification_missing")
     return "Cadastre seu documento fiscal no perfil antes de salvar a conta bancária.";
   if (code === "onboarding.profile_locked_under_review")
