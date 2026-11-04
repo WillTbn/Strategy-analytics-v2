@@ -106,7 +106,7 @@ export default defineComponent({
 
 <style scoped>
 .portal-header {
-  padding: 24px 24px 0;
+  padding: 24px 48px 0;
 }
 .portal-nav-item {
   color: #666666;
@@ -135,6 +135,16 @@ export default defineComponent({
   gap: 16px;
   border-radius: 8px;
   overflow: visible;
+}
+.portal-navbar.bg-theme-3-navbar {
+  background: linear-gradient(
+    181.1deg,
+    rgba(255, 255, 255, 0.16),
+    rgba(255, 255, 255, 0.04) 50%,
+    rgba(255, 255, 255, 0.01)
+  );
+  backdrop-filter: blur(32px);
+  box-shadow: 4px 4px 48px 16px rgba(0, 0, 0, 0.24);
 }
 .portal-navbar-actions {
   display: flex;

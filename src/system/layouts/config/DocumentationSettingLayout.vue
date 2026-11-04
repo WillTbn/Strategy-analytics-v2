@@ -22,42 +22,51 @@
           <img src="/system/icons/profile/progress.png" alt="" />
         </div>
         <div class="documentation-progress-copy">
-          <div class="text-subtitle1 text-weight-bold">
-            Acompanhe seu nível documental
-          </div>
-          <div class="text-caption q-mt-xs">
-            {{
-              progress.nextLevel?.name
-                ? `Próximo nível: ${progress.nextLevel.name}`
-                : "Progresso dos requisitos documentais"
-            }}
-          </div>
-          <div class="row items-center q-gutter-sm q-mt-xs">
+          <h2>
+            Suba de Nível e Desbloqueie Funcionalidades e Recursos Especiais!
+          </h2>
+          <div class="documentation-progress-line">
+            <span>{{ levelProgress.text }}</span>
             <q-linear-progress
               rounded
               size="6px"
               color="primary"
-              :value="progressValue / 100"
-              class="col"
+              :value="levelProgress.value || 0"
               aria-label="Progresso documental"
             />
-            <span>{{ progressValue }}%</span>
+            <span class="documentation-counter">{{
+              levelProgress.counter
+            }}</span>
           </div>
         </div>
         <div class="document-levels" aria-label="Níveis documentais">
           <div
-            v-for="level in [1, 2, 3]"
-            :key="level"
+            v-for="(description, index) in [
+              'Cadastro concluído',
+              '5 documentos enviados',
+              '3 patrimônios registrados',
+            ]"
+            :key="index"
             class="document-level"
-            :class="{ 'document-level--current': currentLevelNumber === level }"
+            :class="{
+              'document-level--current': currentLevelNumber === index + 1,
+            }"
           >
-            <img :src="`/system/icons/profile/level-${level}.svg`" alt="" />
-            <span
-              >Nível {{ level }}
-              <span v-if="currentLevelNumber === level" class="text-primary"
-                >(atual)</span
-              ></span
-            >
+            <span class="document-level-icon"
+              ><img
+                :src="`/system/icons/profile/level-${index + 1}.svg`"
+                alt=""
+            /></span>
+            <div>
+              <span
+                >Nível {{ index + 1 }}
+                <span
+                  v-if="currentLevelNumber === index + 1"
+                  class="text-primary"
+                  >(atual)</span
+                ></span
+              ><small>{{ description }}</small>
+            </div>
           </div>
         </div>
       </q-card>
@@ -69,10 +78,39 @@
         :key="group.key"
         class="tool q-mb-lg"
       >
-        <div class="text-subtitle1 text-weight-bold q-mb-lg">
-          {{ group.name }}
+        <div class="document-group-heading">
+          <h3>{{ group.name }}</h3>
+          <span class="document-group-tag">Conta para o Nível 2</span>
+          <div
+            v-if="dialog && activeGroupKey === group.key"
+            class="document-group-actions"
+          >
+            <q-btn
+              flat
+              no-caps
+              color="primary"
+              icon="check"
+              label="Salvar"
+              type="submit"
+              form="profile-document-upload"
+              :loading="saving"
+            /><q-btn
+              flat
+              no-caps
+              color="grey-6"
+              label="Descartar"
+              :disable="saving"
+              @click="closeDialog"
+            />
+          </div>
         </div>
-        <q-markup-table flat class="document-table" wrap-cells>
+        <div :id="`document-editor-${group.key}`"></div>
+        <q-markup-table
+          v-if="!dialog || activeGroupKey !== group.key"
+          flat
+          class="document-table"
+          wrap-cells
+        >
           <thead>
             <tr>
               <th class="text-left">Documento requisitado</th>
@@ -103,15 +141,26 @@
                   </div>
                 </td>
                 <td>
-                  <span class="document-filename">{{
-                    attachment?.fileName ||
-                    attachment?.originalFileName ||
-                    attachment?.file?.originalFileName ||
-                    attachment?.file?.fileName ||
-                    (attachment
-                      ? "Arquivo protegido"
-                      : "Nenhum arquivo anexado")
-                  }}</span>
+                  <span class="document-file"
+                    ><span
+                      v-if="attachment"
+                      class="document-format"
+                      :class="`document-format--${fileFormat(attachment)}`"
+                      ><img
+                        v-if="['PDF', 'IMG'].includes(fileFormat(attachment))"
+                        :src="`/system/icons/profile/file-${fileFormat(attachment).toLowerCase()}.png`"
+                        alt=""
+                      /><span v-else>{{ fileFormat(attachment) }}</span></span
+                    ><span class="document-filename">{{
+                      attachment?.fileName ||
+                      attachment?.originalFileName ||
+                      attachment?.file?.originalFileName ||
+                      attachment?.file?.fileName ||
+                      (attachment
+                        ? "Arquivo protegido"
+                        : "Nenhum arquivo anexado")
+                    }}</span></span
+                  >
                   <div v-if="attachment?.rejectionReason" class="text-negative">
                     {{ attachment.rejectionReason }}
                   </div>
@@ -124,9 +173,7 @@
                   />
                 </td>
                 <td>
-                  {{
-                    formatUpdatedAt(attachment?.updatedAtUtc || row.updatedAt)
-                  }}
+                  {{ formatUpdatedAt(documentUpdatedAt(attachment, row)) }}
                 </td>
                 <td>
                   <div class="row no-wrap items-center q-gutter-xs">
@@ -155,19 +202,23 @@
                         dense
                         no-caps
                         color="primary"
+                        class="document-upload-button"
+                        icon="upload"
                         label="Upload de arquivo"
                         :disable="saving"
-                        @click="openReplace(attachment)"
+                        @click="openReplace(attachment, group.key)"
                       />
                     </template>
                     <q-btn
-                      v-else-if="canUploadRow(row)"
+                      v-else
                       flat
                       dense
                       no-caps
                       color="primary"
+                      class="document-upload-button"
+                      icon="upload"
                       label="Upload de arquivo"
-                      :disable="saving"
+                      :disable="saving || !canUploadRow(row)"
                       @click="openRequirementUpload(row)"
                     />
                   </div>
@@ -182,65 +233,40 @@
           </tbody>
         </q-markup-table>
       </q-card>
-      <q-btn
-        flat
-        no-caps
-        color="primary"
-        icon="upload_file"
-        label="Enviar outro documento"
-        :disable="saving || !typeOptions.length"
-        @click="openUpload"
-      />
     </template>
 
-    <q-dialog v-model="dialog" persistent
+    <Teleport v-if="dialog" :to="`#document-editor-${activeGroupKey}`"
       ><q-card class="tool form-card"
-        ><q-card-section class="row items-center justify-between"
-          ><div class="text-subtitle1 text-weight-bold">
-            {{ replacing ? "Substituir documento" : "Enviar documento" }}
-          </div>
-          <q-btn
-            flat
-            round
-            dense
-            icon="close"
-            aria-label="Fechar"
-            :disable="saving"
-            @click="closeDialog" /></q-card-section
-        ><q-separator dark /><q-form ref="formRef" @submit.prevent="save"
+        ><q-form
+          id="profile-document-upload"
+          ref="formRef"
+          @submit.prevent="save"
           ><q-card-section
             ><div class="row q-col-gutter-md">
               <label-form
-                v-if="!replacing"
-                class-name="col-12"
+                v-if="
+                  !replacing &&
+                  activeGroupKey === 'identity' &&
+                  editingRows.some((row) => row.side)
+                "
+                class-name="col-12 col-md-6"
                 text-label="Tipo de documento"
                 ><q-select
                   :disable="saving"
-                  v-model="form.documentTypeId"
-                  :readonly="Boolean(form.requirementId)"
-                  :options="typeOptions"
+                  v-model="identityTypeId"
+                  :options="identityTypeOptions"
                   emit-value
                   map-options
                   outlined
                   dense
                   dark
                   :rules="requiredRules"
-                  @update:model-value="typeChanged"
-              /></label-form>
-              <label-form
-                v-if="!replacing && countryOptions.length"
-                class-name="col-12"
-                text-label="País"
-                ><q-select
-                  :disable="saving"
-                  v-model="form.countryId"
-                  :options="countryOptions"
-                  emit-value
-                  map-options
-                  outlined
-                  dense
-                  dark
-                  @update:model-value="loadDefinition"
+                  @update:model-value="
+                    (value) => {
+                      form.documentTypeId = value;
+                      typeChanged();
+                    }
+                  "
               /></label-form>
               <div
                 v-if="definitionHint"
@@ -248,57 +274,69 @@
               >
                 {{ definitionHint }}
               </div>
-              <label-form class-name="col-12" text-label="Arquivo"
-                ><q-file
-                  :disable="saving"
-                  v-model="form.file"
+              <label-form
+                v-for="entry in editingRows"
+                :key="entry.key"
+                class-name="col-12 col-md-6"
+                :text-label="entry.name"
+              >
+                <q-file
+                  :model-value="groupDrafts[entry.key]?.files || null"
+                  @update:model-value="queueRow(entry, $event)"
+                  :multiple="
+                    entry.maxFiles > 1 &&
+                    !entry.documents.some((file) => isRejected(file.status))
+                  "
+                  :max-files="
+                    entry.documents.some((file) => isRejected(file.status))
+                      ? 1
+                      : entry.maxFiles
+                  "
+                  :disable="
+                    saving ||
+                    !entry.catalogAvailable ||
+                    (entry.documents.length > 0 &&
+                      !entry.documents.some((file) => isRejected(file.status)))
+                  "
                   outlined
                   dense
-                  dark
                   accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                   max-file-size="26214400"
-                  :rules="fileRules"
+                  :display-value="
+                    groupDrafts[entry.key]?.files
+                      ? undefined
+                      : entry.documents.length
+                        ? entry.documents
+                            .map(
+                              (file) =>
+                                file.fileName ||
+                                file.originalFileName ||
+                                'Arquivo enviado',
+                            )
+                            .join(', ')
+                        : 'Importe o arquivo'
+                  "
+                  :aria-label="entry.name"
+                  :class="{
+                    'document-import--empty':
+                      !groupDrafts[entry.key]?.files && !entry.documents.length,
+                  }"
                   @rejected="fileRejected"
-                  ><template #prepend
-                    ><q-icon name="attach_file" /></template></q-file
-              ></label-form>
-              <label-form
-                class-name="col-12 col-md-6"
-                text-label="Data de emissão"
-                ><q-input
-                  :disable="saving"
-                  v-model="form.issuedOn"
-                  type="date"
-                  outlined
-                  dense
-                  dark
-              /></label-form>
-              <label-form
-                class-name="col-12 col-md-6"
-                text-label="Data de validade"
-                ><q-input
-                  :disable="saving"
-                  v-model="form.expiresOn"
-                  type="date"
-                  outlined
-                  dense
-                  dark
-              /></label-form></div></q-card-section
-          ><q-card-actions align="right"
-            ><q-btn
-              flat
-              label="Cancelar"
-              no-caps
-              :disable="saving"
-              @click="closeDialog" /><q-btn
-              type="submit"
-              flat
-              color="primary"
-              icon="upload"
-              label="Enviar"
-              no-caps
-              :loading="saving" /></q-card-actions></q-form></q-card
-    ></q-dialog>
+                  ><template #prepend><q-icon name="description" /></template
+                ></q-file>
+              </label-form>
+              <p
+                v-if="groupSaveError"
+                class="col-12 text-negative"
+                role="alert"
+              >
+                {{ groupSaveError }}
+              </p>
+            </div></q-card-section
+          ></q-form
+        ></q-card
+      ></Teleport
+    >
   </div>
 </template>
 
@@ -310,6 +348,13 @@ import {
   documentReplacementValues,
 } from "src/services/documentPresentation";
 import { onboardingBlockMessage } from "src/services/onboardingBlock";
+import {
+  documentationGroups,
+  documentationProgress,
+  fileFormat,
+  documentUpdatedAt,
+} from "src/services/profileDocumentation";
+import { listClientAssets } from "src/services/clientAssetsService";
 import LabelForm from "src/system/components/form/LabelForm.vue";
 import {
   captureClientSession,
@@ -344,31 +389,69 @@ const loading = ref(true),
   progress = ref({}),
   profile = ref(null),
   definition = ref(null);
+const identityTypeId = ref(null);
+const identityTypeOptions = computed(() =>
+  types.value
+    .filter((type) =>
+      ["RG", "CNH", "PASSPORT", "PASSAPORTE"].includes(type.code),
+    )
+    .map((type) => ({ label: type.name, value: type.id })),
+);
+const activeGroupKey = ref("identity"),
+  groupDrafts = reactive({}),
+  groupSaveError = ref("");
+let acceptedFiles = new Set();
+const editingRows = computed(
+  () =>
+    documentGroups.value.find((group) => group.key === activeGroupKey.value)
+      ?.rows || [],
+);
+const queueRow = (row, value) => {
+  const files = Array.isArray(value) ? value : value ? [value] : [];
+  if (files.length > row.maxFiles) {
+    groupSaveError.value = `Selecione até ${row.maxFiles} arquivos.`;
+    return;
+  }
+  for (const file of files) {
+    const result = fileRules
+      .map((rule) => rule(file))
+      .find((result) => result !== true);
+    if (result) {
+      groupSaveError.value = result;
+      return;
+    }
+  }
+  groupDrafts[row.key] = { row, files: value };
+  groupSaveError.value = "";
+};
 const blank = () => ({
     documentTypeId: null,
     requirementId: null,
     countryId: null,
     file: null,
+    side: null,
     issuedOn: "",
     expiresOn: "",
   }),
   form = reactive(blank());
 const collection = (v) => (Array.isArray(v) ? v : v?.items || v?.data || []);
 const documentGroups = computed(() =>
-  profileDocumentGroups(
-    documents.value,
-    overview.value,
-    progress.value,
-    profile.value,
+  documentationGroups(
+    profileDocumentGroups(
+      documents.value,
+      overview.value,
+      progress.value,
+      profile.value,
+      types.value,
+    ),
     types.value,
   ),
 );
-const currentLevelNumber = computed(() => {
-  const level = progress.value.currentLevel;
-  return (
-    Number(String(level?.name || level?.code || "").match(/[1-3]/)?.[0]) || null
-  );
-});
+const assetCount = ref(null);
+const levelProgress = computed(() =>
+  documentationProgress(progress.value, documentGroups.value, assetCount.value),
+);
+const currentLevelNumber = computed(() => levelProgress.value.level);
 const formatUpdatedAt = (value) => {
   if (!value) return "Não informada";
   const date = new Date(value);
@@ -376,31 +459,8 @@ const formatUpdatedAt = (value) => {
     ? "Não informada"
     : date.toLocaleDateString("pt-BR");
 };
-const progressValue = computed(() =>
-  Math.max(
-    0,
-    Math.min(
-      100,
-      Number(
-        progress.value.percentage ??
-          progress.value.progressPercentage ??
-          progress.value.progress ??
-          0,
-      ),
-    ),
-  ),
-);
-const typeOptions = computed(() =>
-  types.value
-    .filter((t) => t.allowsFileUpload !== false)
-    .map((t) => ({
-      label: t.name || t.displayName || t.code || "Documento",
-      value: t.id,
-      source: t,
-    })),
-);
-const selectedType = computed(
-  () => typeOptions.value.find((t) => t.value === form.documentTypeId)?.source,
+const selectedType = computed(() =>
+  types.value.find((t) => t.id === form.documentTypeId),
 );
 const countryOptions = computed(() =>
   collection(
@@ -430,12 +490,12 @@ const statusLabel = (s) =>
   ({
     Uploaded: "Enviado",
     Pending: "Pendente",
-    Missing: "Pendente",
+    Missing: "Upload Pendente",
     Waived: "Dispensado",
     InReview: "Em análise",
     UnderReview: "Em análise",
     Approved: "Aprovado",
-    Rejected: "Rejeitado",
+    Rejected: "Negado",
   })[s] ||
   s ||
   "Enviado";
@@ -478,6 +538,15 @@ const load = async () => {
     documents.value = profileDocumentRows(collection(d), o);
     types.value = collection(t);
     profile.value = customerProfile;
+    assetCount.value = null;
+    listClientAssets()
+      .then((items) => {
+        if (latest())
+          assetCount.value = items.filter(
+            (x) => x.status !== "Archived",
+          ).length;
+      })
+      .catch(() => {});
   } catch (e) {
     if (!latest()) return;
     const block = onboardingBlockMessage(e);
@@ -492,6 +561,9 @@ const load = async () => {
   }
 };
 const resetDialog = () => {
+  for (const key of Object.keys(groupDrafts)) delete groupDrafts[key];
+  acceptedFiles = new Set();
+  groupSaveError.value = "";
   definitionRevision++;
   Object.assign(form, blank());
   replacing.value = null;
@@ -501,7 +573,9 @@ const resetDialog = () => {
 };
 const closeDialog = () => {
   if (saving.value) return;
+  const reload = acceptedFiles.size > 0;
   resetDialog();
+  if (reload) load();
 };
 const canOpen = () =>
   !saving.value &&
@@ -517,6 +591,7 @@ const openUpload = () => {
 const canUploadRow = (row) =>
   Boolean(
     row.documentTypeId &&
+      row.catalogAvailable &&
       !row.isWaived &&
       types.value.find((type) => type.id === row.documentTypeId)
         ?.allowsFileUpload !== false &&
@@ -527,15 +602,28 @@ const canUploadRow = (row) =>
   );
 const openRequirementUpload = (row) => {
   if (!canOpen() || !canUploadRow(row)) return;
+  activeGroupKey.value =
+    documentGroups.value.find((group) =>
+      group.rows.some((item) => item.key === row.key),
+    )?.key || "identity";
   openUpload();
   form.documentTypeId = row.documentTypeId;
+  identityTypeId.value =
+    (row.side
+      ? row.documentTypeId
+      : editingRows.value.find((item) => item.side)?.documentTypeId) ||
+    identityTypeOptions.value[0]?.value ||
+    null;
   form.requirementId = row.requirementId || null;
+  form.side = row.side || null;
   typeChanged();
 };
-const openReplace = (d) => {
+const openReplace = (d, groupKey = "identity") => {
+  activeGroupKey.value = groupKey;
   if (!canOpen()) return;
   resetDialog();
   replacing.value = d;
+  identityTypeId.value = d.documentTypeId;
   Object.assign(form, documentReplacementValues(d));
   dialog.value = true;
 };
@@ -579,71 +667,114 @@ const loadDefinition = async () => {
 const fileRejected = () =>
   errorNotify("Use um arquivo PDF, JPEG ou PNG com até 25 MB.");
 
+const writeSelectedFile = async (values, replacement, session) => {
+  if (
+    !replacement &&
+    types.value.find((type) => type.id === values.documentTypeId)
+      ?.allowsFileUpload === false
+  )
+    throw new Error("Este tipo de documento não permite envio de arquivo.");
+  if (replacement?.providedDocumentId) {
+    const [latestProfile, latestOverview] = await Promise.all([
+      getClientProfile(),
+      getClientDocumentOverview(),
+    ]);
+    if (!current(session)) return;
+    const identity = latestProfile?.identificationDocuments?.documents?.find(
+      (item) =>
+        item.documentTypeId === replacement.documentTypeId &&
+        item.source === "ProvidedDocument",
+    );
+    const files = (latestOverview?.sections || [])
+      .flatMap((section) => section.items || [])
+      .flatMap((item) =>
+        item.files?.length ? item.files : item.document ? [item.document] : [],
+      );
+    if (
+      identity?.documentId !== replacement.providedDocumentId ||
+      !files.some(
+        (file) => file.id === replacement.id && file.status === "Rejected",
+      )
+    )
+      throw new Error(
+        "Este documento mudou. Feche o envio e recarregue a seção antes de tentar novamente.",
+      );
+  }
+  const data = new FormData();
+  data.append("file", values.file);
+  if (values.side) data.append("side", values.side);
+  if (values.issuedOn) data.append("issuedOn", values.issuedOn);
+  if (values.expiresOn) data.append("expiresOn", values.expiresOn);
+  if (replacement) await replaceClientDocument(replacement.id, data);
+  else {
+    data.append("documentTypeId", values.documentTypeId);
+    if (values.requirementId)
+      data.append("requirementId", values.requirementId);
+    if (values.countryId) data.append("countryId", values.countryId);
+    await uploadClientDocument(data);
+  }
+};
 const save = async () => {
   if (saving.value || !dialog.value || !formRef.value) return;
   const session = captureClientSession();
   saving.value = true;
   try {
     if (!(await formRef.value.validate()) || !current(session)) return;
-    const replacement = replacing.value;
-    if (
-      !replacement &&
-      types.value.find((type) => type.id === form.documentTypeId)
-        ?.allowsFileUpload === false
-    )
-      throw new Error("Este tipo de documento não permite envio de arquivo.");
-    if (replacement?.providedDocumentId) {
-      const [latestProfile, latestOverview] = await Promise.all([
-        getClientProfile(),
-        getClientDocumentOverview(),
-      ]);
-      if (!current(session)) return;
-      const identity = latestProfile?.identificationDocuments?.documents?.find(
-        (item) =>
-          item.documentTypeId === replacement.documentTypeId &&
-          item.source === "ProvidedDocument",
-      );
-      const files = (latestOverview?.sections || [])
-        .flatMap((section) => section.items || [])
-        .flatMap((item) =>
-          item.files?.length
-            ? item.files
-            : item.document
-              ? [item.document]
-              : [],
-        );
-      if (
-        identity?.documentId !== replacement.providedDocumentId ||
-        !files.some(
-          (file) => file.id === replacement.id && file.status === "Rejected",
-        )
-      )
-        throw new Error(
-          "Este documento mudou. Feche o envio e recarregue a seção antes de tentar novamente.",
-        );
+    const pending = Object.values(groupDrafts).flatMap(({ row, files }) =>
+      (Array.isArray(files) ? files : files ? [files] : []).map((file) => ({
+        row,
+        file,
+      })),
+    );
+    if (!pending.length && form.file)
+      pending.push({ row: null, file: form.file });
+    if (!pending.length) {
+      groupSaveError.value = "Selecione pelo menos um arquivo.";
+      return;
     }
-    const data = new FormData();
-    data.append("file", form.file);
-    if (form.issuedOn) data.append("issuedOn", form.issuedOn);
-    if (form.expiresOn) data.append("expiresOn", form.expiresOn);
-    if (replacement) await replaceClientDocument(replacement.id, data);
-    else {
-      data.append("documentTypeId", form.documentTypeId);
-      if (form.requirementId) data.append("requirementId", form.requirementId);
-      if (form.countryId) data.append("countryId", form.countryId);
-      await uploadClientDocument(data);
+    for (const { row, file } of pending) {
+      if (acceptedFiles.has(file)) continue;
+      const replacement = row
+        ? (replacing.value?.documentTypeId === row.documentTypeId
+            ? replacing.value
+            : row.documents.find((file) => isRejected(file.status))) || null
+        : replacing.value;
+      const values = {
+        ...form,
+        ...(replacement ? documentReplacementValues(replacement) : {}),
+        file,
+        ...(row
+          ? {
+              documentTypeId: row.side
+                ? identityTypeId.value || row.documentTypeId
+                : row.documentTypeId,
+              requirementId: row.requirementId || null,
+              side: row.side || null,
+            }
+          : {}),
+      };
+      await writeSelectedFile(values, replacement, session);
+      if (!current(session)) return;
+      acceptedFiles.add(file);
     }
     if (!current(session)) return;
     successNotify(
-      replacement ? "Documento substituído." : "Documento enviado.",
+      pending.some(({ row }) =>
+        row?.documents.some((file) => isRejected(file.status)),
+      ) || replacing.value
+        ? "Documento substituído."
+        : "Documento enviado.",
     );
     resetDialog();
     await load();
   } catch (e) {
-    if (current(session))
-      errorNotify(
-        getApiErrorMessage(e, "Não foi possível enviar o documento."),
+    if (current(session)) {
+      groupSaveError.value = getApiErrorMessage(
+        e,
+        "Não foi possível enviar o documento.",
       );
+      errorNotify(groupSaveError.value);
+    }
   } finally {
     if (current(session)) saving.value = false;
   }
@@ -725,7 +856,11 @@ load();
   overflow-wrap: anywhere;
 }
 .form-card {
-  width: min(720px, calc(100vw - 32px));
+  width: 100%;
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  padding: 0;
 }
 @media (max-width: 599px) {
   .documentation-setting-layout > .tool,
@@ -820,5 +955,197 @@ load();
     padding: 8px;
     flex: 1;
   }
+}
+
+.documentation-progress {
+  min-height: 104px;
+  padding: 12px 16px;
+  border-left: 2px solid #00a3ff;
+  border-radius: 8px;
+  background: linear-gradient(181.4deg, #ffffff29, #ffffff0a 50%, #ffffff03);
+  gap: 12px;
+}
+.documentation-progress h2 {
+  font-size: 17px;
+  line-height: 1.35;
+  margin: 0;
+  font-weight: 700;
+}
+.documentation-progress-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  color: #bdbdbd;
+  font-size: 12px;
+  font-weight: 500;
+}
+.documentation-progress-line .q-linear-progress {
+  width: 186px;
+  flex: none;
+  background: #656565;
+  border-radius: 4px;
+}
+.documentation-counter {
+  font-size: 14px;
+  font-weight: 400;
+}
+.documentation-progress-icon {
+  width: 80px;
+  height: 80px;
+  flex: none;
+  padding: 8px;
+  background: linear-gradient(#ffffff0f, #ffffff03);
+}
+.documentation-progress-icon img {
+  height: 87px;
+  width: 159px;
+  left: -40px;
+  top: -1px;
+}
+.document-levels {
+  border-left: 1px solid #464646;
+  padding-left: 32px;
+}
+.document-level {
+  min-width: 216px;
+  min-height: 67px;
+  background: linear-gradient(#ffffff0f, #ffffff03);
+}
+.document-level-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  background: linear-gradient(#ffffff0f, #ffffff03);
+}
+.document-level small {
+  display: block;
+  font-size: 12px;
+  color: #989898;
+  margin-top: 8px;
+}
+.document-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.document-group-heading h3 {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+}
+.document-group-tag {
+  font-size: 12px;
+  font-weight: 400;
+  color: #989898;
+  border: 1px solid #656565;
+  border-radius: 4px;
+  padding: 2px 8px;
+  line-height: 14px;
+  background: linear-gradient(#ffffff29, #ffffff03);
+}
+.document-table :deep(th) {
+  font-size: 14px;
+  font-weight: 500;
+  color: #fafafa;
+}
+.document-table :deep(td) {
+  height: 48px;
+  font-size: 14px;
+  color: #dcdcdc;
+}
+.document-table :deep(td),
+.document-table :deep(th) {
+  border-color: #3d3d3d;
+}
+.document-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.document-format {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #40444c;
+}
+.document-format--XLS {
+  background: #167c42;
+  color: #fff;
+}
+.document-format img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.document-upload-button {
+  width: 162px;
+  min-height: 32px;
+  background: #00a3ff !important;
+  color: #fff !important;
+  border-radius: 6px;
+  font-size: 14px;
+}
+@media (max-width: 1500px) {
+  .document-levels {
+    width: 100%;
+    padding: 16px 0 0;
+    border-left: 0;
+    border-top: 1px solid #464646;
+  }
+  .document-level {
+    flex: 1;
+    min-width: 0;
+  }
+}
+@media (max-width: 599px) {
+  .document-levels {
+    flex-direction: column;
+  }
+  .document-level {
+    width: 100%;
+  }
+  .documentation-progress-copy {
+    min-width: 0;
+    flex-basis: calc(100% - 104px);
+  }
+}
+
+.form-card :deep(.q-field__native),
+.form-card :deep(.q-field__input),
+.form-card :deep(.q-field__marginal) {
+  color: #1d1d1d;
+  font-size: 14px;
+}
+.form-card :deep(.q-field__marginal) {
+  height: 40px;
+}
+.form-card :deep(.q-field--outlined .q-field__control:before) {
+  border: 1px solid #dcdcdc;
+}
+
+.document-group-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.document-import--empty :deep(.q-field__native) {
+  color: #989898;
+}
+.documentation-setting-layout {
+  font-family: Inter, sans-serif;
 }
 </style>

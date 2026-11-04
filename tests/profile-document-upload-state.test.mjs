@@ -9,6 +9,12 @@ import {
   profileDocumentGroups,
   documentReplacementValues,
 } from "../src/services/documentPresentation.js";
+import {
+  documentationGroups,
+  documentationProgress,
+  fileFormat,
+  documentUpdatedAt,
+} from "../src/services/profileDocumentation.js";
 import { onboardingBlockMessage } from "../src/services/onboardingBlock.js";
 const descriptor = parse(
   readFileSync(
@@ -72,6 +78,13 @@ async function harness() {
       profileDocumentGroups,
       documentReplacementValues,
     },
+    "src/services/profileDocumentation": {
+      documentationGroups,
+      documentationProgress,
+      fileFormat,
+      documentUpdatedAt,
+    },
+    "src/services/clientAssetsService": { listClientAssets: async () => [] },
     "src/services/onboardingBlock": { onboardingBlockMessage },
     "src/system/components/form/LabelForm.vue": { default: {} },
     "src/composables/useNotify": {
@@ -89,7 +102,7 @@ async function harness() {
   };
   const mod = new vm.SourceTextModule(
     descriptor.scriptSetup.content +
-      "\nexport { load, loading, error, guardBlocked, overview, progress, documents, types, form, formRef, dialog, saving, definition, openUpload, openRequirementUpload, openReplace, closeDialog, typeChanged, loadDefinition, save };",
+      "\nexport { load, loading, error, guardBlocked, overview, progress, documents, types, form, formRef, dialog, saving, definition, openUpload, openRequirementUpload, openReplace, closeDialog, typeChanged, loadDefinition, save, queueRow };",
     { context },
   );
   await mod.link((specifier) => {
@@ -273,6 +286,7 @@ test("upload from a requirement preserves its identity in the multipart request"
   h.model.openRequirementUpload({
     documentTypeId: "type",
     requirementId: "identity-back",
+    catalogAvailable: true,
   });
   h.model.form.file = {
     name: "verso-ficticio.png",
@@ -389,8 +403,8 @@ test("replacement of the current rejected side uses that file ID after preflight
   await request;
 });
 
-test("CPF and NIF use upload for new files and replace the exact file while preserving dates", async () => {
-  for (const code of ["CPF", "NIF"])
+test("fiscal and residence files use upload and exact replacement while preserving dates", async () => {
+  for (const code of ["DECLARACAO_IRPF", "COMPROVANTE_RESIDENCIA"])
     for (const replace of [false, true]) {
       const h = await harness();
       await h.ready();
@@ -406,6 +420,7 @@ test("CPF and NIF use upload for new files and replace the exact file while pres
         h.model.openRequirementUpload({
           documentTypeId: code,
           requirementId: "requirement",
+          catalogAvailable: true,
           allowedActions: ["Upload"],
         });
       h.model.form.file = { name: "qa-ficticio.pdf" };
@@ -434,4 +449,43 @@ test("CPF and NIF use upload for new files and replace the exact file while pres
       assert.equal(h.model.dialog.value, false);
       assert.equal(h.model.form.file, null);
     }
+});
+
+test("group saves keep the second file after failure and never resend the accepted first file", async () => {
+  const h = await harness();
+  await h.ready();
+  h.model.openUpload();
+  h.model.types.value = [
+    { id: "type", code: "DECLARACAO_IRPF", allowsFileUpload: true },
+  ];
+  const first = { name: "primeiro.pdf", type: "application/pdf", size: 10 },
+    second = { name: "segundo.pdf", type: "application/pdf", size: 10 };
+  const row = {
+    key: "files",
+    documentTypeId: "type",
+    maxFiles: 3,
+    documents: [],
+  };
+  h.model.queueRow(row, [first, second]);
+  h.model.formRef.value = { validate: async () => true, resetValidation() {} };
+  const request = h.model.save();
+  await flush();
+  h.writes[0].resolve({ id: "accepted" });
+  await flush();
+  assert.equal(h.writes.length, 2);
+  h.writes[1].reject(Error("temporary second failure"));
+  await request;
+  assert.equal(h.model.dialog.value, true);
+  const retry = h.model.save();
+  await flush();
+  assert.equal(h.writes.length, 3);
+  assert.equal(
+    h.writes[2].value.data.fields.find(([key]) => key === "file")[1].name,
+    "segundo.pdf",
+  );
+  h.writes[2].resolve({ id: "second" });
+  await flush();
+  h.settle(5);
+  await retry;
+  assert.equal(h.model.dialog.value, false);
 });

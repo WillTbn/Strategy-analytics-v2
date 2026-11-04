@@ -282,3 +282,72 @@ export function assetPayload(draft, type, currencyId, existing) {
   if (!existing) payload.assetType = type;
   return payload;
 }
+
+// Layout order is independent of the write projection; required existing fields remain available.
+export function assetProfileEditorSections(type) {
+  const source = assetFormSections(type)
+    .flatMap((section) => section.fields)
+    .map((field) => ({ ...field }));
+  const take = (keys) =>
+    keys
+      .map((key) => source.find((field) => field.key === key))
+      .filter(Boolean);
+  const leading =
+    type === "RealEstate"
+      ? [
+          take(["declaredValue", "postalCode", "addressLine"]),
+          take([
+            "propertyTaxRegistration",
+            "registrationNumber",
+            "landAreaSquareMeters",
+            "builtAreaSquareMeters",
+            "bedrooms",
+            "bathrooms",
+          ]),
+        ]
+      : type === "Vehicle"
+        ? [take(["vehicleType", "licensePlate", "model"])]
+        : type === "Investment"
+          ? [take(["investmentType", "initialAmount", "institution"])]
+          : [take(["declaredValue", "totalInstallments"])];
+  if (type === "RealEstate")
+    leading[1].push({
+      key: "suites",
+      label: "Número de Suítes",
+      type: "number",
+      readonly: true,
+    });
+  if (type === "Consortium")
+    leading[0].splice(1, 0, {
+      key: "startDate",
+      label: "Quando Começou",
+      type: "date",
+      readonly: true,
+    });
+  const used = new Set(leading.flat().map((field) => field.key));
+  const rest = source.filter((field) => !used.has(field.key));
+  const labels = {
+    postalCode: "CEP do Imóvel",
+    addressLine: "Logradouro do Imóvel",
+    propertyTaxRegistration: "Número da Inscrição Imobiliária",
+    registrationNumber: "Número da Matrícula",
+    landAreaSquareMeters: "Área do Terreno (m²)",
+    builtAreaSquareMeters: "Área Construída (m²)",
+    bedrooms: "Número de Quartos",
+    bathrooms: "Número de Banheiros",
+    licensePlate: "Placa ou Identificação",
+    model: "Modelo do Veículo",
+    initialAmount: "Valor Investido",
+    institution: "Corretora",
+    totalInstallments: "Quantidade de Parcelas",
+  };
+  return [...leading, ...(rest.length ? [rest] : [])].map((fields, index) => ({
+    title: "",
+    key: `row-${index}`,
+    fields: fields.map((field) => ({
+      ...field,
+      label: labels[field.key] || field.label,
+      wide: field.key === "addressLine",
+    })),
+  }));
+}

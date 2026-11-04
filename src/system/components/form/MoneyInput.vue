@@ -3,6 +3,7 @@
     ref="control"
     v-bind="$attrs"
     :model-value="display"
+    :prefix="showCurrency ? currencySymbol : undefined"
     type="text"
     inputmode="numeric"
     :rules="numericRules"
@@ -23,9 +24,19 @@ const props = defineProps({
   currency: { type: String, default: "BRL" },
   modelFormat: { type: String, default: "number" },
   rules: { type: Array, default: () => [] },
+  showCurrency: { type: Boolean, default: false },
 });
 const emit = defineEmits(["update:modelValue"]);
 const control = ref(null);
+const currencySymbol = computed(
+  () =>
+    new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: props.currency,
+    })
+      .formatToParts(0)
+      .find((part) => part.type === "currency")?.value || props.currency,
+);
 const numericValue = computed(() => {
   if (props.modelValue == null || props.modelValue === "") return null;
   const value =

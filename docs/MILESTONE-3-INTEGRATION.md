@@ -3,6 +3,10 @@
 Atualizado em 13/10/2026. Admin: http://localhost:8080. Portal: http://localhost:9010.
 As duas portas são as origens autorizadas pelo CORS do backend.
 
+## Reteste vigente — 04/11 — itens 121–130
+
+Matriz de telas, ações, estados e integração em [Perfil e Documentação 121–130](QA-2026-11-04-PERFIL-DOCUMENTACAO-121-130.md). Inclui tema Aurora, grupos documentais, edição branca na linha e anexos patrimoniais. Níveis, catálogo novo, suítes e compatibilidade do POST com os formulários reduzidos continuam discriminados como contratos pendentes. Não representa homologação integral do Marco 3.
+
 ## Entregue no código
 
 - Admin: contratos com listagem e edição lateral, rascunhos, participantes, status, documentos, ativos elegíveis e histórico. Finalização condicionada aos dados necessários.

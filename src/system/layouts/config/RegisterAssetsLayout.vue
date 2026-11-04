@@ -100,6 +100,7 @@
               <q-btn
                 flat
                 no-caps
+                color="grey-6"
                 label="Descartar"
                 :disable="saving"
                 @click="dialog = false"
@@ -108,6 +109,7 @@
                 no-caps
                 color="primary"
                 label="Salvar"
+                icon="check"
                 type="submit"
                 form="asset-editor-form"
                 :loading="saving"
@@ -126,10 +128,10 @@
                 </p>
                 <div
                   v-for="section in formSections"
-                  :key="section.title"
+                  :key="section.key || section.title"
                   class="q-mt-lg"
                 >
-                  <div class="text-weight-medium q-mb-md">
+                  <div v-if="section.title" class="text-weight-medium q-mb-md">
                     {{ section.title }}
                   </div>
                   <div class="row q-col-gutter-md">
@@ -137,7 +139,13 @@
                       v-for="field in section.fields"
                       :key="field.key"
                       :text-label="field.label"
-                      class-name="col-12 col-sm-6 col-lg-4"
+                      :class-name="
+                        field.wide
+                          ? 'col-12 col-md asset-field-wide'
+                          : section.fields.length > 4
+                            ? 'col-12 col-sm-6 col-lg-3 asset-field-compact'
+                            : 'col-12 col-sm-6 col-md'
+                      "
                       ><component
                         :is="
                           [
@@ -149,6 +157,7 @@
                             ? MoneyInput
                             : QInput
                         "
+                        :show-currency="true"
                         :currency="
                           currencies.state.data?.find(
                             (item) => item.value === currencyId,
@@ -160,7 +169,7 @@
                         outlined
                         dense
                         :aria-label="field.label"
-                        :disable="saving"
+                        :disable="saving || field.readonly"
                         :min="field.type === 'number' ? 0 : undefined"
                         :step="
                           field.type === 'number'
@@ -169,7 +178,7 @@
                               : 'any'
                             : undefined
                         "
-                        :rules="fieldRules(field)"
+                        :rules="field.readonly ? [] : fieldRules(field)"
                     /></label-form>
                   </div>
                 </div>
@@ -185,7 +194,7 @@
                 >
                   <q-toggle
                     v-model="draft.hasFixedTerm"
-                    label="Prazo determinado"
+                    label="Tem Prazo Pré Determinado?"
                     :disable="saving"
                   />
                   <div v-if="draft.hasFixedTerm" class="row q-col-gutter-md">
@@ -247,8 +256,19 @@
                       :rules="[required]"
                       aria-label="Restante para quitação" /></label-form
                 ></template>
+                <asset-attachment-editor
+                  v-if="selectedSection.type === 'RealEstate'"
+                  :ref="
+                    (el) => {
+                      if (el) attachmentEditor = el;
+                    }
+                  "
+                  :key="attachmentEditorKey"
+                  :asset-id="editorAssetId"
+                  :disabled="saving"
+                />
                 <asset-document-gallery
-                  v-if="selected"
+                  v-else-if="selected"
                   :key="selected.id"
                   :asset-id="selected.id"
                   class="q-mt-lg"
@@ -270,6 +290,7 @@
   </div>
 </template>
 <script setup>
+import AssetAttachmentEditor from "src/system/components/profile/AssetAttachmentEditor.vue";
 import PropertyCharacteristics from "src/system/components/profile/PropertyCharacteristics.vue";
 import { QInput } from "quasar";
 import MoneyInput from "src/system/components/form/MoneyInput.vue";
@@ -280,7 +301,7 @@ import ResourceState from "src/system/components/finance/ResourceState.vue";
 import { useFinanceResource } from "src/composables/useFinanceResource";
 import { money } from "src/services/financeService";
 import {
-  assetFormSections,
+  assetProfileEditorSections,
   assetDraft,
   assetPayload,
   isAssetIntegerField,
@@ -337,6 +358,9 @@ const dialog = ref(false),
   viewing = ref(null);
 let active = true,
   revision = 0;
+const attachmentEditor = ref(null),
+  attachmentEditorKey = ref(0),
+  editorAssetId = ref(null);
 const required = (v) =>
   (v != null && String(v).trim() !== "") || "Campo obrigatório";
 const fieldRules = (f) => [
@@ -361,7 +385,7 @@ const status = (item) =>
     item.status
   ] || "Não informado";
 const formSections = computed(() =>
-  assetFormSections(selectedSection.value?.type),
+  assetProfileEditorSections(selectedSection.value?.type),
 );
 const load = () => assets.load(listClientAssets);
 const loadCurrencies = () => currencies.load(getClientAssetCurrencies);
@@ -372,6 +396,9 @@ function documentsFor(id) {
 const loadDocuments = (id) =>
   documentsFor(id).load(() => getClientAssetDocuments(id));
 async function open(section, item = null) {
+  attachmentEditor.value = null;
+  attachmentEditorKey.value++;
+  editorAssetId.value = item?.id || null;
   revision++;
   selectedSection.value = section;
   selected.value = item;
@@ -400,17 +427,38 @@ async function save() {
   saving.value = true;
   saveError.value = "";
   try {
+    if (
+      selectedSection.value.type === "RealEstate" &&
+      typeof attachmentEditor.value?.save !== "function"
+    )
+      throw Error(
+        "Não foi possível preparar os anexos. Reabra o patrimônio antes de salvar.",
+      );
     const payload = assetPayload(
       draft.value,
       selectedSection.value.type,
       currencyId.value,
       selected.value ? detail.state.data : null,
     );
-    await (selected.value
+    const result = await (selected.value
       ? updateClientAsset(selected.value.id, payload)
       : createClientAsset(payload));
     assertClientSessionCurrent(session);
     if (!active) return;
+    const id = selected.value?.id || result?.id;
+    if (selectedSection.value.type === "RealEstate") {
+      if (!id)
+        throw Error(
+          "A gravação não confirmou o patrimônio. Recarregue antes de tentar novamente.",
+        );
+      if (!selected.value) {
+        selected.value = { ...result, id };
+        detail.state.data = { ...result, ...payload, id };
+      }
+      await attachmentEditor.value.save(id);
+      assertClientSessionCurrent(session);
+      if (!active) return;
+    }
     dialog.value = false;
     await load();
   } catch (error) {
@@ -475,5 +523,16 @@ loadCurrencies();
 }
 .asset-editor :deep(.LabelForm) {
   min-width: 0;
+}
+
+.asset-field-wide {
+  flex-grow: 2;
+}
+@media (min-width: 1600px) {
+  .asset-field-compact {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+  }
 }
 </style>

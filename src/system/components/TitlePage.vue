@@ -1,6 +1,6 @@
 <template>
   <div class="title-page row justify-between q-mx-sm">
-    <div class="col-10 q-pa-lg">
+    <div class="col-10 q-pa-lg title-page-main">
       <div class="text-subtitle2 text-caption text-grey q-mb-md">
         {{ subtitle }}
         <slot name="subtitleAppend"></slot>
@@ -17,14 +17,17 @@
           :icon="item.icon"
         />
       </q-breadcrumbs>
-      <div class="text-h3 text-bold">
-        <IconArrowLeft
+      <div class="text-h3 text-bold title-page-heading">
+        <q-btn
           v-if="toBack"
-          width="40"
-          height="40"
+          flat
+          round
+          dense
+          class="title-page-back"
+          aria-label="Voltar à página anterior"
           @click="$router.back()"
-          style="cursor: pointer"
-        />
+          ><img src="/system/icons/profile/back.svg" alt=""
+        /></q-btn>
         {{ title }}
       </div>
       <slot></slot>
@@ -53,3 +56,20 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+.title-page-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.title-page-back {
+  width: 40px;
+  height: 40px;
+  flex: none;
+}
+.title-page-back img {
+  width: 40px;
+  height: 40px;
+}
+</style>

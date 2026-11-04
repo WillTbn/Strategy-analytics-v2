@@ -67,151 +67,86 @@
                   aria-label="Editar conta"
                   :disable="loading || saving || formDialog"
                   @click="openEdit(account)"
-                /><q-btn
-                  v-if="!account.isPrimary"
-                  flat
-                  round
-                  dense
-                  icon="star_outline"
-                  color="primary"
-                  aria-label="Definir como principal"
-                  :disable="loading || saving || formDialog"
-                  @click="makePrimary(account)"
-                /><q-btn
-                  flat
-                  round
-                  dense
-                  icon="archive"
-                  color="negative"
-                  aria-label="Arquivar conta"
-                  :disable="loading || saving || formDialog"
-                  @click="askArchive(account)"
                 /></div
             ></q-item-section>
           </q-item>
         </q-list>
       </q-card-section>
-      <div v-if="formDialog" class="form-card q-mt-lg">
-        <q-card-section class="row items-center justify-between"
-          ><div class="text-subtitle1 text-weight-bold">
-            {{ editingId ? "Editar conta" : "Nova conta" }}
-          </div>
-          <q-btn
-            flat
-            round
-            dense
-            icon="close"
-            aria-label="Fechar"
+      <q-form
+        v-if="formDialog"
+        ref="formRef"
+        class="form-card bank-inline-form q-mt-lg"
+        @submit.prevent="save"
+      >
+        <label-form text-label="Banco"
+          ><q-select
             :disable="saving"
-            @click="closeForm" /></q-card-section
-        ><q-separator dark /><q-form ref="formRef" @submit.prevent="save"
-          ><q-card-section
-            ><div class="row q-col-gutter-md">
-              <label-form class-name="col-12 col-md-4" text-label="Banco"
-                ><q-select
-                  :disable="saving"
-                  v-model="form.bankId"
-                  :options="bankOptions"
-                  emit-value
-                  map-options
-                  outlined
-                  dense
-                  dark
-                  :rules="requiredRules"
-              /></label-form>
-              <label-form class-name="col-12 col-md-2" text-label="Agência"
-                ><q-input
-                  :disable="saving"
-                  v-model.trim="form.branch"
-                  outlined
-                  dense
-                  dark
-                  :rules="requiredRules"
-              /></label-form>
-              <label-form class-name="col-8 col-md-4" text-label="Conta"
-                ><q-input
-                  :disable="saving"
-                  v-model.trim="form.accountNumber"
-                  outlined
-                  dense
-                  dark
-                  :placeholder="editingId ? `Atual: ${masks.account}` : ''"
-                  :hint="
-                    editingId
-                      ? 'Redigite o número integral para confirmar a alteração.'
-                      : ''
-                  "
-                  :rules="requiredRules"
-              /></label-form>
-              <label-form class-name="col-4 col-md-2" text-label="Dígito"
-                ><q-input
-                  :disable="saving"
-                  v-model.trim="form.accountDigit"
-                  outlined
-                  dense
-                  dark
-              /></label-form>
-              <label-form
-                class-name="col-12 col-md-4"
-                text-label="Tipo de conta"
-                ><q-select
-                  :disable="saving"
-                  v-model="form.accountType"
-                  :options="accountTypes"
-                  emit-value
-                  map-options
-                  outlined
-                  dense
-                  dark
-                  :rules="requiredRules"
-              /></label-form>
-              <label-form
-                class-name="col-12 col-md-4"
-                text-label="Tipo de chave Pix"
-                ><q-select
-                  :disable="saving"
-                  v-model="form.pixKeyType"
-                  :options="pixTypes"
-                  emit-value
-                  map-options
-                  clearable
-                  outlined
-                  dense
-                  dark
-              /></label-form>
-              <label-form class-name="col-12 col-md-4" text-label="Chave Pix"
-                ><q-input
-                  :disable="saving"
-                  v-model.trim="form.pixKey"
-                  outlined
-                  dense
-                  dark
-                  :placeholder="editingId ? `Atual: ${masks.pix}` : ''"
-              /></label-form>
-              <div class="col-12">
-                <q-checkbox
-                  :disable="saving"
-                  v-model="form.isPrimary"
-                  label="Definir como principal"
-                  color="primary"
-                />
-              </div></div></q-card-section
-          ><q-card-actions align="right"
-            ><q-btn
-              flat
-              label="Descartar"
-              no-caps
-              :disable="saving"
-              @click="closeForm" /><q-btn
-              type="submit"
-              flat
-              color="primary"
-              icon="save"
-              label="Salvar"
-              no-caps
-              :loading="saving" /></q-card-actions
-        ></q-form>
-      </div>
+            v-model="form.bankId"
+            :options="bankOptions"
+            emit-value
+            map-options
+            outlined
+            dense
+            :rules="requiredRules"
+            aria-label="Banco"
+        /></label-form>
+        <label-form text-label="Agência"
+          ><q-input
+            :disable="saving"
+            v-model.trim="form.branch"
+            outlined
+            dense
+            :rules="requiredRules"
+            aria-label="Agência"
+        /></label-form>
+        <label-form text-label="Conta Corrente"
+          ><q-input
+            :disable="saving"
+            v-model.trim="form.accountNumber"
+            outlined
+            dense
+            :placeholder="editingId ? masks.account : ''"
+            :hint="
+              editingId ? 'Redigite a conta para confirmar a alteração.' : ''
+            "
+            :rules="requiredRules"
+            aria-label="Conta Corrente"
+        /></label-form>
+        <label-form text-label="Chave PIX"
+          ><q-input
+            :disable="saving"
+            v-model.trim="form.pixKey"
+            outlined
+            dense
+            :placeholder="editingId ? masks.pix : ''"
+            aria-label="Chave PIX"
+        /></label-form>
+        <q-toggle
+          :disable="saving"
+          v-model="form.isPrimary"
+          label="Principal?"
+          size="32px"
+        />
+        <q-btn
+          type="submit"
+          unelevated
+          color="primary"
+          icon="check"
+          aria-label="Confirmar conta"
+          :loading="saving"
+        />
+        <q-btn
+          flat
+          dense
+          icon="delete_outline"
+          color="negative"
+          :aria-label="
+            editingId ? 'Arquivar conta em edição' : 'Descartar nova conta'
+          "
+          :disable="saving"
+          @click="discardBankForm"
+        />
+      </q-form>
       <div class="q-mt-md">
         <q-btn
           flat
@@ -265,7 +200,6 @@ import {
   getClientBankAccount,
   listClientBankAccounts,
   listAllClientBanks,
-  setPrimaryClientBankAccount,
   updateClientBankAccount,
 } from "src/services/clientProfileService";
 
@@ -295,17 +229,6 @@ const empty = () => ({
 });
 const form = reactive(empty()),
   masks = reactive({ account: "", document: "", pix: "" });
-const accountTypes = [
-    { label: "Conta corrente", value: "Checking" },
-    { label: "Conta poupança", value: "Savings" },
-    { label: "Conta de pagamento", value: "Payment" },
-  ],
-  pixTypes = [
-    { label: "CPF/CNPJ", value: "Document" },
-    { label: "E-mail", value: "Email" },
-    { label: "Telefone", value: "Phone" },
-    { label: "Aleatória", value: "Random" },
-  ];
 const requiredRules = [
   (v) => Boolean(String(v || "").trim()) || "Campo obrigatório",
 ];
@@ -408,11 +331,27 @@ const save = async () => {
   saving.value = true;
   try {
     if (!(await formRef.value.validate()) || !current(session)) return;
+    const digits = form.accountNumber.match(/^(.+)-([0-9Xx])$/);
+    const pix = String(form.pixKey || "").trim();
+    const pixKeyType = !pix
+      ? null
+      : pix.includes("@")
+        ? "Email"
+        : /^\+/.test(pix)
+          ? "Phone"
+          : /^\d{11}$|^\d{14}$/.test(pix.replace(/[^\d]/g, ""))
+            ? "Document"
+            : "Random";
     const payload = {
-      ...form,
-      accountDigit: form.accountDigit || null,
+      bankId: form.bankId,
+      branch: form.branch,
+      accountNumber: form.accountNumber,
+      accountType: form.accountType,
+      isPrimary: form.isPrimary,
+      ...(digits ? { accountNumber: digits[1], accountDigit: digits[2] } : {}),
+      accountDigit: digits?.[2] || form.accountDigit || null,
       pixKey: form.pixKey || null,
-      pixKeyType: form.pixKeyType || null,
+      pixKeyType,
     };
     if (editingId.value)
       await updateClientBankAccount(editingId.value, payload);
@@ -428,23 +367,10 @@ const save = async () => {
     if (current(session)) saving.value = false;
   }
 };
-const makePrimary = async (a) => {
-  if (actionBlocked()) return;
-  const session = captureClientSession();
-  saving.value = true;
-  try {
-    await setPrimaryClientBankAccount(a.id);
-    if (!current(session)) return;
-    successNotify("Conta principal atualizada.");
-    await load();
-  } catch (e) {
-    if (current(session))
-      errorNotify(
-        getApiErrorMessage(e, "Não foi possível definir a conta principal."),
-      );
-  } finally {
-    if (current(session)) saving.value = false;
-  }
+const discardBankForm = () => {
+  const account = accounts.value.find((item) => item.id === editingId.value);
+  closeForm();
+  if (account) askArchive(account);
 };
 const askArchive = (a) => {
   if (actionBlocked()) return;
@@ -543,5 +469,44 @@ load().then(() => {
 }
 .form-card :deep(.q-card__section) {
   padding: 16px 0;
+}
+
+.bank-inline-form {
+  display: grid;
+  grid-template-columns:
+    minmax(200px, 1.4fr) repeat(3, minmax(120px, 1fr))
+    auto 32px 32px;
+  align-items: start;
+  gap: 16px;
+  width: 100%;
+  padding: 0;
+}
+.bank-inline-form > .q-toggle,
+.bank-inline-form > .q-btn {
+  margin-top: 26px;
+}
+.bank-inline-form > .q-btn {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border-radius: 4px;
+  padding: 0;
+}
+@media (max-width: 1100px) {
+  .bank-inline-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bank-inline-form > .q-toggle,
+  .bank-inline-form > .q-btn {
+    margin-top: 0;
+  }
+}
+@media (max-width: 599px) {
+  .bank-inline-form {
+    grid-template-columns: 1fr;
+  }
+  .bank-inline-form > .q-btn {
+    justify-self: end;
+  }
 }
 </style>

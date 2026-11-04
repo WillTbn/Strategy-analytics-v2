@@ -1,7 +1,4 @@
-import {
-  captureClientSession,
-  assertClientSessionCurrent,
-} from "./clientApi";
+import { captureClientSession, assertClientSessionCurrent } from "./clientApi";
 import { financeGet, financeWrite } from "./financeService";
 import { getPreferenceCatalog } from "./clientProfileService";
 const base = "client/profile/assets";
@@ -81,3 +78,13 @@ export const getClientAssetCurrencies = async () => {
     ).values(),
   ];
 };
+
+export const linkClientAssetDocument = (id, documentId) =>
+  financeWrite("post", `${base}/${encodeURIComponent(id)}/documents`, {
+    documentId,
+  });
+export const unlinkClientAssetDocument = (id, documentId) =>
+  financeWrite(
+    "delete",
+    `${base}/${encodeURIComponent(id)}/documents/${encodeURIComponent(documentId)}`,
+  );

@@ -66,7 +66,7 @@ async function harness(startWithCreate = false) {
   };
   const mod = new vm.SourceTextModule(
     descriptor.scriptSetup.content +
-      "\nexport { load, accounts, banks, loading, saving, error, form, masks, formDialog, formRef, openCreate, openEdit, closeForm, save, makePrimary, askArchive, confirmArchive, archiveDialog };",
+      "\nexport { load, accounts, banks, loading, saving, error, form, masks, formDialog, formRef, openCreate, openEdit, closeForm, save, askArchive, confirmArchive, archiveDialog };",
     { context },
   );
   await mod.link((specifier) => {
@@ -126,22 +126,16 @@ test("save locks before async validation and rejects duplicate submits", async (
   assert.equal(h.model.form.holderName, "Titular fictício QA");
   assert.equal(h.model.formDialog.value, true);
 });
-test("primary and archive writes cannot be submitted twice", async () => {
-  for (const kind of ["primary", "archive"]) {
-    const h = await harness();
-    await h.ready();
-    if (kind === "archive") h.model.askArchive({ id: "account" });
-    const call = () =>
-      kind === "primary"
-        ? h.model.makePrimary({ id: "account" })
-        : h.model.confirmArchive();
-    const first = call(),
-      second = call();
-    assert.equal(h.writes.length, 1);
-    h.writes[0].reject(Error("temporary failure"));
-    await Promise.all([first, second]);
-    assert.equal(h.model.saving.value, false);
-  }
+test("archive writes cannot be submitted twice", async () => {
+  const h = await harness();
+  await h.ready();
+  h.model.askArchive({ id: "account" });
+  const first = h.model.confirmArchive(),
+    second = h.model.confirmArchive();
+  assert.equal(h.writes.length, 1);
+  h.writes[0].reject(Error("temporary failure"));
+  await Promise.all([first, second]);
+  assert.equal(h.model.saving.value, false);
 });
 test("latest bank list survives an older request failure", async () => {
   const h = await harness(),
@@ -236,7 +230,8 @@ test("a late successful write cannot notify or refresh a disposed or changed ses
   for (const invalidate of ["dispose", "changeSession"]) {
     const h = await harness();
     await h.ready();
-    const write = h.model.makePrimary({ id: "account" });
+    h.model.askArchive({ id: "account" });
+    const write = h.model.confirmArchive();
     h[invalidate]();
     h.writes[0].resolve({});
     await write;
@@ -319,7 +314,7 @@ test("existing fields are disabled during submission without introducing new act
     props: ["disable"],
     setup: (p) => () => Vue.h("select", { disabled: p.disable }),
   });
-  app.component("QCheckbox", {
+  app.component("QToggle", {
     props: ["disable"],
     setup: (p) => () =>
       Vue.h("input", { type: "checkbox", disabled: p.disable }),
@@ -330,9 +325,37 @@ test("existing fields are disabled during submission without introducing new act
   });
   app.component("QIcon", { render: () => null });
   const html = await renderToString(app);
-  assert.equal((html.match(/<(?:input|select)\b/g) || []).length, 8);
+  assert.equal((html.match(/<(?:input|select)\b/g) || []).length, 5);
   for (const tag of html.match(/<(?:input|select)\b[^>]*>/g) || [])
     assert.match(tag, /disabled/);
-  assert.match(html, />Salvar<\/button>/);
-  assert.match(html, />Descartar<\/button>/);
+  assert.match(html, /aria-label="Confirmar conta"/);
+  assert.match(html, /aria-label="Descartar nova conta"/);
+});
+
+test("inline banking payload preserves account type, splits the digit and excludes holder fields", async () => {
+  const h = await harness();
+  await h.ready();
+  h.model.openCreate();
+  Object.assign(h.model.form, {
+    bankId: "bank",
+    branch: "0000",
+    accountNumber: "1234-X",
+    accountType: "Savings",
+    pixKey: "qa@example.com",
+    isPrimary: true,
+    holderName: "must never be sent",
+    holderType: "Individual",
+  });
+  h.model.formRef.value = { validate: async () => true, resetValidation() {} };
+  const saving = h.model.save();
+  await flush();
+  const body = h.writes[0].value.args[0];
+  assert.equal(body.accountNumber, "1234");
+  assert.equal(body.accountDigit, "X");
+  assert.equal(body.accountType, "Savings");
+  assert.equal(body.pixKeyType, "Email");
+  assert.equal(body.holderName, undefined);
+  assert.equal(body.holderType, undefined);
+  h.writes[0].reject(Error("controlled failure"));
+  await saving;
 });
