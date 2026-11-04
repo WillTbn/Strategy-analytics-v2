@@ -346,8 +346,23 @@ export function assetProfileEditorSections(type) {
     key: `row-${index}`,
     fields: fields.map((field) => ({
       ...field,
-      label: labels[field.key] || field.label,
+      label:
+        field.key === "declaredValue" && type === "Consortium"
+          ? "Valor do Consórcio"
+          : labels[field.key] || field.label,
       wide: field.key === "addressLine",
     })),
   }));
+}
+
+export function assetSettlementLabel(asset) {
+  if (asset.assetType === "Investment")
+    return asset.investment?.hasFixedTerm
+      ? `Com prazo pré-determinado${asset.investment.termMonths ? " · " + asset.investment.termMonths + " meses" : ""}`
+      : "Sem prazo pré-determinado";
+  return (
+    { PaidOff: "Quitado", Financed: "Financiado", UnderReview: "Em análise" }[
+      asset.status
+    ] || "Não informado"
+  );
 }

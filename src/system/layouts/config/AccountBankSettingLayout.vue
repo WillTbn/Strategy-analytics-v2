@@ -119,6 +119,11 @@
             outlined
             dense
             :placeholder="editingId ? masks.pix : ''"
+            :hint="
+              editingId && masks.pix !== 'Não informado'
+                ? 'Redigite a chave PIX para confirmar a alteração.'
+                : ''
+            "
             aria-label="Chave PIX"
         /></label-form>
         <q-toggle
@@ -333,6 +338,8 @@ const save = async () => {
     if (!(await formRef.value.validate()) || !current(session)) return;
     const digits = form.accountNumber.match(/^(.+)-([0-9Xx])$/);
     const pix = String(form.pixKey || "").trim();
+    if (editingId.value && masks.pix && masks.pix !== "Não informado" && !pix)
+      throw new Error("Redigite a chave PIX para preservar os dados da conta.");
     const pixKeyType = !pix
       ? null
       : pix.includes("@")

@@ -252,7 +252,10 @@
                 class-name="col-12 col-md-6"
                 text-label="Tipo de documento"
                 ><q-select
-                  :disable="saving"
+                  :disable="
+                    saving ||
+                    editingRows.some((row) => row.side && row.documents.length)
+                  "
                   v-model="identityTypeId"
                   :options="identityTypeOptions"
                   emit-value
@@ -735,9 +738,16 @@ const save = async () => {
     for (const { row, file } of pending) {
       if (acceptedFiles.has(file)) continue;
       const replacement = row
-        ? (replacing.value?.documentTypeId === row.documentTypeId
-            ? replacing.value
-            : row.documents.find((file) => isRejected(file.status))) || null
+        ? row.documents.find(
+            (candidate) =>
+              isRejected(candidate.status) &&
+              (!row.side ||
+                candidate.side === row.side ||
+                (!candidate.side && row.side === "Front")) &&
+              (candidate.id === replacing.value?.id ||
+                !candidate.documentTypeId ||
+                candidate.documentTypeId === row.documentTypeId),
+          ) || null
         : replacing.value;
       const values = {
         ...form,
@@ -745,10 +755,12 @@ const save = async () => {
         file,
         ...(row
           ? {
-              documentTypeId: row.side
-                ? identityTypeId.value || row.documentTypeId
-                : row.documentTypeId,
-              requirementId: row.requirementId || null,
+              documentTypeId:
+                row.side && !row.documents.length
+                  ? identityTypeId.value || row.documentTypeId
+                  : row.documentTypeId,
+              requirementId:
+                replacement?.requirementId || row.requirementId || null,
               side: row.side || null,
             }
           : {}),
@@ -960,6 +972,7 @@ load();
 .documentation-progress {
   min-height: 104px;
   padding: 12px 16px;
+  border: 0;
   border-left: 2px solid #00a3ff;
   border-radius: 8px;
   background: linear-gradient(181.4deg, #ffffff29, #ffffff0a 50%, #ffffff03);
@@ -1006,11 +1019,17 @@ load();
 }
 .document-levels {
   border-left: 1px solid #464646;
-  padding-left: 32px;
+  padding-left: 48px;
 }
 .document-level {
+  width: 216px;
   min-width: 216px;
+  height: 67px;
   min-height: 67px;
+  flex: none;
+  padding: 10px;
+  gap: 8px;
+  line-height: 1.35;
   background: linear-gradient(#ffffff0f, #ffffff03);
 }
 .document-level-icon {
@@ -1021,8 +1040,12 @@ load();
   flex: none;
   background: linear-gradient(#ffffff0f, #ffffff03);
 }
+.document-level > div > span {
+  font-weight: 500;
+}
 .document-level small {
   display: block;
+  line-height: 1.35;
   font-size: 12px;
   color: #989898;
   margin-top: 8px;
@@ -1139,7 +1162,6 @@ load();
 .document-group-actions {
   display: flex;
   gap: 8px;
-  margin-left: auto;
 }
 
 .document-import--empty :deep(.q-field__native) {

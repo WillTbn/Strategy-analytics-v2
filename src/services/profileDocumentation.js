@@ -136,12 +136,32 @@ export function documentationGroups(groups = [], catalog = []) {
         : source;
       return (selected.length ? selected : source.slice(0, 1)).map(
         (row, index) => {
-          const files = (row.documents || []).filter(
+          let files = (row.documents || []).filter(
             (file) =>
               !spec.side ||
               file.side === spec.side ||
               (!file.side && spec.side === "Front"),
           );
+          // Single-file Figma rows expose the newest upload, not an old rejected version.
+          // Keep multi-file types and undated data intact; never infer a replacement from a name.
+          if (
+            (spec.maxFiles || 1) === 1 &&
+            files.length > 1 &&
+            files.every((file) =>
+              Number.isFinite(Date.parse(file.createdAtUtc)),
+            )
+          ) {
+            const newest = [...files].sort(
+              (a, b) => Date.parse(b.createdAtUtc) - Date.parse(a.createdAtUtc),
+            )[0];
+            files = files.filter(
+              (file) =>
+                file.id === newest.id ||
+                file.status !== "Rejected" ||
+                Date.parse(file.createdAtUtc) >=
+                  Date.parse(newest.createdAtUtc),
+            );
+          }
           const type = catalog.find((t) => t.id === row.documentTypeId);
           return {
             ...row,
@@ -165,7 +185,11 @@ export function documentationGroups(groups = [], catalog = []) {
 }
 export function fileFormat(file = {}) {
   const name =
-    file.fileName || file.originalFileName || file.file?.fileName || "";
+    file.fileName ||
+    file.originalFileName ||
+    file.file?.fileName ||
+    file.file?.originalFileName ||
+    "";
   const mime = file.contentType || file.file?.contentType || "";
   if (/pdf/i.test(mime) || /\.pdf$/i.test(name)) return "PDF";
   if (/^image\//i.test(mime) || /\.(png|jpe?g|webp|gif)$/i.test(name))

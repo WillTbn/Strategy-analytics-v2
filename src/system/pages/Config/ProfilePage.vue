@@ -45,7 +45,7 @@
 
 <script setup>
 import { defineComponent, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import TitlePage from "src/system/components/TitlePage.vue";
 import PersonalSettingLayout from "src/system/layouts/config/PersonalSettingLayout.vue";
 import DocumentationSettingLayout from "src/system/layouts/config/DocumentationSettingLayout.vue";
@@ -65,6 +65,7 @@ defineComponent({
 });
 
 const route = useRoute();
+const router = useRouter();
 const tab = ref("personal");
 
 const options = [
@@ -94,6 +95,12 @@ const options = [
     component: "TermsContractLayouts",
   },
 ];
+watch(tab, (value) => {
+  if (route.query.tab === value) return;
+  const query = { ...route.query, tab: value };
+  if (value !== "bank") delete query.action;
+  router.replace({ query });
+});
 watch(
   () => route.query.tab,
   (value) => {

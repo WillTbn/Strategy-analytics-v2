@@ -489,3 +489,53 @@ test("group saves keep the second file after failure and never resend the accept
   await retry;
   assert.equal(h.model.dialog.value, false);
 });
+
+test("a group resubmission replaces each rejected identity side exactly once", async () => {
+  const h = await harness();
+  await h.ready();
+  const front = {
+    id: "front",
+    side: "Front",
+    documentTypeId: "rg",
+    status: "Rejected",
+  };
+  const back = {
+    id: "back",
+    side: "Back",
+    documentTypeId: "rg",
+    status: "Rejected",
+  };
+  h.model.openReplace(front);
+  for (const existing of [front, back]) {
+    h.model.queueRow(
+      {
+        key: existing.side,
+        documentTypeId: "rg",
+        side: existing.side,
+        maxFiles: 1,
+        documents: [existing],
+      },
+      { name: existing.side + ".pdf", type: "application/pdf", size: 10 },
+    );
+  }
+  h.model.formRef.value = { validate: async () => true, resetValidation() {} };
+  const request = h.model.save();
+  await flush();
+  assert.equal(h.writes[0].value.id, "front");
+  assert.equal(
+    h.writes[0].value.data.fields.find(([key]) => key === "side")[1],
+    "Front",
+  );
+  h.writes[0].resolve({});
+  await flush();
+  assert.equal(h.writes[1].value.id, "back");
+  assert.equal(
+    h.writes[1].value.data.fields.find(([key]) => key === "side")[1],
+    "Back",
+  );
+  h.writes[1].resolve({});
+  await flush();
+  h.settle(5);
+  await request;
+  assert.equal(h.model.dialog.value, false);
+});

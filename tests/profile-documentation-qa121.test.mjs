@@ -116,3 +116,35 @@ test("attachment icons use MIME or file extension instead of a generic document 
   assert.equal(fileFormat({ fileName: "extrato.xlsx" }), "XLS");
   assert.equal(fileFormat({ fileName: "desconhecido" }), "FILE");
 });
+
+test("a resubmitted single-file row no longer offers the older rejected upload", () => {
+  const old = {
+    id: "old",
+    status: "Rejected",
+    createdAtUtc: "2026-11-04T10:00:00Z",
+  };
+  const current = {
+    id: "new",
+    status: "Uploaded",
+    createdAtUtc: "2026-11-04T11:00:00Z",
+  };
+  const groups = documentationGroups(
+    [{ rows: [row("DECLARACAO_IRPF", [old, current])] }],
+    types,
+  );
+  const irpf = groups
+    .flatMap((group) => group.rows)
+    .find((entry) => entry.documentTypeId === "DECLARACAO_IRPF");
+  assert.deepEqual(
+    irpf.documents.map((file) => file.id),
+    ["new"],
+  );
+  assert.equal(documentationProgress({}, groups).counter, "1 / 5");
+  const months = documentationGroups(
+    [{ rows: [row("HOLERITE", [old, current])] }],
+    types,
+  )
+    .flatMap((group) => group.rows)
+    .find((entry) => entry.documentTypeId === "HOLERITE");
+  assert.equal(months.documents.length, 2);
+});

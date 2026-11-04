@@ -37,6 +37,7 @@
                 round
                 dense
                 icon="edit"
+                color="primary"
                 :aria-label="`Editar ${item.nickname}`"
                 :disable="saving || dialog"
                 @click.stop="open(section, item)"
@@ -100,13 +101,6 @@
               <q-btn
                 flat
                 no-caps
-                color="grey-6"
-                label="Descartar"
-                :disable="saving"
-                @click="dialog = false"
-              /><q-btn
-                flat
-                no-caps
                 color="primary"
                 label="Salvar"
                 icon="check"
@@ -114,6 +108,13 @@
                 form="asset-editor-form"
                 :loading="saving"
                 :disable="!draft"
+              /><q-btn
+                flat
+                no-caps
+                color="grey-6"
+                label="Descartar"
+                :disable="saving"
+                @click="dialog = false"
               /></div
           ></q-card-section>
           <q-card-section
@@ -148,15 +149,18 @@
                       "
                       ><component
                         :is="
-                          [
-                            'declaredValue',
-                            'initialAmount',
-                            'amountPaid',
-                            'releasedCredit',
-                          ].includes(field.key)
-                            ? MoneyInput
-                            : QInput
+                          selectFields.has(field.key)
+                            ? QSelect
+                            : [
+                                  'declaredValue',
+                                  'initialAmount',
+                                  'amountPaid',
+                                  'releasedCredit',
+                                ].includes(field.key)
+                              ? MoneyInput
+                              : QInput
                         "
+                        v-bind="selectBindings(field)"
                         :show-currency="true"
                         :currency="
                           currencies.state.data?.find(
@@ -240,6 +244,7 @@
                     text-label="Restante para quitação"
                     class="q-mt-md"
                     ><money-input
+                      :show-currency="true"
                       :currency="
                         currencies.state.data?.find(
                           (item) => item.value === currencyId,
@@ -292,7 +297,7 @@
 <script setup>
 import AssetAttachmentEditor from "src/system/components/profile/AssetAttachmentEditor.vue";
 import PropertyCharacteristics from "src/system/components/profile/PropertyCharacteristics.vue";
-import { QInput } from "quasar";
+import { QInput, QSelect } from "quasar";
 import MoneyInput from "src/system/components/form/MoneyInput.vue";
 import { computed, onScopeDispose, ref } from "vue";
 import AssetDocumentGallery from "src/system/components/profile/AssetDocumentGallery.vue";
@@ -308,6 +313,7 @@ import {
   assetIntegerRule,
   assetDateRule,
   assetTermMonthsRule,
+  assetSettlementLabel,
 } from "src/services/clientAssetModel";
 import {
   listClientAssets,
@@ -380,10 +386,30 @@ const amount = (item) => {
     ? money(item.declaredValue, code)
     : `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(Number(item.declaredValue))} (moeda não informada)`;
 };
-const status = (item) =>
-  ({ PaidOff: "Quitado", Financed: "Financiado", UnderReview: "Em análise" })[
-    item.status
-  ] || "Não informado";
+const status = assetSettlementLabel;
+const selectFields = new Set(["vehicleType", "investmentType", "institution"]);
+function selectBindings(field) {
+  if (!selectFields.has(field.key)) return {};
+  const detailKey =
+    selectedSection.value?.type === "Vehicle" ? "vehicle" : "investment";
+  const choices = new Set(
+    (assets.state.data || [])
+      .map((item) => item[detailKey]?.[field.key])
+      .filter(Boolean),
+  );
+  if (draft.value?.[field.key]) choices.add(draft.value[field.key]);
+  return {
+    options: [...choices],
+    useInput: true,
+    fillInput: true,
+    hideSelected: true,
+    inputDebounce: 0,
+    newValueMode: "add-unique",
+    onInputValue: (value) => {
+      draft.value[field.key] = value;
+    },
+  };
+}
 const formSections = computed(() =>
   assetProfileEditorSections(selectedSection.value?.type),
 );

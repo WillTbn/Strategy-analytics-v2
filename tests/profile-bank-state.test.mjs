@@ -359,3 +359,25 @@ test("inline banking payload preserves account type, splits the digit and exclud
   h.writes[0].reject(Error("controlled failure"));
   await saving;
 });
+
+test("editing another bank field never silently clears a masked PIX key", async () => {
+  const h = await harness();
+  await h.ready();
+  const open = h.model.openEdit({ id: "account" });
+  await flush();
+  h.details[0].resolve({
+    bankId: "bank",
+    branch: "0001",
+    accountType: "Checking",
+    accountNumberMasked: "****0001",
+    pixKeyMasked: "q***@example.com",
+    isPrimary: false,
+  });
+  await open;
+  h.model.form.accountNumber = "1234-5";
+  h.model.formRef.value = { validate: async () => true, resetValidation() {} };
+  await h.model.save();
+  assert.equal(h.writes.length, 0);
+  assert.equal(h.model.formDialog.value, true);
+  assert.match(h.notifications.at(-1), /Redigite a chave PIX/);
+});

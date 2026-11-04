@@ -103,3 +103,29 @@ test("all four approved asset kinds generate their own detail and validate integ
     null,
   );
 });
+
+test("investment summaries use term information rather than the settlement label of a physical asset", async () => {
+  const { assetSettlementLabel } = await import(
+    "../src/services/clientAssetModel.js"
+  );
+  assert.equal(
+    assetSettlementLabel({
+      assetType: "Investment",
+      status: "PaidOff",
+      investment: { hasFixedTerm: true, termMonths: 12 },
+    }),
+    "Com prazo pré-determinado · 12 meses",
+  );
+  assert.equal(
+    assetSettlementLabel({
+      assetType: "Investment",
+      status: "PaidOff",
+      investment: { hasFixedTerm: false },
+    }),
+    "Sem prazo pré-determinado",
+  );
+  assert.equal(
+    assetSettlementLabel({ assetType: "Vehicle", status: "Financed" }),
+    "Financiado",
+  );
+});
