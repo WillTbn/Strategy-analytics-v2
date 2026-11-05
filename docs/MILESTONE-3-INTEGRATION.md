@@ -1,5 +1,8 @@
 # Marco 3 — implementação frontend
 
+> Revisão complementar QA 121–130: reenvio por lado, versão vigente, PIX protegido, dimensões dos níveis, selects/estados de patrimônio e retomada de aba corrigidos. [Matriz e evidências](QA-2026-11-04-PERFIL-DOCUMENTACAO-121-130.md). Regras oficiais de nível e campos/tipos não suportados continuam sem aprovação integrada; não devolver como checklist todo verde.
+
+
 Atualizado em 13/10/2026. Admin: http://localhost:8080. Portal: http://localhost:9010.
 As duas portas são as origens autorizadas pelo CORS do backend.
 
