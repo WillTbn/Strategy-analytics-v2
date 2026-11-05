@@ -31,6 +31,9 @@ async function harness() {
       listProfileContracts: (page) => pending(lists, page),
       listProfileContractDocuments: (id) => pending(docs, id),
       listProfileTerms: () => pending(terms),
+      downloadProfileTermDocument: () => {
+        throw Error("Unexpected download");
+      },
       getProfileContractDocumentUrl: () => {
         throw Error("Unexpected download");
       },

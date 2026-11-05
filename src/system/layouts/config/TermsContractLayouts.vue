@@ -52,6 +52,7 @@ import {
   listProfileContractDocuments,
   getProfileContractDocumentUrl,
   listProfileTerms,
+  downloadProfileTermDocument,
 } from "src/services/profileDocumentsService";
 import { collection } from "src/services/profilePresentation";
 import { getApiErrorMessage } from "src/services/clientAuthService";
@@ -151,11 +152,15 @@ async function loadTerms() {
   try {
     const result = await listProfileTerms();
     if (!current()) return;
+    terms.error = result?.partialError || "";
     terms.items = collection(result?.items).map((t) => ({
       key: t.versionId || t.code,
       name: t.content?.title || t.code,
       content: t.content,
-      downloadable: Boolean(t.content?.documentUri || t.content?.body),
+      profileDocumentId: t.documentId,
+      downloadable: Boolean(
+        t.documentId || t.content?.documentUri || t.content?.body,
+      ),
     }));
   } catch (e) {
     if (current())
@@ -172,7 +177,19 @@ async function download(item) {
   const session = captureClientSession();
   downloading.value = item.key;
   try {
-    if (item.contractId || item.content?.documentUri) {
+    if (item.profileDocumentId) {
+      const response = await downloadProfileTermDocument(
+        item.profileDocumentId,
+      );
+      assertClientSessionCurrent(session);
+      if (!active) return;
+      const url = URL.createObjectURL(response.data),
+        link = document.createElement("a");
+      link.href = url;
+      link.download = item.name;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } else if (item.contractId || item.content?.documentUri) {
       const value = item.contractId
         ? await getProfileContractDocumentUrl(item.contractId, item.documentId)
         : { url: item.content.documentUri };
