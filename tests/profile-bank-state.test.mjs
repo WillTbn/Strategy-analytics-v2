@@ -137,6 +137,21 @@ test("archive writes cannot be submitted twice", async () => {
   await Promise.all([first, second]);
   assert.equal(h.model.saving.value, false);
 });
+test("archived accounts stay hidden when the API returns them after a reload", async () => {
+  const h = await harness();
+  await h.ready();
+  const reload = h.model.load();
+  h.catalogs[1].resolve([]);
+  h.lists[1].resolve([
+    { id: "primary", status: "Active", isPrimary: true },
+    { id: "archived", status: "Archived" },
+    { id: "legacy-archived", archivedAtUtc: "2026-11-05T13:00:00Z" },
+  ]);
+  await reload;
+  assert.deepEqual(Array.from(h.model.accounts.value, (account) => account.id), [
+    "primary",
+  ]);
+});
 test("latest bank list survives an older request failure", async () => {
   const h = await harness(),
     retry = h.model.load();

@@ -272,7 +272,9 @@ const load = async () => {
     ]);
     if (!latest()) return;
     banks.value = collection(b).filter((x) => x.isActive !== false);
-    accounts.value = collection(a);
+    accounts.value = collection(a).filter(
+      (account) => account.status !== "Archived" && !account.archivedAtUtc,
+    );
   } catch (e) {
     if (latest())
       error.value = getApiErrorMessage(

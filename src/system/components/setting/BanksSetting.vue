@@ -66,7 +66,9 @@ async function load() {
       listAllClientBanks(),
     ]);
     if (active) {
-      accounts.value = collection(a);
+      accounts.value = collection(a).filter(
+        (account) => account.status !== "Archived" && !account.archivedAtUtc,
+      );
       banks.value = collection(b);
     }
   } catch (e) {
