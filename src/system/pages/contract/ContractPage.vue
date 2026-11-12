@@ -69,6 +69,9 @@
           row-key="id"
           no-data-label="Nenhum evento disponível"
           rows-per-page-label="Itens por página:"
+          :pagination-label="
+            (first, last, total) => first + '–' + last + ' de ' + total
+          "
       /></resource-state>
     </section>
   </q-page>
