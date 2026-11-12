@@ -327,6 +327,7 @@ import {
 import {
   captureClientSession,
   assertClientSessionCurrent,
+  isClientSessionCurrent,
 } from "src/services/clientApi";
 import { getApiErrorMessage } from "src/services/clientAuthService";
 const sections = [
@@ -363,7 +364,8 @@ const dialog = ref(false),
   saveError = ref(""),
   viewing = ref(null);
 let active = true,
-  revision = 0;
+  revision = 0,
+  pendingTab = null;
 const attachmentEditor = ref(null),
   attachmentEditorKey = ref(0),
   editorAssetId = ref(null);
@@ -498,29 +500,62 @@ async function save() {
   }
 }
 async function viewDocument(id, documentId) {
-  if (viewing.value) return;
+  if (!active || viewing.value) return;
   const session = captureClientSession();
   viewing.value = documentId;
+  saveError.value = "";
+  let tab = null;
   try {
+    // Reserve during the click; delayed API responses may lose user activation.
+    tab = window.open("", "_blank");
+    if (!tab)
+      throw Error("Permita a abertura de novas abas e tente novamente.");
+    pendingTab = tab;
+    tab.opener = null;
+    const referrer = tab.document.createElement("meta");
+    referrer.name = "referrer";
+    referrer.content = "no-referrer";
+    tab.document.head.appendChild(referrer);
     const result = await getClientAssetDocumentUrl(id, documentId);
     assertClientSessionCurrent(session);
-    if (!active) return;
-    if (!/^https?:\/\//i.test(result?.url || ""))
-      throw Error("URL indisponível");
-    window.open(result.url, "_blank", "noopener,noreferrer");
+    if (!active) {
+      tab.close();
+      return;
+    }
+    const url = new URL(result?.url);
+    if (
+      url.protocol !== "https:" &&
+      !(url.protocol === "http:" && url.origin === window.location.origin)
+    )
+      throw Error("O documento não possui um endereço válido.");
+    if (tab.closed) throw Error("Não foi possível abrir o documento.");
+    const link = tab.document.createElement("a");
+    link.href = url.href;
+    link.rel = "noopener noreferrer";
+    link.referrerPolicy = "no-referrer";
+    link.hidden = true;
+    tab.document.body.appendChild(link);
+    link.click();
+    // Already opened files remain with the user when leaving this section.
+    if (pendingTab === tab) pendingTab = null;
   } catch (error) {
-    if (active)
+    tab?.close();
+    if (active && isClientSessionCurrent(session))
       saveError.value = getApiErrorMessage(
         error,
         "Não foi possível abrir o documento.",
       );
   } finally {
+    if (pendingTab === tab) pendingTab = null;
     if (active) viewing.value = null;
   }
 }
 onScopeDispose(() => {
   active = false;
   revision++;
+  pendingTab?.close();
+  pendingTab = null;
+  viewing.value = null;
   [assets, detail, currencies, ...documents.values()].forEach((resource) =>
     resource.reset(),
   );
