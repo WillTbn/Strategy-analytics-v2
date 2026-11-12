@@ -77,7 +77,7 @@
   </q-page>
 </template>
 <script setup>
-import { ref, watch } from "vue";
+import { onScopeDispose, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import TitlePage from "../../components/TitlePage.vue";
 import ResourceState from "../../components/finance/ResourceState.vue";
@@ -89,6 +89,10 @@ import {
   columns,
   dateLabel,
 } from "src/services/financeService";
+import {
+  captureClientSession,
+  isClientSessionCurrent,
+} from "src/services/clientApi";
 const route = useRoute(),
   detail = useFinanceResource(),
   documents = useFinanceResource(),
@@ -99,55 +103,111 @@ const metric = (value) =>
   value?.calculationStatus === "Available"
     ? money(value.value, detail.state.data?.currency?.isoCode)
     : "Indisponível";
-const loadDetail = () =>
-  detail.load(
-    async () => (await financeGet(`client/contracts/${route.params.id}`)).data,
-  );
-const loadDocuments = () =>
-  documents.load(
-    async () =>
-      (await financeGet(`client/contracts/${route.params.id}/documents`)).data,
-  );
-const loadHistory = () =>
-  history.load(
-    async () =>
-      (await financeGet(`client/contracts/${route.params.id}/history`)).data,
-  );
+let active = true,
+  viewRevision = 0,
+  openingRevision = 0,
+  pendingTab = null;
+const viewIsCurrent = (revision, session, contractId) =>
+  active &&
+  route.name === "contract" &&
+  revision === viewRevision &&
+  contractId === route.params.id &&
+  isClientSessionCurrent(session);
+const loadSection = (resource, suffix = "") => {
+  if (!active || route.name !== "contract" || !route.params.id)
+    return Promise.resolve(null);
+  const contractId = route.params.id,
+    revision = viewRevision,
+    session = captureClientSession();
+  return resource.load(async () => {
+    try {
+      const result = await financeGet(
+        "client/contracts/" + contractId + suffix,
+      );
+      return viewIsCurrent(revision, session, contractId) ? result.data : null;
+    } catch (error) {
+      if (viewIsCurrent(revision, session, contractId)) throw error;
+      return null;
+    }
+  });
+};
+const loadDetail = () => loadSection(detail);
+const loadDocuments = () => loadSection(documents, "/documents");
+const loadHistory = () => loadSection(history, "/history");
+const resetView = () => {
+  viewRevision++;
+  openingRevision++;
+  pendingTab?.close();
+  pendingTab = null;
+  opening.value = null;
+  error.value = "";
+  for (const resource of [detail, documents, history]) resource.reset();
+};
+onScopeDispose(() => {
+  active = false;
+  resetView();
+});
 const historyColumns = columns([
   ["occurredAtUtc", "Data", (r) => dateLabel(r.occurredAtUtc)],
   ["eventType", "Evento", (row) => financeLabel(row.eventType)],
   ["statusName", "Status", (row) => financeLabel(row.statusName)],
 ]);
 async function openDocument(id) {
+  if (
+    !active ||
+    opening.value ||
+    !documents.state.data?.some((document) => document.documentId === id)
+  )
+    return;
+  const contractId = route.params.id,
+    revision = viewRevision,
+    session = captureClientSession(),
+    attempt = ++openingRevision;
+  const current = () =>
+    attempt === openingRevision && viewIsCurrent(revision, session, contractId);
   opening.value = id;
   error.value = "";
   const tab = window.open("", "_blank");
-  if (tab) tab.opener = null;
+  if (!tab) {
+    error.value = "Permita a abertura de novas abas e tente novamente.";
+    opening.value = null;
+    return;
+  }
+  tab.opener = null;
+  pendingTab = tab;
   try {
     const result = await financeGet(
-      `client/contracts/${route.params.id}/documents/${id}/temporary-url`,
+      "client/contracts/" + contractId + "/documents/" + id + "/temporary-url",
     );
-    const url = new URL(result.data.url);
-    if (url.protocol !== "https:") throw new Error("URL inválida");
-    if (tab) tab.location.replace(url.href);
-    else {
-      error.value = "Permita a abertura de novas abas e tente novamente.";
+    if (!current()) {
+      tab.close();
+      return;
     }
+    const url = new URL(result.data.url);
+    if (url.protocol !== "https:" || tab.closed)
+      throw new Error("URL indisponível");
+    tab.location.replace(url.href);
+    // Leave successfully opened documents with the user; close only pending tabs.
+    if (pendingTab === tab) pendingTab = null;
   } catch {
-    tab?.close();
-    error.value = "Não foi possível abrir o documento. Tente novamente.";
+    tab.close();
+    if (current())
+      error.value = "Não foi possível abrir o documento. Tente novamente.";
   } finally {
-    opening.value = null;
+    if (pendingTab === tab) pendingTab = null;
+    if (attempt === openingRevision) opening.value = null;
   }
 }
 watch(
-  () => route.params.id,
-  () => {
+  () => [route.name, route.params.id],
+  ([name, id]) => {
+    resetView();
+    if (name !== "contract" || !id) return;
     loadDetail();
     loadDocuments();
     loadHistory();
   },
-  { immediate: true },
+  { immediate: true, flush: "sync" },
 );
 </script>
 <style scoped>
