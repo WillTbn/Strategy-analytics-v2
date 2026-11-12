@@ -19,6 +19,9 @@
       :loading="loading"
       :hide-bottom="loading || (Boolean(error) && rows.length === 0)"
       :rows-per-page-options="[5, 10, 20]"
+      rows-per-page-label="Itens por página:"
+      :pagination-label="(first, last, total) => `${first}–${last} de ${total}`"
+      loading-label="Carregando sessões..."
       class="q-mt-md bg-transparent"
       flat
       no-data-label="Nenhuma sessão disponível."
