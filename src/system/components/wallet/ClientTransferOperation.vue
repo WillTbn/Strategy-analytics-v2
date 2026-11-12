@@ -39,7 +39,7 @@
         {{
           recipientError ||
           (recipient
-            ? `Destinatário: ${recipient.displayName}. Confira o nome antes de confirmar.`
+            ? `Destinatário: ${recipient.displayName.replace(/\.+$/, "")}. Confira o nome antes de confirmar.`
             : "Informe o ID Strategy para conferir o destinatário.")
         }}
       </p>
@@ -86,11 +86,12 @@
       <div class="currencies" role="group" aria-label="Moeda da transferência">
         <q-btn
           v-for="item in currencies"
-          :key="item.id"
+          :key="item.code"
           flat
           no-caps
           :aria-label="item.code"
-          :aria-pressed="form.currencyId === item.id"
+          :aria-pressed="!!item.id && form.currencyId === item.id"
+          :disable="!item.id"
           :class="{ selected: form.currencyId === item.id }"
           @click="form.currencyId = item.id"
           ><span
@@ -234,22 +235,16 @@ let active = true,
   lookupVersion = 0,
   timer;
 const currencies = computed(() =>
-  Array.from(
-    new Map(
-      (wallets.state.data || [])
-        .filter((w) => w.currencyId && w.currencyIsoCode)
-        .map((w) => [
-          w.currencyId,
-          {
-            id: w.currencyId,
-            code: w.currencyIsoCode,
-            symbol:
-              WALLET_CURRENCIES.find((c) => c.code === w.currencyIsoCode)
-                ?.symbol || w.currencyIsoCode,
-          },
-        ]),
-    ).values(),
-  ),
+  WALLET_CURRENCIES.map((definition) => {
+    const wallet = (wallets.state.data || []).find(
+      (w) => w.currencyIsoCode === definition.code && w.currencyId,
+    );
+    return {
+      id: wallet?.currencyId || null,
+      code: definition.code,
+      symbol: definition.symbol,
+    };
+  }),
 );
 const currency = computed(
   () => currencies.value.find((c) => c.id === form.currencyId)?.code || "BRL",
@@ -290,8 +285,12 @@ async function loadWallets() {
       throw new Error("Carteiras indisponíveis.");
     return result.data;
   });
-  if (active && !currencies.value.some((c) => c.id === form.currencyId))
-    form.currencyId = currencies.value[0]?.id || null;
+  if (
+    active &&
+    (!form.currencyId ||
+      !currencies.value.some((c) => c.id === form.currencyId))
+  )
+    form.currencyId = currencies.value.find((c) => c.id)?.id || null;
 }
 watch(
   () => form.recipientStrategyId,
@@ -404,6 +403,14 @@ label :deep(.q-field) {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+.client-transfer :deep(.q-field--dense .q-field__control),
+.client-transfer :deep(.q-field--dense .q-field__marginal) {
+  height: 32px;
+  min-height: 32px;
+}
+.client-transfer :deep(.q-field--dense .q-field__native) {
+  min-height: 32px;
 }
 .columns label {
   min-width: 0;

@@ -6,6 +6,7 @@
     @click="emit('go')"
     tabindex="0"
     role="link"
+    :aria-label="title"
     @keydown.enter="emit('go')"
   >
     <q-card-section horizontal>
@@ -38,7 +39,10 @@
             <span class="text-grey">{{ create_at }}</span>
           </div>
         </div>
-        <span class="text-weight-bold">{{ title }}</span> <br />
+        <span :class="unread ? 'text-weight-bold' : 'text-weight-regular'">{{
+          title
+        }}</span>
+        <br />
         <p class="content text-grey">{{ content }}</p>
       </q-card-section>
     </q-card-section>
@@ -52,6 +56,7 @@
     @click="emit('go')"
     tabindex="0"
     role="link"
+    :aria-label="title"
     @keydown.enter="emit('go')"
   >
     <img v-if="image" :src="image" alt="" />
@@ -66,7 +71,12 @@
           {{ typeNew }}
         </q-badge>
       </div>
-      <div class="text-subtitle2 content">{{ title }}</div>
+      <div
+        class="text-subtitle2 content"
+        :class="unread ? 'text-weight-bold' : 'text-weight-regular'"
+      >
+        {{ title }}
+      </div>
       <p class="content text-grey">{{ content }}</p>
       <q-chip v-if="author" color="styleTool" text-color="white">
         <q-avatar size="sm" flat color="white" class="text-dark">
@@ -92,6 +102,7 @@ defineComponent({
 const emit = defineEmits(["go"]);
 
 const props = defineProps({
+  unread: { type: Boolean, default: true },
   horizontal: {
     type: Boolean,
     default: true,

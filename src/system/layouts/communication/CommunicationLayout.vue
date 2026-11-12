@@ -63,7 +63,8 @@
             type-new="Comunicados S.A"
             type-color="#e5ffad"
             :create_at="announcementDate(item.publishedAtUtc)"
-            :class="{ unread: !item.isRead }"
+            :unread="!item.isRead"
+            class-card=""
             @go="
               router.push({
                 name: 'Comunicação Insight',
@@ -78,6 +79,9 @@
           :max="pages"
           :max-pages="5"
           direction-links
+          active-color="primary"
+          active-text-color="white"
+          color="grey-6"
           class="justify-center q-my-lg"
           aria-label="Página dos comunicados"
         />
@@ -94,12 +98,18 @@
             {
               label: 'Lista',
               value: 'list',
-              icon: 'img:/icons/communication/layout-list.svg',
+              icon:
+                layout === 'list'
+                  ? 'img:/icons/communication/layout-list.svg'
+                  : 'img:/icons/communication/layout-list-inactive.svg',
             },
             {
               label: 'Card',
               value: 'grid',
-              icon: 'img:/icons/communication/layout-grid.svg',
+              icon:
+                layout === 'grid'
+                  ? 'img:/icons/communication/layout-grid-active.svg'
+                  : 'img:/icons/communication/layout-grid.svg',
             },
           ]"
           class="q-mt-sm"
@@ -116,6 +126,12 @@
             dense
             bg-color="white"
             aria-label="Categoria do comunicado"
+            :display-value="
+              draft.category
+                ? announcementCategory(draft.category).label
+                : 'Selecione uma opção'
+            "
+            dropdown-icon="img:/icons/communication/chevron-down.svg"
         /></label>
         <label
           >Publicado por<q-select
@@ -124,6 +140,8 @@
             bg-color="white"
             disable
             aria-label="Publicado por"
+            display-value="Indisponível"
+            dropdown-icon="img:/icons/communication/chevron-down.svg"
         /></label>
         <label
           >Publicado em<q-select
@@ -132,6 +150,8 @@
             bg-color="white"
             disable
             aria-label="Publicado em"
+            display-value="Indisponível"
+            dropdown-icon="img:/icons/communication/chevron-down.svg"
         /></label>
         <q-toggle v-model="draft.unread" label="Exibir somente Novos" />
         <div class="filter-actions">
@@ -165,6 +185,7 @@ import {
 } from "src/services/clientApi";
 import {
   announcementCategories,
+  announcementCategory,
   announcementApiCategories,
   announcementDate,
   createAnnouncementsService,
@@ -246,8 +267,16 @@ onScopeDispose(resource.reset);
 }
 .communication-items.grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
+}
+.communication-items.grid :deep(.q-card__section) {
+  padding: 0;
+}
+@media (max-width: 1279px) {
+  .communication-items.grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .communication-items.grid :deep(.q-separator) {
   display: none;
@@ -279,6 +308,11 @@ label :deep(.q-field) {
 .unread :deep(.text-weight-bold),
 .unread :deep(.text-subtitle2) {
   font-weight: 700;
+}
+.communication-filters :deep(.q-select__dropdown-icon) {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
 }
 .communication-filters :deep(.q-field__native) {
   color: #1a1a1a;
