@@ -92,7 +92,7 @@
           :aria-label="item.code"
           :aria-pressed="!!item.id && form.currencyId === item.id"
           :disable="!item.id"
-          :class="{ selected: form.currencyId === item.id }"
+          :class="{ selected: !!item.id && form.currencyId === item.id }"
           @click="form.currencyId = item.id"
           ><span
             >{{ item.symbol }}<small>{{ item.code }}</small></span
