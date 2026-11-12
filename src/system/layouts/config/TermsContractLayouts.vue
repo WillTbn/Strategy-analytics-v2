@@ -83,11 +83,15 @@ const sections = computed(() => [contracts, terms]),
 const { errorNotify } = useNotify();
 let active = true,
   contractsRevision = 0,
-  termsRevision = 0;
+  termsRevision = 0,
+  pendingTab = null;
 onScopeDispose(() => {
   active = false;
   contractsRevision++;
   termsRevision++;
+  pendingTab?.close();
+  pendingTab = null;
+  downloading.value = null;
 });
 async function loadContracts() {
   const session = captureClientSession(),
@@ -173,9 +177,10 @@ async function loadTerms() {
   }
 }
 async function download(item) {
-  if (downloading.value) return;
+  if (!active || downloading.value || !item.downloadable) return;
   const session = captureClientSession();
   downloading.value = item.key;
+  let tab = null;
   try {
     if (item.profileDocumentId) {
       const response = await downloadProfileTermDocument(
@@ -190,18 +195,41 @@ async function download(item) {
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } else if (item.contractId || item.content?.documentUri) {
+      // Reserve the tab during the click, while the browser still permits it.
+      tab = window.open("", "_blank");
+      if (!tab)
+        throw new Error("Permita a abertura de novas abas e tente novamente.");
+      tab.opener = null;
+      const referrer = tab.document.createElement("meta");
+      referrer.name = "referrer";
+      referrer.content = "no-referrer";
+      tab.document.head.appendChild(referrer);
+      pendingTab = tab;
       const value = item.contractId
         ? await getProfileContractDocumentUrl(item.contractId, item.documentId)
         : { url: item.content.documentUri };
       assertClientSessionCurrent(session);
-      if (!active) return;
+      if (!active) {
+        tab.close();
+        return;
+      }
       const url = new URL(value.url);
       if (
         url.protocol !== "https:" &&
         !(url.protocol === "http:" && url.origin === window.location.origin)
       )
         throw new Error("O documento não possui um endereço válido.");
-      window.open(url.href, "_blank", "noopener,noreferrer");
+      if (tab.closed) throw new Error("Não foi possível baixar o documento.");
+      // Navigate from the reserved tab so its no-referrer policy is honored.
+      const link = tab.document.createElement("a");
+      link.href = url.href;
+      link.rel = "noopener noreferrer";
+      link.referrerPolicy = "no-referrer";
+      link.hidden = true;
+      tab.document.body.appendChild(link);
+      link.click();
+      // An opened file belongs to the user; leaving closes only pending tabs.
+      if (pendingTab === tab) pendingTab = null;
     } else if (item.content?.body) {
       const blob = new Blob([item.content.body], {
           type: "text/plain;charset=utf-8",
@@ -214,11 +242,13 @@ async function download(item) {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
   } catch (e) {
+    tab?.close();
     if (active && isClientSessionCurrent(session))
       errorNotify(
         getApiErrorMessage(e, "Não foi possível baixar o documento."),
       );
   } finally {
+    if (pendingTab === tab) pendingTab = null;
     downloading.value = null;
   }
 }

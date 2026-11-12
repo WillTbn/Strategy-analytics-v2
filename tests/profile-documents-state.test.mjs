@@ -13,12 +13,73 @@ const descriptor = parse(
 ).descriptor;
 const pending = (queue, value) =>
   new Promise((resolve, reject) => queue.push({ resolve, reject, value }));
-async function harness() {
-  const context = vm.createContext({});
+async function harness({ popupAllowed = true } = {}) {
+  const tabs = [],
+    notifications = [],
+    downloads = [],
+    urls = [],
+    revoked = [],
+    blobs = [];
+  const makeDocument = (destinations) => ({
+    head: {
+      appendChild(node) {
+        this.meta = node;
+      },
+    },
+    body: {
+      appendChild(node) {
+        this.link = node;
+      },
+    },
+    createElement: (tag) => ({
+      tag,
+      click() {
+        if (destinations) destinations.push(this.href);
+        else downloads.push({ href: this.href, name: this.download });
+      },
+    }),
+  });
+  class TestURL extends URL {
+    static createObjectURL(blob) {
+      blobs.push(blob);
+      return "blob:test/" + urls.push(blob);
+    }
+    static revokeObjectURL(url) {
+      revoked.push(url);
+    }
+  }
+  const context = vm.createContext({
+    URL: TestURL,
+    Blob,
+    setTimeout: (callback) => callback(),
+    document: makeDocument(),
+    window: {
+      location: { origin: "https://portal.example.test" },
+      open(url) {
+        if (!popupAllowed) return null;
+        const destinations = [];
+        const tab = {
+          closed: false,
+          opener: {},
+          document: makeDocument(destinations),
+          destinations,
+          close() {
+            this.closed = true;
+          },
+        };
+        tab.location = { replace: (url) => tab.destinations.push(url) };
+        if (url) tab.destinations.push(url);
+        tabs.push(tab);
+        return tab;
+      },
+    },
+  });
   const lists = [],
     terms = [],
     docs = [],
-    dispose = [];
+    dispose = [],
+    fileRequests = [],
+    urlRequests = [];
   let session = 0;
   const modules = {
     vue: {
@@ -31,12 +92,9 @@ async function harness() {
       listProfileContracts: (page) => pending(lists, page),
       listProfileContractDocuments: (id) => pending(docs, id),
       listProfileTerms: () => pending(terms),
-      downloadProfileTermDocument: () => {
-        throw Error("Unexpected download");
-      },
-      getProfileContractDocumentUrl: () => {
-        throw Error("Unexpected download");
-      },
+      downloadProfileTermDocument: (id) => pending(fileRequests, id),
+      getProfileContractDocumentUrl: (contractId, documentId) =>
+        pending(urlRequests, { contractId, documentId }),
     },
     "src/services/profilePresentation": { collection },
     "src/services/clientAuthService": { getApiErrorMessage: (e) => e.message },
@@ -49,15 +107,15 @@ async function harness() {
     },
     "src/composables/useNotify": {
       default: () => ({
-        errorNotify() {
-          throw Error("Unexpected notification");
+        errorNotify(message) {
+          notifications.push(message);
         },
       }),
     },
   };
   const mod = new vm.SourceTextModule(
     descriptor.scriptSetup.content +
-      "\nexport { contracts, terms, loadContracts, loadTerms };",
+      "\nexport { contracts, terms, loadContracts, loadTerms, download, downloading };",
     { context },
   );
   await mod.link((specifier) => {
@@ -78,6 +136,13 @@ async function harness() {
     lists,
     terms,
     docs,
+    tabs,
+    notifications,
+    downloads,
+    revoked,
+    blobs,
+    fileRequests,
+    urlRequests,
     dispose: () => dispose.forEach((fn) => fn()),
     changeSession: () => session++,
   };
@@ -228,4 +293,153 @@ test("real template distinguishes errors and loading from a successful empty sec
     },
   ]);
   assert.match(html, /Nenhum documento disponível/);
+});
+
+const contractDownload = {
+  key: "contract:document",
+  name: "Arquivo fictício",
+  contractId: "contract",
+  documentId: "document",
+  downloadable: true,
+};
+test("contract download reserves its tab in the click handler before waiting for its URL", async () => {
+  const h = await harness(),
+    pending = h.model.download(contractDownload);
+  assert.equal(h.tabs.length, 1);
+  assert.equal(h.tabs[0].opener, null);
+  assert.equal(h.tabs[0].document.head.meta.name, "referrer");
+  assert.equal(h.tabs[0].document.head.meta.content, "no-referrer");
+  h.urlRequests[0].resolve({ url: "https://files.example.test/contract.pdf" });
+  await pending;
+  assert.deepEqual(h.tabs[0].destinations, [
+    "https://files.example.test/contract.pdf",
+  ]);
+  assert.equal(h.tabs[0].document.body.link.referrerPolicy, "no-referrer");
+  assert.equal(h.tabs[0].document.body.link.rel, "noopener noreferrer");
+  h.dispose();
+  assert.equal(h.tabs[0].closed, false);
+});
+test("a blocked popup prevents the temporary URL call and reports the existing recovery", async () => {
+  const h = await harness({ popupAllowed: false }),
+    pending = h.model.download(contractDownload);
+  for (const request of h.urlRequests)
+    request.resolve({ url: "https://files.example.test/contract.pdf" });
+  await pending;
+  assert.equal(h.urlRequests.length, 0);
+  assert.match(h.notifications[0], /Permita a abertura/);
+  assert.equal(h.model.downloading.value, null);
+});
+test("leaving Contracts and Terms closes a pending tab and ignores its late URL", async () => {
+  const h = await harness(),
+    pending = h.model.download(contractDownload);
+  h.dispose();
+  assert.equal(h.tabs[0]?.closed, true);
+  h.urlRequests[0].resolve({ url: "https://files.example.test/late.pdf" });
+  await pending;
+  assert.deepEqual(h.tabs[0].destinations, []);
+  assert.equal(h.notifications.length, 0);
+});
+test("session changes close the pending tab without exposing a stale URL or error", async () => {
+  const h = await harness(),
+    pending = h.model.download(contractDownload);
+  h.changeSession();
+  h.urlRequests[0].resolve({
+    url: "https://files.example.test/old-session.pdf",
+  });
+  await pending;
+  assert.equal(h.tabs[0]?.closed, true);
+  assert.deepEqual(h.tabs[0].destinations, []);
+  assert.equal(h.notifications.length, 0);
+});
+test("invalid URL or API failure closes its reserved tab and allows another attempt", async () => {
+  for (const fail of [false, true]) {
+    const h = await harness(),
+      pending = h.model.download(contractDownload);
+    if (fail) h.urlRequests[0].reject(Error("Falha controlada"));
+    else h.urlRequests[0].resolve({ url: "javascript:alert(1)" });
+    await pending;
+    assert.equal(h.tabs[0]?.closed, true);
+    assert.equal(h.notifications.length, 1);
+    assert.equal(h.model.downloading.value, null);
+    const retry = h.model.download(contractDownload);
+    h.urlRequests[1].resolve({ url: "https://files.example.test/retry.pdf" });
+    await retry;
+    assert.deepEqual(h.tabs[1].destinations, [
+      "https://files.example.test/retry.pdf",
+    ]);
+  }
+});
+test("double click starts only one contract URL call", async () => {
+  const h = await harness(),
+    one = h.model.download(contractDownload),
+    two = h.model.download(contractDownload);
+  assert.equal(h.urlRequests.length, 1);
+  h.urlRequests[0].resolve({ url: "https://files.example.test/one.pdf" });
+  await Promise.all([one, two]);
+  assert.equal(h.tabs.length, 1);
+});
+test("leaving stops an old handler from initiating another download", async () => {
+  const h = await harness();
+  h.dispose();
+  const pending = h.model.download(contractDownload);
+  for (const request of h.urlRequests)
+    request.resolve({ url: "https://files.example.test/old.pdf" });
+  await pending;
+  assert.equal(h.urlRequests.length, 0);
+  assert.equal(h.tabs.length, 0);
+});
+test("a profile file uses its blob download and releases the URL without a popup", async () => {
+  const h = await harness(),
+    pending = h.model.download({
+      key: "profile:file",
+      name: "Arquivo fictício",
+      profileDocumentId: "file",
+      downloadable: true,
+    });
+  h.fileRequests[0].resolve({ data: new Blob(["FICTICIO"]) });
+  await pending;
+  assert.equal(h.tabs.length, 0);
+  assert.equal(h.downloads.length, 1);
+  assert.deepEqual(h.revoked, [h.downloads[0].href]);
+});
+test("term text is downloaded as plain text and never executes markup", async () => {
+  const h = await harness();
+  await h.model.download({
+    key: "term",
+    name: "Termo fictício",
+    downloadable: true,
+    content: { body: "<script>ficticio</script>" },
+  });
+  assert.equal(h.tabs.length, 0);
+  assert.equal(h.blobs[0].type, "text/plain;charset=utf-8");
+  assert.equal(await h.blobs[0].text(), "<script>ficticio</script>");
+  assert.equal(h.downloads[0].name, "Termo fictício.txt");
+});
+
+test("leaving or changing session prevents a pending profile file from triggering a blob download", async () => {
+  for (const invalidate of ["dispose", "changeSession"]) {
+    const h = await harness(),
+      pending = h.model.download({
+        key: "file",
+        name: "Fictício",
+        profileDocumentId: "file",
+        downloadable: true,
+      });
+    h[invalidate]();
+    h.fileRequests[0].resolve({ data: new Blob(["fictício"]) });
+    await pending;
+    assert.equal(h.downloads.length, 0);
+    assert.equal(h.blobs.length, 0);
+    assert.equal(h.notifications.length, 0);
+  }
+});
+test("a manually closed pending tab is not navigated when the URL arrives", async () => {
+  const h = await harness(),
+    pending = h.model.download(contractDownload);
+  h.tabs[0].close();
+  h.urlRequests[0].resolve({ url: "https://files.example.test/closed.pdf" });
+  await pending;
+  assert.deepEqual(h.tabs[0].destinations, []);
+  assert.equal(h.notifications.length, 1);
+  assert.equal(h.model.downloading.value, null);
 });
