@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { defineComponent, ref, watch } from "vue";
+import { defineComponent, onScopeDispose, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import TitlePage from "src/system/components/TitlePage.vue";
 import PersonalSettingLayout from "src/system/layouts/config/PersonalSettingLayout.vue";
@@ -95,16 +95,41 @@ const options = [
     component: "TermsContractLayouts",
   },
 ];
+const normalizedTab = (value) =>
+  options.some((option) => option.value === value) ? value : "personal";
+let active = true,
+  pendingNavigations = 0,
+  selectionRevision = 0;
+onScopeDispose(() => {
+  active = false;
+});
 watch(tab, (value) => {
-  if (route.query.tab === value) return;
+  if (!active || route.name !== "profile") return;
+  const revision = ++selectionRevision;
+  if (!pendingNavigations && normalizedTab(route.query.tab) === value) return;
   const query = { ...route.query, tab: value };
   if (value !== "bank") delete query.action;
-  router.replace({ query });
+  pendingNavigations++;
+  // Force is needed when the latest click returns to the current URL while
+  // another tab's guarded navigation is still pending. It cancels that intent.
+  const restoreCommittedTab = () => {
+    if (active && route.name === "profile" && revision === selectionRevision)
+      tab.value = normalizedTab(route.query.tab);
+  };
+  router
+    .replace({ query, force: true })
+    .finally(() => {
+      pendingNavigations--;
+    })
+    .then((failure) => {
+      if (failure) restoreCommittedTab();
+    })
+    .catch(restoreCommittedTab);
 });
 watch(
   () => route.query.tab,
   (value) => {
-    if (options.some((option) => option.value === value)) tab.value = value;
+    if (active && route.name === "profile") tab.value = normalizedTab(value);
   },
   { immediate: true },
 );
