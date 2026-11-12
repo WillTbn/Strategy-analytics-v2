@@ -7,16 +7,21 @@ export function onboardingBlockMessage(error) {
     const current = body?.data?.current?.documentLevel;
     const required = body?.data?.required?.documentLevel;
     return Number.isInteger(current) && Number.isInteger(required)
-      ? `Seu cadastro consta no nível documental ${current}. Esta consulta exige nível ${required}. Se você já foi aprovado, solicite a revisão do nível ao atendimento.`
-      : "Seu nível documental ainda não atende ao exigido para esta consulta. Solicite a revisão do cadastro ao atendimento.";
+      ? `Seu cadastro consta no nível documental ${current}. Esta consulta exige nível ${required}. Confira no Perfil o que falta para alcançar esse nível.`
+      : "Seu nível documental ainda não atende ao exigido para esta consulta. Confira as pendências no Perfil.";
   }
-  if (code === "PreferencesRequired") return "Complete suas preferências de cadastro para acessar esta seção.";
+  if (code === "PreferencesRequired")
+    return "Complete suas preferências de cadastro para acessar esta seção.";
   const messages = {
     EmailConfirmationRequired: "Confirme seu e-mail para acessar esta seção.",
-    PhoneVerificationRequired: "Verifique seu telefone para acessar esta seção.",
-    RequiredConsentsPending: "Revise os termos pendentes do seu cadastro para acessar esta seção.",
-    RequiredConsentsConfigurationInvalid: "Não foi possível consultar os termos necessários. Entre em contato com o atendimento.",
-    ProfileIncomplete: "Complete seus dados pessoais no perfil para acessar esta seção.",
+    PhoneVerificationRequired:
+      "Verifique seu telefone para acessar esta seção.",
+    RequiredConsentsPending:
+      "Revise os termos pendentes do seu cadastro para acessar esta seção.",
+    RequiredConsentsConfigurationInvalid:
+      "Não foi possível consultar os termos necessários. Entre em contato com o atendimento.",
+    ProfileIncomplete:
+      "Complete seus dados pessoais no perfil para acessar esta seção.",
   };
   if (Object.hasOwn(messages, code)) return messages[code];
   return "";

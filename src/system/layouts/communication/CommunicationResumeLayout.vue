@@ -4,11 +4,17 @@
     flat
     v-if="horizontal"
     @click="emit('go')"
+    tabindex="0"
+    role="link"
+    @keydown.enter="emit('go')"
   >
     <q-card-section horizontal>
-      <q-img class="col-5" :src="image" width="20%" />
+      <q-img v-if="image" class="col-5" :src="image" width="20%" />
 
-      <q-card-section class="body-new" style="max-width: 80%">
+      <q-card-section
+        class="body-new"
+        :style="{ maxWidth: image ? '80%' : '100%' }"
+      >
         <div class="row justify-between items-center">
           <div class="col-auto">
             <q-badge
@@ -20,7 +26,7 @@
             </q-badge>
           </div>
           <div class="col-auto">
-            <q-chip color="styleTool q-mx-sm" text-color="white">
+            <q-chip v-if="author" color="styleTool q-mx-sm" text-color="white">
               <q-avatar size="sm" flat color="white" class="text-dark">
                 {{ author.charAt(0) }}
               </q-avatar>
@@ -44,8 +50,11 @@
     v-else
     flat
     @click="emit('go')"
+    tabindex="0"
+    role="link"
+    @keydown.enter="emit('go')"
   >
-    <img :src="image" />
+    <img v-if="image" :src="image" alt="" />
 
     <q-card-section>
       <div class="text-h6">
@@ -59,7 +68,7 @@
       </div>
       <div class="text-subtitle2 content">{{ title }}</div>
       <p class="content text-grey">{{ content }}</p>
-      <q-chip color="styleTool" text-color="white">
+      <q-chip v-if="author" color="styleTool" text-color="white">
         <q-avatar size="sm" flat color="white" class="text-dark">
           {{ author.charAt(0) }}
         </q-avatar>
@@ -118,7 +127,8 @@ const props = defineProps({
 
 <style scoped>
 .body-new {
-  /* line-height: 80%; */
+  min-width: 0;
+  width: 100%;
 }
 .content {
   white-space: nowrap;

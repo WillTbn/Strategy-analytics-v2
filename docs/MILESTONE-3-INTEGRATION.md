@@ -1,5 +1,9 @@
 # Marco 3 — implementação frontend
 
+## Integração de 12/11 — Comunicados e ID Strategy
+
+Checklist e bloqueios reproduzidos em [Comunicados e transferências](QA-2026-11-12-COMUNICADOS-TRANSFERENCIAS.md). Front integrado nas telas existentes; senha de login recusada com 409 withdrawal_password_not_set. Teste positivo de Comunicados aguarda conta nível 2; revisão visual não aprovada devido ao bloqueio da automação Windows. Esta rodada não homologa as demais entregas do backend.
+
 > Revisão complementar QA 121–130: reenvio por lado, versão vigente, PIX protegido, dimensões dos níveis, selects/estados de patrimônio e retomada de aba corrigidos. [Matriz e evidências](QA-2026-11-04-PERFIL-DOCUMENTACAO-121-130.md). Regras oficiais de nível e campos/tipos não suportados continuam sem aprovação integrada; não devolver como checklist todo verde.
 
 

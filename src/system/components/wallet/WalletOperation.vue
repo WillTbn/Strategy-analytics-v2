@@ -1,5 +1,11 @@
 <template>
-  <q-card class="wallet-operation">
+  <client-transfer-operation
+    v-if="mode === 'transfer' && otherClient"
+    @own="otherClient = false"
+    @close="emit('close')"
+    @completed="emit('completed')"
+  />
+  <q-card v-else class="wallet-operation">
     <q-form @submit="confirm" :inert="busy || undefined">
       <header>
         <q-icon
@@ -12,6 +18,22 @@
         <p>{{ descriptions[mode] }}</p>
       </header>
       <template v-if="mode === 'transfer'">
+        <label>Enviar para</label>
+        <div class="target-toggle" role="group" aria-label="Enviar para">
+          <q-btn
+            flat
+            no-caps
+            label="Minhas carteiras"
+            class="selected"
+            aria-pressed="true"
+          />
+          <q-btn
+            flat
+            no-caps
+            label="Outro cliente"
+            @click="otherClient = true"
+          />
+        </div>
         <div class="operation-columns">
           <label
             >Carteira de origem<q-select
@@ -315,6 +337,7 @@ import { computed, onScopeDispose, ref, watch } from "vue";
 import QrcodeVue from "qrcode.vue";
 import { copyToClipboard, useQuasar } from "quasar";
 import MoneyInput from "src/system/components/form/MoneyInput.vue";
+import ClientTransferOperation from "./ClientTransferOperation.vue";
 import { useFinanceResource } from "src/composables/useFinanceResource";
 import { listAllClientBanks } from "src/services/clientProfileService";
 import { financeGet } from "src/services/financeService";
@@ -339,6 +362,7 @@ const props = defineProps({
   submitOperation: { type: Function, default: null },
 });
 const emit = defineEmits(["close", "completed"]);
+const otherClient = ref(false);
 const titles = {
   deposit: "Depósito",
   transfer: "Transferência entre carteiras",
@@ -524,6 +548,26 @@ async function confirm() {
 }
 </script>
 <style scoped>
+.target-toggle {
+  display: flex;
+  gap: 4px;
+  width: fit-content;
+  border: 1px solid #ffffff1f;
+  background: #ffffff0f;
+  padding: 4px;
+  border-radius: 999px;
+  margin: 8px 0 24px;
+}
+.target-toggle .q-btn {
+  border-radius: 999px;
+  font-size: 13px;
+  background: #ffffff14;
+}
+.target-toggle .selected {
+  background: #00a3ff;
+  outline: 1.5px solid #ffffffe6;
+  outline-offset: -1.5px;
+}
 .wallet-operation {
   width: 572px;
   max-width: calc(100vw - 32px);
