@@ -86,6 +86,8 @@
 </template>
 <script setup>
 import { ref, onScopeDispose } from "vue";
+import { createDocumentWindow } from "src/services/documentWindow";
+import { getApiErrorMessage } from "src/services/clientAuthService";
 import {
   listClientDocumentTypes,
   uploadClientDocument,
@@ -99,6 +101,7 @@ import {
 import {
   captureClientSession,
   assertClientSessionCurrent,
+  isClientSessionCurrent,
 } from "src/services/clientApi";
 import { fileFormat } from "src/services/profileDocumentation";
 const props = defineProps({
@@ -233,26 +236,41 @@ function remove(item) {
     items.value = items.value.filter((row) => row !== item);
   }
 }
+const documentWindow = createDocumentWindow();
 async function view(item) {
-  if (props.disabled || viewing.value) return;
+  if (!active || props.disabled || viewing.value) return;
   const session = captureClientSession();
   viewing.value = item.key;
+  error.value = "";
+  let localUrl = null,
+    opened = false;
   try {
-    if (item.file) {
-      const url = URL.createObjectURL(item.file);
-      window.open(url, "_blank", "noopener,noreferrer");
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } else {
-      const url = await getClientAssetDocumentUrl(
-        props.assetId,
-        item.documentId,
-      );
-      assertClientSessionCurrent(session);
-      if (active) window.open(safeUrl(url), "_blank", "noopener,noreferrer");
-    }
-  } catch {
-    if (active) error.value = "Não foi possível abrir o arquivo.";
+    opened = await documentWindow.open(
+      async () => {
+        if (item.file) {
+          localUrl = URL.createObjectURL(item.file);
+          return localUrl;
+        }
+        const result = await getClientAssetDocumentUrl(
+          props.assetId,
+          item.documentId,
+        );
+        assertClientSessionCurrent(session);
+        return result?.url;
+      },
+      {
+        current: () => active && isClientSessionCurrent(session),
+        allowBlob: Boolean(item.file),
+      },
+    );
+  } catch (e) {
+    if (active && isClientSessionCurrent(session))
+      error.value = getApiErrorMessage(e, "Não foi possível abrir o arquivo.");
   } finally {
+    if (localUrl) {
+      if (opened) setTimeout(() => URL.revokeObjectURL(localUrl), 60000);
+      else URL.revokeObjectURL(localUrl);
+    }
     if (active) viewing.value = null;
   }
 }
@@ -292,6 +310,8 @@ async function save(assetId) {
 }
 onScopeDispose(() => {
   active = false;
+  documentWindow.dispose();
+  viewing.value = null;
   revision++;
   for (const item of items.value)
     if (item.file && item.preview) URL.revokeObjectURL(item.preview);

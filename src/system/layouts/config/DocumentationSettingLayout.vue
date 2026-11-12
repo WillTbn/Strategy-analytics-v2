@@ -346,6 +346,7 @@
 
 <script setup>
 import { computed, reactive, ref, onScopeDispose } from "vue";
+import { createDocumentWindow } from "src/services/documentWindow";
 import {
   profileDocumentRows,
   profileDocumentGroups,
@@ -804,15 +805,18 @@ const download = async (d) => {
       );
   }
 };
+const documentWindow = createDocumentWindow();
 const temporaryUrl = async (d) => {
   const session = captureClientSession();
   try {
-    const result = await getClientDocumentTemporaryUrl(d.id);
-    if (!current(session)) return;
-    const url = result.url || result.temporaryUrl;
-    if (!url) throw new Error("URL ausente");
-    window.open(url, "_blank", "noopener");
-    successNotify("Link temporário aberto em uma nova aba.");
+    const opened = await documentWindow.open(
+      async () => {
+        const result = await getClientDocumentTemporaryUrl(d.id);
+        return result?.url || result?.temporaryUrl;
+      },
+      { current: () => current(session) },
+    );
+    if (opened) successNotify("Link temporário aberto em uma nova aba.");
   } catch (e) {
     if (current(session))
       errorNotify(
@@ -822,6 +826,7 @@ const temporaryUrl = async (d) => {
 };
 onScopeDispose(() => {
   active = false;
+  documentWindow.dispose();
   loadRevision++;
   resetDialog();
   documents.value = [];

@@ -1,3 +1,4 @@
+import { createDocumentWindow } from "../src/services/documentWindow.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
@@ -8,7 +9,7 @@ async function harness(urlFor = async () => ({url:"https://example.test/file.png
  const calls=[],disposed=[];
  const resource={state:reactive({data:null,loading:false,error:""}),async load(fn){this.state.loading=true;try{return this.state.data=await fn()}finally{this.state.loading=false}},reset(){this.state.data=null}};
  const docs=[{documentId:"image",contentType:"image/png",fileName:"ficticio.png"},{documentId:"pdf",contentType:"application/pdf",fileName:"ficticio.pdf"}];
- const values={vue:{ref,onScopeDispose:fn=>disposed.push(fn)},"src/system/components/finance/ResourceState.vue":{default:{}},"src/composables/useFinanceResource":{useFinanceResource:()=>resource},"src/services/clientAssetsService":{getClientAssetDocuments:async()=>docs,getClientAssetDocumentUrl:async(asset,id)=>{calls.push([asset,id]);return urlFor(id)}},"src/services/clientApi":{captureClientSession:()=>({}),assertClientSessionCurrent(){}}};
+ const values={"src/services/clientAuthService":{getApiErrorMessage:e=>e.message},"src/services/documentWindow":{createDocumentWindow},vue:{ref,onScopeDispose:fn=>disposed.push(fn)},"src/system/components/finance/ResourceState.vue":{default:{}},"src/composables/useFinanceResource":{useFinanceResource:()=>resource},"src/services/clientAssetsService":{getClientAssetDocuments:async()=>docs,getClientAssetDocumentUrl:async(asset,id)=>{calls.push([asset,id]);return urlFor(id)}},"src/services/clientApi":{captureClientSession:()=>({}),isClientSessionCurrent:()=>true,assertClientSessionCurrent(){}}};
  const context=vm.createContext({defineProps:()=>({assetId:"asset"})});
  const mod=new vm.SourceTextModule(source+"\nexport { ready, previews, previewErrors };",{context});
  await mod.link(name=>{const exports=values[name];return new vm.SyntheticModule(Object.keys(exports),function(){for(const[k,v]of Object.entries(exports))this.setExport(k,v)},{context})}); await mod.evaluate();

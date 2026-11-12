@@ -60,6 +60,8 @@
 </template>
 <script setup>
 import { ref, onScopeDispose } from "vue";
+import { createDocumentWindow } from "src/services/documentWindow";
+import { getApiErrorMessage } from "src/services/clientAuthService";
 import ResourceState from "src/system/components/finance/ResourceState.vue";
 import { useFinanceResource } from "src/composables/useFinanceResource";
 import {
@@ -69,6 +71,7 @@ import {
 import {
   captureClientSession,
   assertClientSessionCurrent,
+  isClientSessionCurrent,
 } from "src/services/clientApi";
 const props = defineProps({ assetId: { type: String, required: true } });
 const resource = useFinanceResource(),
@@ -112,27 +115,38 @@ async function load() {
       }),
   );
 }
+const documentWindow = createDocumentWindow();
 async function view(doc) {
-  if (viewing.value) return;
+  if (!active || viewing.value) return;
   const session = captureClientSession();
   viewing.value = doc.documentId;
   viewError.value = "";
   try {
-    const result = await getClientAssetDocumentUrl(
-      props.assetId,
-      doc.documentId,
+    await documentWindow.open(
+      async () => {
+        const result = await getClientAssetDocumentUrl(
+          props.assetId,
+          doc.documentId,
+        );
+        assertClientSessionCurrent(session);
+        return result?.url;
+      },
+      { current: () => active && isClientSessionCurrent(session) },
     );
-    assertClientSessionCurrent(session);
-    if (active) window.open(safeUrl(result), "_blank", "noopener,noreferrer");
-  } catch {
-    if (active)
-      viewError.value = "Não foi possível abrir o documento. Tente novamente.";
+  } catch (error) {
+    if (active && isClientSessionCurrent(session))
+      viewError.value = getApiErrorMessage(
+        error,
+        "Não foi possível abrir o documento. Tente novamente.",
+      );
   } finally {
     if (active) viewing.value = null;
   }
 }
 onScopeDispose(() => {
   active = false;
+  documentWindow.dispose();
+  viewing.value = null;
   revision++;
   resource.reset();
   previews.value = {};

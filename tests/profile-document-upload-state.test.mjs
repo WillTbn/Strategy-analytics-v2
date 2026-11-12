@@ -1,3 +1,4 @@
+import { createDocumentWindow } from "../src/services/documentWindow.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
@@ -73,6 +74,7 @@ async function harness({ summaryFailure = false } = {}) {
     },
   };
   const modules = {
+    "src/services/documentWindow": { createDocumentWindow },
     vue: {
       computed: Vue.computed,
       reactive: Vue.reactive,
@@ -103,6 +105,7 @@ async function harness({ summaryFailure = false } = {}) {
     "src/services/clientProfileService": services,
     "src/services/clientApi": {
       captureClientSession: () => session,
+      isClientSessionCurrent: (value) => value === session,
       isClientSessionCurrent: (value) => value === session,
     },
   };

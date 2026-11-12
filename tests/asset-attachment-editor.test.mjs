@@ -1,3 +1,4 @@
+import { createDocumentWindow } from "../src/services/documentWindow.js";
 import test from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
@@ -22,6 +23,8 @@ async function harness() {
     session = 1;
   const dispose = [];
   const modules = {
+    "src/services/clientAuthService": { getApiErrorMessage: e => e.message },
+    "src/services/documentWindow": { createDocumentWindow },
     vue: { ref, onScopeDispose: (fn) => dispose.push(fn) },
     "src/services/clientProfileService": {
       listClientDocumentTypes: async () => [],
@@ -45,6 +48,7 @@ async function harness() {
     },
     "src/services/clientApi": {
       captureClientSession: () => session,
+      isClientSessionCurrent: (value) => value === session,
       assertClientSessionCurrent: (value) => assert.equal(value, session),
     },
     "src/services/profileDocumentation": { fileFormat },
