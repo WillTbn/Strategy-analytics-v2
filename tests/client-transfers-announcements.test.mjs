@@ -267,3 +267,59 @@ test("recipient errors distinguish own account, unknown ID and transport failure
   );
   assert.match(recipientLookupError(new Error("offline")), /consultar/);
 });
+
+test("publication period reads every server page before filtering and paginates the filtered result", async () => {
+  const calls = [];
+  const fixture = (id, date) => ({ id, publishedAtUtc: date });
+  const service = createAnnouncementsService({
+    now: () => new Date("2026-11-12T13:00:00Z"),
+    read: async (path, query) => {
+      calls.push(query);
+      return {
+        data:
+          query.page === 1
+            ? [
+                fixture("recent-a", "2026-11-11T10:00:00Z"),
+                fixture("old", "2026-10-01T10:00:00Z"),
+              ]
+            : [
+                fixture("recent-b", "2026-11-10T10:00:00Z"),
+                fixture("recent-a", "2026-11-11T10:00:00Z"),
+              ],
+        pagination: { totalPages: 2 },
+        unreadCount: 3,
+      };
+    },
+  });
+  const result = await service.list({
+    periodDays: 7,
+    page: 2,
+    pageSize: 1,
+    category: "Institutional",
+    unread: true,
+  });
+  assert.deepEqual(
+    result.data.map((x) => x.id),
+    ["recent-b"],
+  );
+  assert.equal(result.pagination.totalItems, 2);
+  assert.equal(result.pagination.totalPages, 2);
+  assert.equal(result.unreadCount, 3);
+  assert.deepEqual(calls, [
+    { category: "Institutional", unread: true, page: 1, pageSize: 100 },
+    { category: "Institutional", unread: true, page: 2, pageSize: 100 },
+  ]);
+});
+test("period filter never presents partial data when a later page fails", async () => {
+  const service = createAnnouncementsService({
+    read: async (path, query) => {
+      if (query.page === 2) throw new Error("offline");
+      return {
+        data: [{ id: "one", publishedAtUtc: "2026-11-12T00:00:00Z" }],
+        pagination: { totalPages: 2 },
+      };
+    },
+  });
+  await assert.rejects(service.list({ periodDays: 7 }), /offline/);
+  await assert.rejects(service.list({ periodDays: 3 }), /período/);
+});

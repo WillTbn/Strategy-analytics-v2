@@ -145,12 +145,21 @@
         /></label>
         <label
           >Publicado em<q-select
+            v-model="draft.periodDays"
+            :options="announcementPeriods"
+            emit-value
+            map-options
+            clearable
             outlined
             dense
             bg-color="white"
-            disable
             aria-label="Publicado em"
-            display-value="Indisponível"
+            :display-value="
+              draft.periodDays
+                ? announcementPeriods.find((p) => p.value === draft.periodDays)
+                    ?.label
+                : 'Selecione uma opção'
+            "
             dropdown-icon="img:/icons/communication/chevron-down.svg"
         /></label>
         <q-toggle v-model="draft.unread" label="Exibir somente Novos" />
@@ -186,6 +195,7 @@ import {
 import {
   announcementCategories,
   announcementCategory,
+  announcementPeriods,
   announcementApiCategories,
   announcementDate,
   createAnnouncementsService,
@@ -198,13 +208,17 @@ const router = useRouter(),
   page = ref(1),
   layout = ref("list"),
   resource = useFinanceResource();
-const draft = reactive({ category: null, unread: false }),
+const draft = reactive({ category: null, unread: false, periodDays: null }),
   filters = ref({});
 const session = captureClientSession();
+let active = true;
 const service = createAnnouncementsService({
   read: financeGet,
   write: financeWrite,
-  assertCurrent: () => assertClientSessionCurrent(session),
+  assertCurrent: () => {
+    assertClientSessionCurrent(session);
+    if (!active) throw new Error("Consulta encerrada.");
+  },
 });
 const items = computed(() => resource.state.data?.data || []);
 const pages = computed(
@@ -222,6 +236,7 @@ function apply() {
   filters.value = {
     ...(draft.category ? { category: draft.category } : {}),
     ...(draft.unread ? { unread: true } : {}),
+    ...(draft.periodDays ? { periodDays: draft.periodDays } : {}),
   };
   if (page.value !== 1) page.value = 1;
   else load();
@@ -229,6 +244,7 @@ function apply() {
 function clear() {
   draft.category = null;
   draft.unread = false;
+  draft.periodDays = null;
   apply();
 }
 watch(page, load);
@@ -237,7 +253,10 @@ watch(tab, () => {
   else load();
 });
 load();
-onScopeDispose(resource.reset);
+onScopeDispose(() => {
+  active = false;
+  resource.reset();
+});
 </script>
 <style scoped>
 .communication-layout,
