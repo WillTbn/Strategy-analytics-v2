@@ -101,7 +101,7 @@ export function registrationReviewSections(snapshot) {
           join([
             d.documentCode,
             d.numberMasked ? maskRegistrationIdentifier(d.numberMasked) : "",
-            d.status,
+            { Active: "Ativo", Archived: "Arquivado" }[d.status] || d.status,
           ]),
         )
       : []),
