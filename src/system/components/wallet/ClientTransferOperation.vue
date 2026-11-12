@@ -508,6 +508,14 @@ footer {
   .client-transfer {
     padding: 24px 16px 16px;
   }
+  .currencies {
+    flex-wrap: nowrap;
+    gap: 3px;
+  }
+  .currencies .q-btn {
+    min-width: 38px;
+    min-height: 38px;
+  }
   .columns {
     grid-template-columns: 1fr;
     gap: 0;
