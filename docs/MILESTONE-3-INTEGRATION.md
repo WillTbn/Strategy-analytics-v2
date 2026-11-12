@@ -1,5 +1,9 @@
 # Marco 3 — implementação frontend
 
+## Revisão consolidada — 12/11
+
+[Entrega única e limites atuais](https://github.com/Statregy-Analytics/strategy-control/blob/main/docs/QA-2026-11-12-REVISAO-CONSOLIDADA-FRONT.md). Portal 6e013a3 publicado: rodapé de sessões e status documental da revisão em português, sem campos/ações extras; 420 testes, lint/build e deploy aprovados. Rodapé, paginação e revisão conferidos em homologação. Relatórios anteriores preservam a evidência dos demais fluxos; bloqueios de API, massa e produto estão separados na matriz.
+
 ## Revisão de 12/11 — Documentação e prévias dos editores
 
 [Checklist e evidências](https://github.com/WillTbn/strategy-control/blob/main/docs/QA-2026-11-12-PERFIL-PREVIAS-DOCUMENTOS.md). Corrigida abertura tardia em Documentação, galeria de anexos e edição de imóvel, incluindo falha/retry, clique duplicado, sessão antiga e reserva pendente ao sair. Os três pontos reutilizam a mesma proteção; templates/estilos/ações preservados. Versão 118fd8b publicada; 18 verificações controladas e oito integradas em homologação, destinos 200 e vínculo temporário removido. 25 novos testes e 420 testes totais, lint/build aprovados. Nenhum endpoint novo necessário; bloqueios anteriores de API continuam separados.
