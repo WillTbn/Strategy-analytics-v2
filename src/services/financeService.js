@@ -64,6 +64,7 @@ const labels = {
   Canceled: "Cancelada",
   Create: "Criação",
   Created: "Cadastrado",
+  ContractCreated: "Contrato criado",
   Updated: "Atualização",
   External: "Conta externa",
   Wallet: "Carteira",

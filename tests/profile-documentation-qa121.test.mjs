@@ -67,48 +67,54 @@ test("approved profile groups exclude fiscal ID, platform and asset files while 
   assert.equal(missing.documentTypeId, undefined);
   assert.equal(missing.catalogAvailable, false);
 });
-test("level progress counts one identity and one payslip type, excludes rejected files and preserves authoritative API level", () => {
-  const groups = documentationGroups(
-    [
-      {
-        rows: [
-          row("RG", [
-            { id: "front", side: "Front", status: "Approved" },
-            { id: "back", side: "Back", status: "Uploaded" },
-          ]),
-          row("HOLERITE", [
-            { id: "month1", status: "Uploaded" },
-            { id: "month2", status: "Pending" },
-            { id: "month3", status: "Approved" },
-          ]),
-          row("DECLARACAO_IRPF", [{ id: "old", status: "Rejected" }]),
-        ],
-      },
-    ],
-    types,
-  );
-  const value = documentationProgress(
-    { currentLevel: { code: "LEVEL_1" } },
-    groups,
-    0,
-  );
+test("documentation uses the official account level and counts, independent of legacy approval", () => {
+  const value = documentationProgress({
+    level: 1,
+    countedDocuments: 2,
+    requiredDocuments: 5,
+  });
   assert.equal(value.counter, "2 / 5");
   assert.equal(value.value, 0.4);
   assert.equal(
-    documentationProgress({ currentLevel: { code: "LEVEL_2" } }, groups, null)
-      .value,
-    null,
-  );
-  assert.equal(
-    documentationProgress({ currentLevel: { code: "LEVEL_2" } }, groups, 1)
+    documentationProgress({ level: 2, registeredAssets: 1, requiredAssets: 3 })
       .counter,
     "1 / 3",
   );
+  assert.equal(documentationProgress({ level: 3 }).value, 1);
   assert.equal(
-    documentationProgress({ currentLevel: { code: "LEVEL_3" } }, groups, 3)
-      .value,
-    1,
+    documentationProgress({ currentLevel: { code: "LEVEL_3" } }).level,
+    null,
   );
+});
+test("level zero shows missing confirmations without falsely granting level one", () => {
+  const value = documentationProgress({
+    level: 0,
+    emailConfirmed: true,
+    phoneVerified: false,
+  });
+  assert.equal(value.level, 0);
+  assert.equal(value.value, 0.5);
+  assert.equal(value.counter, "1 / 2");
+  assert.match(value.text, /seu celular/);
+  assert.equal(
+    documentationProgress({
+      level: 0,
+      emailConfirmed: false,
+      phoneVerified: false,
+    }).value,
+    0,
+  );
+});
+test("missing official progress is unavailable rather than locally inferred", () => {
+  for (const data of [
+    null,
+    {},
+    { level: "1" },
+    { level: 4 },
+    { level: 1 },
+    { level: 2, registeredAssets: 1, requiredAssets: 0 },
+  ])
+    assert.equal(documentationProgress(data).value, null);
 });
 test("attachment icons use MIME or file extension instead of a generic document glyph", () => {
   assert.equal(fileFormat({ fileName: "arquivo.PDF" }), "PDF");
@@ -139,7 +145,7 @@ test("a resubmitted single-file row no longer offers the older rejected upload",
     irpf.documents.map((file) => file.id),
     ["new"],
   );
-  assert.equal(documentationProgress({}, groups).counter, "1 / 5");
+  assert.equal(documentationProgress({}).value, null);
   const months = documentationGroups(
     [{ rows: [row("HOLERITE", [old, current])] }],
     types,

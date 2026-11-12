@@ -31,7 +31,8 @@
               rounded
               size="6px"
               color="primary"
-              :value="levelProgress.value || 0"
+              :value="levelProgress.value ?? 0"
+              :indeterminate="levelProgress.value == null"
               aria-label="Progresso documental"
             />
             <span class="documentation-counter">{{
@@ -357,7 +358,6 @@ import {
   fileFormat,
   documentUpdatedAt,
 } from "src/services/profileDocumentation";
-import { listClientAssets } from "src/services/clientAssetsService";
 import LabelForm from "src/system/components/form/LabelForm.vue";
 import {
   captureClientSession,
@@ -367,6 +367,7 @@ import useNotify from "src/composables/useNotify";
 import { getApiErrorMessage } from "src/services/clientAuthService";
 import {
   getClientProfile,
+  getClientProfileSummary,
   downloadClientDocument,
   getClientDocumentDataDefinition,
   getClientDocumentOverview,
@@ -450,9 +451,9 @@ const documentGroups = computed(() =>
     types.value,
   ),
 );
-const assetCount = ref(null);
+const accountLevelProgress = ref(null);
 const levelProgress = computed(() =>
-  documentationProgress(progress.value, documentGroups.value, assetCount.value),
+  documentationProgress(accountLevelProgress.value),
 );
 const currentLevelNumber = computed(() => levelProgress.value.level);
 const formatUpdatedAt = (value) => {
@@ -525,15 +526,17 @@ const load = async () => {
   overview.value = {};
   progress.value = {};
   profile.value = null;
+  accountLevelProgress.value = null;
   documents.value = [];
   types.value = [];
   try {
-    const [o, p, d, t, customerProfile] = await Promise.all([
+    const [o, p, d, t, customerProfile, summary] = await Promise.all([
       getClientDocumentOverview(),
       getClientDocumentProgress(),
       listClientDocuments({ page: 1, pageSize: 100 }),
       listClientDocumentTypes(),
       getClientProfile(),
+      getClientProfileSummary().catch(() => null),
     ]);
     if (!latest()) return;
     overview.value = o || {};
@@ -541,15 +544,7 @@ const load = async () => {
     documents.value = profileDocumentRows(collection(d), o);
     types.value = collection(t);
     profile.value = customerProfile;
-    assetCount.value = null;
-    listClientAssets()
-      .then((items) => {
-        if (latest())
-          assetCount.value = items.filter(
-            (x) => x.status !== "Archived",
-          ).length;
-      })
-      .catch(() => {});
+    accountLevelProgress.value = summary?.levelProgress || null;
   } catch (e) {
     if (!latest()) return;
     const block = onboardingBlockMessage(e);

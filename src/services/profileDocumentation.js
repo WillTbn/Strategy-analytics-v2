@@ -198,47 +198,62 @@ export function fileFormat(file = {}) {
   if (/word/i.test(mime) || /\.docx?$/i.test(name)) return "DOC";
   return "FILE";
 }
-export function documentationProgress(progress, groups, assetCount = null) {
-  const level =
-    Number(
-      String(
-        progress?.currentLevel?.name || progress?.currentLevel?.code || "",
-      ).match(/[1-3]/)?.[0],
-    ) || null;
-  const ids = new Set();
-  for (const group of groups)
-    for (const row of group.rows || []) {
-      if (
-        (row.documents || []).some((file) =>
-          [
-            "Uploaded",
-            "Pending",
-            "UnderReview",
-            "InReview",
-            "Approved",
-          ].includes(file.status),
-        )
-      )
-        ids.add(row.side ? "identity" : row.documentTypeId || row.key);
-    }
-  const sent = ids.size;
+// Account level is authoritative in summary.levelProgress. The legacy documents
+// progress describes approval requirements, not the account's feature level.
+export function documentationProgress(progress) {
+  const unavailable = {
+    level: null,
+    value: null,
+    counter: "—",
+    text: "Progresso indisponível no momento.",
+  };
+  const level = progress?.level;
+  if (!Number.isInteger(level) || level < 0 || level > 3) return unavailable;
   if (level === 3)
     return { level, value: 1, counter: "", text: "Você está no nível máximo!" };
-  if (level === 2)
+  if (level === 0) {
+    if (
+      typeof progress.emailConfirmed !== "boolean" ||
+      typeof progress.phoneVerified !== "boolean"
+    )
+      return unavailable;
+    const confirmed =
+      Number(progress.emailConfirmed) + Number(progress.phoneVerified);
+    const missing = [
+      !progress.emailConfirmed && "seu e-mail",
+      !progress.phoneVerified && "seu celular",
+    ]
+      .filter(Boolean)
+      .join(" e ");
     return {
       level,
-      value: assetCount == null ? null : Math.min(assetCount / 3, 1),
-      counter: assetCount == null ? "— / 3" : `${assetCount} / 3`,
-      text:
-        assetCount == null
-          ? "Progresso patrimonial indisponível"
-          : `Registre mais ${Math.max(3 - assetCount, 0)} patrimônios para subir para o Nível 3!`,
+      value: confirmed / 2,
+      counter: `${confirmed} / 2`,
+      text: missing
+        ? `Confirme ${missing} para alcançar o Nível 1.`
+        : "Confirmações concluídas. Aguardando atualização do nível.",
     };
+  }
+  const count =
+    level === 1 ? progress.countedDocuments : progress.registeredAssets;
+  const required =
+    level === 1 ? progress.requiredDocuments : progress.requiredAssets;
+  if (
+    !Number.isInteger(count) ||
+    count < 0 ||
+    !Number.isInteger(required) ||
+    required <= 0
+  )
+    return { ...unavailable, level };
+  const remaining = Math.max(required - count, 0);
   return {
     level,
-    value: Math.min(sent / 5, 1),
-    counter: `${sent} / 5`,
-    text: `Faça Upload de mais ${Math.max(5 - sent, 0)} Arquivos para subir para o Nível 2!`,
+    value: Math.min(count / required, 1),
+    counter: `${count} / ${required}`,
+    text:
+      level === 1
+        ? `Faça Upload de mais ${remaining} Arquivos para subir para o Nível 2!`
+        : `Registre mais ${remaining} patrimônios para subir para o Nível 3!`,
   };
 }
 

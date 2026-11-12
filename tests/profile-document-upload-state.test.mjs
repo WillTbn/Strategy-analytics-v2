@@ -28,7 +28,7 @@ const descriptor = parse(
 const flush = async () => {
   for (let i = 0; i < 12; i++) await Promise.resolve();
 };
-async function harness() {
+async function harness({ summaryFailure = false } = {}) {
   const context = vm.createContext({
     FormData: class {
       fields = [];
@@ -53,6 +53,12 @@ async function harness() {
     "getClientProfile",
   ];
   const services = {
+    getClientProfileSummary: async () => {
+      if (summaryFailure) throw Error("summary unavailable");
+      return {
+        levelProgress: { level: 0, emailConfirmed: true, phoneVerified: false },
+      };
+    },
     ...Object.fromEntries(methods.map((key) => [key, () => queue(reads, key)])),
     getClientDocumentDataDefinition: (type, country) =>
       queue(definitions, { type, country }),
@@ -102,7 +108,7 @@ async function harness() {
   };
   const mod = new vm.SourceTextModule(
     descriptor.scriptSetup.content +
-      "\nexport { load, loading, error, guardBlocked, overview, progress, documents, types, form, formRef, dialog, saving, definition, openUpload, openRequirementUpload, openReplace, closeDialog, typeChanged, loadDefinition, save, queueRow };",
+      "\nexport { levelProgress, load, loading, error, guardBlocked, overview, progress, documents, types, form, formRef, dialog, saving, definition, openUpload, openRequirementUpload, openReplace, closeDialog, typeChanged, loadDefinition, save, queueRow };",
     { context },
   );
   await mod.link((specifier) => {
@@ -538,4 +544,15 @@ test("a group resubmission replaces each rejected identity side exactly once", a
   h.settle(5);
   await request;
   assert.equal(h.model.dialog.value, false);
+});
+
+test("level summary failure keeps document loading and uploads independent", async () => {
+  const h = await harness({ summaryFailure: true });
+  await h.ready();
+  assert.equal(h.model.loading.value, false);
+  assert.equal(h.model.error.value, "");
+  assert.equal(h.model.levelProgress.value.value, null);
+  assert.equal(h.model.levelProgress.value.level, null);
+  h.model.openUpload();
+  assert.equal(h.model.dialog.value, true);
 });

@@ -68,6 +68,7 @@
           :columns="historyColumns"
           row-key="id"
           no-data-label="Nenhum evento disponível"
+          rows-per-page-label="Itens por página:"
       /></resource-state>
     </section>
   </q-page>
@@ -80,6 +81,7 @@ import ResourceState from "../../components/finance/ResourceState.vue";
 import { useFinanceResource } from "src/composables/useFinanceResource";
 import {
   financeGet,
+  financeLabel,
   money,
   columns,
   dateLabel,
@@ -110,8 +112,8 @@ const loadHistory = () =>
   );
 const historyColumns = columns([
   ["occurredAtUtc", "Data", (r) => dateLabel(r.occurredAtUtc)],
-  ["eventType", "Evento"],
-  ["statusName", "Status"],
+  ["eventType", "Evento", (row) => financeLabel(row.eventType)],
+  ["statusName", "Status", (row) => financeLabel(row.statusName)],
 ]);
 async function openDocument(id) {
   opening.value = id;
