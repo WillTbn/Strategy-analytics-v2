@@ -62,6 +62,7 @@
 </template>
 
 <script setup>
+import { useQuasar } from "quasar";
 import { defineComponent } from "vue";
 import { useLoanStore } from "src/stores/loan";
 import { storeToRefs } from "pinia";
@@ -83,9 +84,19 @@ const componentsMaps = {
 defineComponent({
   name: "CollateraLoanPage",
 });
+const $q = useQuasar();
 const storeLoan = useLoanStore();
 const { step_collateral, loan_callateral } = storeToRefs(storeLoan);
+if (step_collateral.value > 3) step_collateral.value = 3;
 const nextStep = () => {
+  if (step_collateral.value >= 3) {
+    $q.notify({
+      type: "warning",
+      message:
+        "A simulação e o envio desta solicitação ainda não estão disponíveis.",
+    });
+    return;
+  }
   step_collateral.value += 1;
 };
 const backStep = () => {

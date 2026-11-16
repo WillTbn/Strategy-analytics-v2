@@ -1,50 +1,53 @@
 <template>
-  <div class="installments-collateral-layout row justify-center">
-    <div class="col-auto q-mb-lg">
-      <slot name="header"></slot>
-    </div>
-    <div class="col-12"></div>
-    <div class="col-auto tool row" style="max-width: 38rem">
-      <div class="col-12">
-        <p class="text-inter-24-700">
-          {{ header }}
-        </p>
+  <credit-offers-state>
+    <div class="installments-collateral-layout row justify-center">
+      <div class="col-auto q-mb-lg">
+        <slot name="header"></slot>
       </div>
-      <div class="row col-12 justify-center">
-        <div class="col-auto">
-          <p>
-            <span class="text-grey">Valor do Empréstimo:</span>
-            {{ formattedLoanValue }}
+      <div class="col-12"></div>
+      <div class="col-auto tool row" style="max-width: 38rem">
+        <div class="col-12">
+          <p class="text-inter-24-700">
+            {{ header }}
           </p>
         </div>
-      </div>
+        <div class="row col-12 justify-center">
+          <div class="col-auto">
+            <p>
+              <span class="text-grey">Valor do Empréstimo:</span>
+              {{ formattedLoanValue }}
+            </p>
+          </div>
+        </div>
 
-      <div
-        class="row col-12 items-center q-gutter-sm justify-around tool tool-off q-py-md"
-      >
         <div
-          class="col-auto badge-perfomance cursor-pointer self-center items-center"
-          style="border-radius: 8px"
-          v-for="(item, index) in list"
-          :key="index"
-          :class="{ 'border-primary': loan.installments == item.value }"
-          @click="loan.installments = item.value"
+          class="row col-12 items-center q-gutter-sm justify-around tool tool-off q-py-md"
         >
-          {{ item.label }}
+          <div
+            class="col-auto badge-perfomance cursor-pointer self-center items-center"
+            style="border-radius: 8px"
+            v-for="(item, index) in list"
+            :key="index"
+            :class="{ 'border-primary': loan.installments == item.value }"
+            @click="loan.installments = item.value"
+          >
+            {{ item.label }}
+          </div>
+          <div class="col-12 text-center q-my-md">
+            <p class="text-inter-29-700">
+              {{ loan.installments }} x de {{ installment_value }}
+            </p>
+            <p class="">Com juros à partir de x.x%* ao mês</p>
+          </div>
         </div>
-        <div class="col-12 text-center q-my-md">
-          <p class="text-inter-29-700">
-            {{ loan.installments }} x de {{ installment_value }}
-          </p>
-          <p class="">Com juros à partir de x.x%* ao mês</p>
-        </div>
+        <slot name="actions"></slot>
       </div>
-      <slot name="actions"></slot>
     </div>
-  </div>
+  </credit-offers-state>
 </template>
 
 <script setup>
+import CreditOffersState from "src/system/components/loan/CreditOffersState.vue";
 import { defineComponent, computed } from "vue";
 import { useLoanStore } from "src/stores/loan";
 import { storeToRefs } from "pinia";

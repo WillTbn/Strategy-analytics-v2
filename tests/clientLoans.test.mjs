@@ -117,3 +117,15 @@ test("withdrawal cannot pretend to verify a password the documented DTO cannot r
   );
   assert.equal(reads, 1);
 });
+
+test('collateral flow cannot reach local fake success and clamps a restored final step',async()=>{
+ const Vue=await import('vue'),{parse,compileScript}=await import('@vue/compiler-sfc');
+ const context=vm.createContext({console,Function}),step=Vue.ref(5),notices=[];
+ const file='src/system/pages/loan/CollateraLoanPage.vue';const {descriptor}=parse(readFileSync(file,'utf8'));const script=compileScript(descriptor,{id:file});
+ const deps={vue:Vue,quasar:{useQuasar:()=>({notify:value=>notices.push(value)})},'src/stores/loan':{useLoanStore:()=>({})},pinia:{storeToRefs:()=>({step_collateral:step,loan_callateral:Vue.ref([])})}};
+ const m=new vm.SourceTextModule(script.content,{context});await m.link(async name=>{const values=deps[name]||{default:{}};return new vm.SyntheticModule(Object.keys(values),function(){for(const k in values)this.setExport(k,values[k])},{context})});await m.evaluate();const scope=Vue.effectScope();const h=scope.run(()=>m.namespace.default.setup({}, {expose(){}}));assert.equal(step.value,3);h.nextStep();assert.equal(step.value,3);assert.equal(notices.length,1);h.backStep();assert.equal(step.value,2);h.nextStep();assert.equal(step.value,3);scope.stop();
+});
+test('changed loan and wallet templates compile, including gated offer slots',async()=>{
+ const {parse,compileScript,compileTemplate}=await import('@vue/compiler-sfc');
+ for(const file of ['src/system/pages/loan/CollateraLoanPage.vue','src/system/pages/loan/OffersFinalLoanPage.vue','src/system/layouts/loans/consortium/steps/OffersConsortiumLayout.vue','src/system/layouts/loans/collateral/InstallmentCollateralLayout.vue','src/system/pages/Wallet/CashWalletPage.vue','src/system/layouts/leverage/LendingAccess.vue']){const {descriptor}=parse(readFileSync(file,'utf8'));const script=compileScript(descriptor,{id:file});const compiled=compileTemplate({source:descriptor.template.content,filename:file,id:file,compilerOptions:{bindingMetadata:script.bindings}});assert.deepEqual(compiled.errors,[],file);}
+});

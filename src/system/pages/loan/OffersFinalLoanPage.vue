@@ -91,6 +91,7 @@
 </template>
 
 <script setup>
+import { useQuasar } from "quasar";
 import CreditOffersState from "src/system/components/loan/CreditOffersState.vue";
 import { defineComponent, ref, onMounted } from "vue";
 import { useLoanStore } from "src/stores/loan";
@@ -109,9 +110,16 @@ const componentsMaps = { ApprovedSelectStatus };
 const storeLoan = useLoanStore();
 const { loan } = storeToRefs(storeLoan);
 const router = useRouter();
+const $q = useQuasar();
+onMounted(() => {
+  loan.value.offer_final = false;
+});
 const nextStep = () => {
   console.log("aqui");
-  loan.value.offer_final = true;
+  $q.notify({
+    type: "warning",
+    message: "O envio desta oferta ainda não está disponível.",
+  });
   // router.push({ name: "Empréstimo com Garantia" });
   // router.replace({ path: "/loan/securedLoan" });
 };
