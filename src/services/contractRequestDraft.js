@@ -1,0 +1,7 @@
+export const requestSendUnavailable = "Não foi possível enviar sua solicitação. Suas respostas foram mantidas. Tente novamente.";
+export function emptyContractRequestDraft(){return {objective:null,time:null,modality:null,amount:null,amount_mensal:null,types:[],regions:[]};}
+function positive(value){const raw=String(value??'').trim().replace(/\s/g,'');if(!/^(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?$/.test(raw))return false;const n=Number(raw.replace(/\./g,'').replace(',','.'));return Number.isFinite(n)&&n>0&&n<=9999999999999.99;}
+export function requestStepReady(step,draft){if(step===1)return !!draft.objective;if(step===2)return !!draft.time;if(step===3)return ['Aplicação Única','Com Aportes Recorrentes','Aplicação Híbrida'].includes(draft.modality)&&positive(draft.amount)&&(draft.modality!=='Aplicação Híbrida'||positive(draft.amount_mensal));if(step===4)return Array.isArray(draft.types)&&draft.types.length>0&&draft.types.every(value=>Number.isInteger(value)&&value>=1&&value<=11);if(step===5)return Array.isArray(draft.regions)&&draft.regions.length>0;return false;}
+export function contractRequestComplete(draft){return [1,2,3,4,5].every(step=>requestStepReady(step,draft));}
+// No contract-request POST is documented yet. Do not send guessed payloads or fake success.
+export async function submitContractRequest(){throw Error(requestSendUnavailable);}

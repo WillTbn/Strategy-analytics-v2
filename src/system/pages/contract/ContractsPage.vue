@@ -2,6 +2,7 @@
   <q-page class="q-pa-md"
     ><title-page title="Meus contratos" />
     <section class="tool q-pa-lg">
+      <contract-opportunity @open="requestOpen=true"/>
       <finance-table path="client/contracts" :columns="contractColumns"
         ><template #body-cell-actions="p"
           ><q-td :props="p"
@@ -14,9 +15,13 @@
                 params: { id: p.row.id },
               }" /></q-td></template
       ></finance-table></section
-  ></q-page>
+  ><q-dialog v-model="requestOpen" :persistent="requestBusy"><opportunity-investment @closed="requestOpen=false" @busy="requestBusy=$event"/></q-dialog></q-page>
 </template>
 <script setup>
+import {ref} from "vue";
+import ContractOpportunity from "../../components/contract/ContractOpportunity.vue";
+import OpportunityInvestment from "../../layouts/contracts/OpportunityInvestment.vue";
+const requestOpen=ref(false),requestBusy=ref(false);
 import TitlePage from "../../components/TitlePage.vue";
 import FinanceTable from "../../components/finance/FinanceTable.vue";
 import { columns, money, dateLabel } from "src/services/financeService";

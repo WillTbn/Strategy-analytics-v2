@@ -14,6 +14,9 @@
           :key="index"
           :class="{ 'border-primary': highPerfomance.time == item }"
           @click.prevent="setTimeInvestment(item)"
+          role="button" tabindex="0"
+          @keydown.enter="setTimeInvestment(item)"
+          @keydown.space.prevent="setTimeInvestment(item)"
         >
           {{ item }}
         </div>

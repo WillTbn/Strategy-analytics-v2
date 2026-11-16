@@ -14,6 +14,9 @@
           :key="index"
           :class="{ 'border-primary': highPerfomance.objective == item }"
           @click.prevent="setObjective(item)"
+          role="button" tabindex="0"
+          @keydown.enter="setObjective(item)"
+          @keydown.space.prevent="setObjective(item)"
         >
           {{ item }}
         </div>
@@ -30,11 +33,11 @@ import { storeToRefs } from "pinia";
 const storeInvestment = useInvestmentStore();
 const { highPerfomance } = storeToRefs(storeInvestment);
 const list = [
-  "crescimento de Capital",
+  "Crescimento de Capital",
   "Aquisição de Bens",
   "Renda Passiva",
   "Preservação de Capital",
-  "Preteção contra inflação",
+  "Proteção contra Inflação",
 ];
 defineComponent({
   name: "StepROneHighPerfomance",

@@ -13,6 +13,9 @@
             class="col-12 badge-perfomance q-mb-sm cursor-pointer"
             :class="{ 'border-primary': highPerfomance.modality == item.title }"
             @click.prevent="setMode(item.title)"
+            role="button" tabindex="0"
+            @keydown.enter="setMode(item.title)"
+            @keydown.space.prevent="setMode(item.title)"
           >
             <p>{{ item.title }}</p>
             <span class="text-grey">{{ item.subTitle }}</span>
@@ -65,7 +68,7 @@ const list = [
 ];
 
 const setMode = (item) => {
-  console.log(item);
+
   storeInvestment.setHighPerfomanceModality(item);
 };
 </script>

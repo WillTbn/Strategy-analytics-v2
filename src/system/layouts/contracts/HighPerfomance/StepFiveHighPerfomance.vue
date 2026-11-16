@@ -4,7 +4,7 @@
       <p class="text-inter-24-700 text-bolder-weight">Regiões</p>
       <p class="text-grey">Define a alocação geográfica do portfólio</p>
     </q-card-section>
-    <q-list class="list-type-control">
+    <q-list class="list-type-control q-px-lg q-pb-lg">
       <q-item
         class="badge-perfomance q-mb-sm"
         tag="label"
@@ -13,7 +13,7 @@
         :key="index"
       >
         <q-item-section top avatar>
-          <q-toggle v-model="selection" :val="item.value" />
+          <q-toggle v-model="highPerfomance.regions" :val="item.value" :aria-label="item.label" />
         </q-item-section>
         <q-item-section>
           <q-item-label>
@@ -49,12 +49,14 @@
 </template>
 
 <script setup>
-import { defineComponent, ref } from "vue";
+import { defineComponent } from "vue";
+import { useInvestmentStore } from "src/stores/investments";
+import {storeToRefs} from "pinia";
 
 defineComponent({
   name: "StepFiveHighPerfomance",
 });
-const selection = ref([]);
+const {highPerfomance}=storeToRefs(useInvestmentStore());
 const list = [
   {
     label: "EUA",
@@ -85,7 +87,7 @@ const list = [
   {
     label: "Canadá",
     icon: "/system/icons/contracts/ca.png",
-    value: "🇨🇦 Canadá",
+    value: "Canadá",
     description:
       "Toronto Stock Exchange (TSX), TSX Venture Exchange (TSXV), Canadian Securities Exchange (CSE)",
   },
@@ -135,7 +137,7 @@ const list = [
       { icon: "/system/icons/contracts/br.png", description: "Brasil (B3)," },
       {
         icon: "/system/icons/contracts/kr.png",
-        description: "Coreia do Sul (KRK),",
+        description: "Coreia do Sul (KRX),",
       },
       { icon: "/system/icons/contracts/tw.png", description: "Taiwan (TWSE)," },
       { icon: "/system/icons/contracts/mx.png", description: "México," },
@@ -159,7 +161,7 @@ const list = [
 
 <style scoped>
 .list-type-control {
-  max-height: 349px;
+  max-height: min(1000px,60dvh);
   overflow: auto;
 }
 .icon-control {

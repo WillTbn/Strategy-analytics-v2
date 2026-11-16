@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { defineComponent, ref } from "vue";
+import { defineComponent } from "vue";
 import { useInvestmentStore } from "src/stores/investments";
 import { storeToRefs } from "pinia";
 
@@ -30,7 +30,7 @@ const { highPerfomance } = storeToRefs(storeInvestment);
 defineComponent({
   name: "StepFourHighPerfomance",
 });
-const selection = ref([]);
+
 const list = [
   {
     label: "Ações",
@@ -82,7 +82,7 @@ const list = [
 
 <style scoped>
 .badge-four {
-  max-height: 349px;
+  max-height: min(900px,60dvh);
   overflow: auto;
 }
 .badge-perfomance-four {

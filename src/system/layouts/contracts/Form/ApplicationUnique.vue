@@ -6,7 +6,7 @@
           input-class="text-white"
           color="white"
           bg-color="secondary"
-          v-model="highPerfomance.amount"
+          aria-label="Valor da aplicação" inputmode="decimal" v-model="highPerfomance.amount"
           lazy-rules
           dense
           :rules="[(val) => (val && val.length > 0) || 'Campo obrigatório.']"

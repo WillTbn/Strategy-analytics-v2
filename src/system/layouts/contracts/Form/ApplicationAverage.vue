@@ -1,12 +1,12 @@
 <template>
   <div class="row application-average">
     <div class="col-12">
-      <label-form textLabel="Valor Médio de Apostes Mensais (R$)">
+      <label-form textLabel="Valor Médio de Aportes Mensais (R$)">
         <q-input
           input-class="text-white"
           color="white"
           bg-color="secondary"
-          v-model="highPerfomance.amount"
+          aria-label="Valor da aplicação" inputmode="decimal" v-model="highPerfomance.amount"
           lazy-rules
           dense
           :rules="[(val) => (val && val.length > 0) || 'Campo obrigatório.']"

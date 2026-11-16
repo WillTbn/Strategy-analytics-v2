@@ -6,9 +6,7 @@ const state = () => {
     },
     isDirtyReport: {},
     stepHighPerfomance: 1,
-    highPerfomance: {
-      types: []
-    }
+    highPerfomance: {objective:null,time:null,modality:null,amount:null,amount_mensal:null,types:[],regions:[]},
   };
 };
 
