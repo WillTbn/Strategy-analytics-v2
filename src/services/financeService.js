@@ -55,6 +55,11 @@ export const dateLabel = (value) =>
       ).toLocaleDateString("pt-BR")
     : "—";
 const labels = {
+  InterCustomerTransfer: "Transferência entre clientes",
+  Error: "Erro",
+  CorrectDeposit: "Corrigir depósito",
+  Loan: "Empréstimo",
+  Leverage: "Alavancagem",
   AwaitingReceipt: "Aguardando comprovante",
   PaidOff: "Quitado",
   AssetRecord: "Patrimônio declarado",

@@ -192,26 +192,9 @@ const submitAllDocuments = () => {
     return;
   }
 
-  // Simulate API call
-  console.log("Submitting all documents:", filesToSubmit);
-  submissionStatus.value = `Iniciando submissão de ${totalFilesCount} arquivos...`;
-
-  setTimeout(() => {
-    submissionStatus.value = JSON.stringify(
-      {
-        message: "Documentos submetidos com sucesso!",
-        details: filesToSubmit,
-      },
-      null,
-      2,
-    );
-    $q.notify({
-      type: "positive",
-      message: "Todos os documentos foram submetidos com sucesso!",
-      position: "top",
-    });
-    router.push("/system/loan/securedLoan/offers_final");
-  }, 2000);
+  submissionStatus.value =
+    "O envio desta solicitação ainda não está disponível. Os arquivos selecionados foram mantidos.";
+  $q.notify({ type: "warning", message: submissionStatus.value });
 };
 
 // Method to clear all uploaded files across all DocumentUpload instances

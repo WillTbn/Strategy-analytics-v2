@@ -322,13 +322,8 @@
       </footer>
     </q-form>
     <q-dialog v-model="recoveryOpen"
-      ><q-card class="tool q-pa-lg"
-        ><h3>Recuperar Senha de Saque</h3>
-        <p>
-          A recuperação da Senha de Saque ainda não está disponível. Sua senha
-          de login é independente.
-        </p>
-        <q-btn v-close-popup flat no-caps label="Voltar" /></q-card
+      ><q-card class="tool q-pa-lg wallet-password-recovery"
+        ><forgotpassword-layout @status-login="recoveryOpen = false" /></q-card
     ></q-dialog>
   </q-card>
 </template>
@@ -336,6 +331,7 @@
 import { computed, onScopeDispose, ref, watch } from "vue";
 import QrcodeVue from "qrcode.vue";
 import { copyToClipboard, useQuasar } from "quasar";
+import ForgotpasswordLayout from "src/system/layouts/auth/ForgotpasswordLayout.vue";
 import MoneyInput from "src/system/components/form/MoneyInput.vue";
 import ClientTransferOperation from "./ClientTransferOperation.vue";
 import { useFinanceResource } from "src/composables/useFinanceResource";
@@ -538,9 +534,11 @@ async function confirm() {
         props.mode === "withdrawal" ? password.value : undefined,
     });
     emit("completed");
-  } catch {
+  } catch (e) {
     error.value =
-      "Não foi possível concluir a operação. Confira os dados e tente novamente.";
+      !e.response && !e.config
+        ? e.message
+        : "Não foi possível concluir a operação. Confira os dados e tente novamente.";
   } finally {
     password.value = "";
     busy.value = false;
@@ -749,5 +747,15 @@ footer :deep(.q-btn) {
 }
 .wallet-operation :deep(.q-field__bottom) {
   padding-top: 4px;
+}
+</style>
+
+<style scoped>
+.wallet-password-recovery {
+  width: 512px;
+  max-width: calc(100vw - 32px);
+}
+.wallet-password-recovery :deep(.col-md-3) {
+  width: 100%;
 }
 </style>

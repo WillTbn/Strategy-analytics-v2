@@ -5,10 +5,7 @@
     :class="{ 'active-section': isActive }"
   >
     <div class="row justify-between items-center">
-      <div
-        class="col-10 row"
-        style="align-content: space-between"
-      >
+      <div class="col-10 row" style="align-content: space-between">
         <div class="col-12 row items-center">
           <q-avatar size="32px" flat class="text-primary">
             <component :is="icon" />
@@ -17,12 +14,13 @@
             {{ title }}
           </span>
           <div class="simulation-status text-inter-14-400 q-ml-sm">
-            <component :is="typeLoanIcon[type]" 
+            <component
+              :is="typeLoanIcon[type]"
               width="16"
               height="16"
               style="vertical-align: text-bottom"
             />
-            {{typeDescription}}
+            {{ typeDescription }}
           </div>
         </div>
         <div class="col-12 grid-loan-info q-mt-md q-ml-sm">
@@ -30,25 +28,25 @@
             class="grid-item simulation-status-description text-inter-17-400"
             style="color: #dcdcdc"
           >
-            <p  class="">Próxima Parcela</p>
+            <p class="">Próxima Parcela</p>
             <p class="row items-center">
               <span class="text-primary text-inter-17-700">
-                R$ {{ nextInstallment }}
+                {{ nextInstallment == null ? "—" : nextInstallment }}
               </span>
-             <span class="divisor q-mx-sm"></span>
-             <span>Ven.: {{ dueDate }}</span>
+              <span class="divisor q-mx-sm"></span>
+              <span>Ven.: {{ dueDate || "—" }}</span>
             </p>
           </div>
           <div
             class="grid-item simulation-status-description text-inter-17-400"
             style="color: #dcdcdc"
           >
-            <p  class="">Status das Parcelas</p>
+            <p class="">Status das Parcelas</p>
             <p class="row items-center">
               <b class="text-primary text-inter-17-700 q-mr-xs">
-                {{ status }}
+                {{ totalInstallments == null ? "—" : status }}
               </b>
-              <span>de {{ totalInstallments }}</span>
+              <span>de {{ totalInstallments ?? "—" }}</span>
             </p>
           </div>
           <div
@@ -56,7 +54,7 @@
             class="grid-item simulation-status-description text-inter-17-400"
             style="color: #dcdcdc"
           >
-            <p  class="">Juros</p>
+            <p class="">Juros</p>
             <p class="row items-center">
               <span>{{ interest }}</span>
             </p>
@@ -66,7 +64,7 @@
             class="grid-item simulation-status-description text-inter-17-400"
             style="color: #dcdcdc"
           >
-            <p  class="">Taxa Admin.:</p>
+            <p class="">Taxa Admin.:</p>
             <p class="row items-center">
               <span>{{ administrativeFee }}</span>
             </p>
@@ -76,7 +74,7 @@
             class="grid-item simulation-status-description text-inter-17-400"
             style="color: #dcdcdc"
           >
-            <p  class="">Distribuição de Lucros</p>
+            <p class="">Distribuição de Lucros</p>
             <p class="row items-center">
               <span>{{ profDistribution }}</span>
             </p>
@@ -86,7 +84,7 @@
             class="grid-item simulation-status-description text-inter-17-400"
             style="color: #dcdcdc"
           >
-            <p  class="">Lance Embutido:</p>
+            <p class="">Lance Embutido:</p>
             <p class="row items-center">
               <span>{{ embeddedBid }}</span>
             </p>
@@ -96,35 +94,42 @@
             class="grid-item simulation-status-description text-inter-17-400"
             style="color: #dcdcdc"
           >
-            <p  class="">Administradora</p>
+            <p class="">Administradora</p>
             <p class="row items-center">
-              <q-icon :name="`img:${administrationImage[adminstration]}`" class="bank-img" />
+              <q-icon
+                :name="`img:${administrationImage[adminstration]}`"
+                class="bank-img"
+              />
             </p>
           </div>
-
         </div>
-        
       </div>
       <div class="col-auto">
         <q-circular-progress
           show-value
           font-size="12px"
-          :value="discharge"
+          :value="discharge ?? 0"
           size="115px"
           :thickness="0.16"
           color="primary"
           track-color="grey-9"
           class="q-ma-md text-center"
         >
-         <b class="text-inter-14-700"> {{ discharge }}% </b> 
-         <span style="display: block;width: 100px;"></span>
-         <span class="text-inter-12-400" style="color: #98989898;margin-top: 0.5rem;">
-           Quitação
-         </span>
+          <b class="text-inter-14-700">
+            {{ discharge == null ? "—" : discharge + "%" }}
+          </b>
+          <span style="display: block; width: 100px"></span>
+          <span
+            class="text-inter-12-400"
+            style="color: #98989898; margin-top: 0.5rem"
+          >
+            Quitação
+          </span>
         </q-circular-progress>
       </div>
       <div class="col-auto" style="align-self: center" v-show="!isActive">
         <q-btn
+          :aria-label="`Expandir ${title}`"
           @click="emit('select')"
           class="border-primary border-radius-pattern"
           dense
@@ -147,15 +152,16 @@
               flat
               no-caps
               color="primary"
-              :to="{ name:'Empréstimos', query:{hash:hash}}"
+              v-if="!detail"
+              :to="{ name: 'Empréstimos', query: { hash: hash } }"
             >
-            <span>Ver Empréstimo</span>
-            <IconArrowRight class="q-ml-md" width="24"
-              height="24"/>
+              <span>Ver Empréstimo</span>
+              <IconArrowRight class="q-ml-md" width="24" height="24" />
             </q-btn>
           </div>
           <div class="col-auto">
             <q-btn
+              :aria-label="`Recolher ${title}`"
               @click="emit('closed')"
               class="border-primary border-radius-pattern"
               dense
@@ -181,41 +187,49 @@ defineComponent({
   name: "ActiveLoansSection",
 });
 const props = defineProps({
+  detail: Boolean,
   icon: { type: String, default: "IconFileDollar" },
   title: { type: String },
-  nextInstallment:{type:[Number, String]},
-  dueDate:{type:String},
-  interest:{type:String}, //juros
-  totalInstallments:{type:Number},
-  installmentsPaidOff:{type:Number},
-  adminstration:{type:String},
-  administrativeFee:{type:String},
-  profDistribution:{type:String},
-  embeddedBid:{type:String},
+  nextInstallment: { type: [Number, String] },
+  dueDate: { type: String },
+  interest: { type: String }, //juros
+  totalInstallments: { type: Number },
+  installmentsPaidOff: { type: Number },
+  adminstration: { type: String },
+  administrativeFee: { type: String },
+  profDistribution: { type: String },
+  embeddedBid: { type: String },
   status: { type: String },
-  type:{type:String},
-  typeDescription:{type:String},
+  type: { type: String },
+  typeDescription: { type: String },
   isActive: { type: Boolean, default: true },
-  hash:{type:String}
+  hash: { type: String },
 });
 const emit = defineEmits(["select", "edit", "closed"]);
-const discharge = computed(() => {const total = Number(props.totalInstallments) || 0;
+const discharge = computed(() => {
+  const total = Number(props.totalInstallments) || 0;
   const paid = Number(props.installmentsPaidOff) || 0;
-  if (total <= 0) return 0;
+  if (
+    props.totalInstallments == null ||
+    props.installmentsPaidOff == null ||
+    total <= 0
+  )
+    return null;
   const value = Math.round((paid / total) * 100);
-  return value > 100 ? 100 : value < 0 ? 0 : value;})
+  return value > 100 ? 100 : value < 0 ? 0 : value;
+});
 const typeLoanIcon = {
-  "secured_automovel" :"IconCar",
-  "secured_imovel" :"IconHome2",
-  "consorcio":"IconPigMoney",
-  "colateral":"IconCoins"
-}
-const administrationImage= {
-  "Sicredi" :"/icons/banks/sicredi.png",
-  "Porto" :"/icons/banks/porto.png",
-  "Itau" :"/icons/banks/itau.png",
-  "Inter" :"/icons/banks/inter.png",
-}
+  secured_automovel: "IconCar",
+  secured_imovel: "IconHome2",
+  consorcio: "IconPigMoney",
+  colateral: "IconCoins",
+};
+const administrationImage = {
+  Sicredi: "/icons/banks/sicredi.png",
+  Porto: "/icons/banks/porto.png",
+  Itau: "/icons/banks/itau.png",
+  Inter: "/icons/banks/inter.png",
+};
 </script>
 
 <style scoped lang="sass">
@@ -236,7 +250,7 @@ const administrationImage= {
   background: linear-gradient(202.99deg, rgba(255, 255, 255, 0.16) 0.52%, rgba(255, 255, 255, 0.04) 50%, rgba(255, 255, 255, 0.01) 99.48%)
   border: 1px solid #656565
   cursor: pointer
-.bank-img 
+.bank-img
   max-width: 8rem
   /* min-width: 60px */
   width: 100%
@@ -250,4 +264,29 @@ const administrationImage= {
 .grid-item
   background: none
   min-width: 0
+</style>
+
+<style scoped>
+@media (max-width: 600px) {
+  .active-loans-section .col-10 {
+    width: 100%;
+    min-width: 0;
+  }
+  .grid-loan-info {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-left: 0;
+  }
+  .grid-item p {
+    overflow-wrap: anywhere;
+  }
+  .text-h6 {
+    overflow-wrap: anywhere;
+    max-width: 100%;
+  }
+  .simulation-status {
+    height: auto;
+    max-width: 100%;
+  }
+}
 </style>

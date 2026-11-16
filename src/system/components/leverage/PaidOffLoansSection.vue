@@ -30,7 +30,9 @@
           >
             <p class="">Valor da Parcelas</p>
             <p class="row items-center">
-              <span class="text-inter-17-400"> R$ {{ nextInstallment }} </span>
+              <span class="text-inter-17-400">
+                {{ nextInstallment == null ? "—" : nextInstallment }}
+              </span>
             </p>
           </div>
           <div
@@ -40,9 +42,9 @@
             <p class="">Status das Parcelas</p>
             <p class="row items-center">
               <b class="text-primary text-inter-17-700 q-mr-xs">
-                {{ status }}
+                {{ totalInstallments == null ? "—" : status }}
               </b>
-              <span>de {{ totalInstallments }}</span>
+              <span>de {{ totalInstallments ?? "—" }}</span>
             </p>
           </div>
           <div
@@ -96,14 +98,16 @@
         <q-circular-progress
           show-value
           font-size="12px"
-          :value="discharge"
+          :value="discharge ?? 0"
           size="115px"
           :thickness="0.16"
           color="positive"
           track-color="grey-9"
           class="q-ma-md text-center"
         >
-          <b class="text-inter-14-700"> {{ discharge }}% </b>
+          <b class="text-inter-14-700">
+            {{ discharge == null ? "—" : discharge + "%" }}
+          </b>
           <span style="display: block; width: 100px"></span>
           <span
             class="text-inter-12-400"
@@ -115,6 +119,7 @@
       </div>
       <div class="col-auto" style="align-self: center" v-show="!isActive">
         <q-btn
+          :aria-label="`Expandir ${title}`"
           @click="emit('select')"
           class="border-primary border-radius-pattern"
           dense
@@ -133,13 +138,20 @@
 
         <div class="row justify-between">
           <div class="col-auto">
-            <q-btn flat no-caps color="primary">
+            <q-btn
+              flat
+              no-caps
+              color="primary"
+              :to="{ name: 'Empréstimos', query: { hash } }"
+              :disable="!hash"
+            >
               <span>Ver Empréstimo</span>
               <IconArrowRight class="q-ml-md" width="24" height="24" />
             </q-btn>
           </div>
           <div class="col-auto">
             <q-btn
+              :aria-label="`Recolher ${title}`"
               @click="emit('closed')"
               class="border-primary border-radius-pattern"
               dense
@@ -165,6 +177,7 @@ defineComponent({
   name: "PaidOffLoansSection",
 });
 const props = defineProps({
+  hash: String,
   icon: { type: String, default: "IconFileDollar" },
   title: { type: String },
   nextInstallment: { type: [Number, String] },
@@ -186,7 +199,12 @@ const emit = defineEmits(["select", "edit", "closed"]);
 const discharge = computed(() => {
   const total = Number(props.totalInstallments) || 0;
   const paid = Number(props.installmentsPaidOff) || 0;
-  if (total <= 0) return 0;
+  if (
+    props.totalInstallments == null ||
+    props.installmentsPaidOff == null ||
+    total <= 0
+  )
+    return null;
   const value = Math.round((paid / total) * 100);
   return value > 100 ? 100 : value < 0 ? 0 : value;
 });
@@ -226,4 +244,29 @@ const { typeLoanIcon, administrationImage } = useStates();
 .grid-item
   background: none
   min-width: 0
+</style>
+
+<style scoped>
+@media (max-width: 600px) {
+  .paid-off-loans-section .col-10 {
+    width: 100%;
+    min-width: 0;
+  }
+  .grid-loan-info {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-left: 0;
+  }
+  .grid-item p {
+    overflow-wrap: anywhere;
+  }
+  .text-h6 {
+    overflow-wrap: anywhere;
+    max-width: 100%;
+  }
+  .simulation-status {
+    height: auto;
+    max-width: 100%;
+  }
+}
 </style>

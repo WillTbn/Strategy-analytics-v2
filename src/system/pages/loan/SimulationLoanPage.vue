@@ -1,43 +1,47 @@
 <template>
-  <q-page class="simulation-loan-page">
-    <div class="row col-12 q-pa-lg q-mt-lg">
-      <div class="col-auto">
-        <route-back />
-      </div>
-    </div>
-    <div class="row col-auto justify-center">
-      <div class="col-10">
-        <div class="text-inter-41-700">Simule com seu Crédito Pré-Aprovado</div>
-        <div class="text-grey text-inter-24-400">
-          Com a simulação, te retornamos algumas Ofertas Pré-Aprovadas de bancos
-          parceiros. Para prosseguir no processo é necessário o envio de algumas
-          documentações importantes.
+  <q-page class="simulation-loan-page"
+    ><credit-offers-state>
+      <div class="row col-12 q-pa-lg q-mt-lg">
+        <div class="col-auto">
+          <route-back />
         </div>
       </div>
-      <div class="col-10 row justify-end">
-        <div class="col-6 q-pa-lg">
-          <loading-step :progress="1" :stepNumber="5" :stepTotal="7" />
-        </div>
-      </div>
-      <div class="col-10 row justify-between">
-        <div class="col q-pr-xl">
-          <div class="tool">
-            <slider-loan-values textHeader="De quanto você precisa?" />
-            <select-installments
-              :installments="loan.installments"
-              @updateValue="handleUpdateValue"
-            />
+      <div class="row col-auto justify-center">
+        <div class="col-10">
+          <div class="text-inter-41-700">
+            Simule com seu Crédito Pré-Aprovado
+          </div>
+          <div class="text-grey text-inter-24-400">
+            Com a simulação, te retornamos algumas Ofertas Pré-Aprovadas de
+            bancos parceiros. Para prosseguir no processo é necessário o envio
+            de algumas documentações importantes.
           </div>
         </div>
-        <div class="col">
-          <credit-offers-loan-layout @next="nextStep" />
+        <div class="col-10 row justify-end">
+          <div class="col-6 q-pa-lg">
+            <loading-step :progress="1" :stepNumber="5" :stepTotal="7" />
+          </div>
         </div>
-      </div>
-    </div>
-  </q-page>
+        <div class="col-10 row justify-between">
+          <div class="col q-pr-xl">
+            <div class="tool">
+              <slider-loan-values textHeader="De quanto você precisa?" />
+              <select-installments
+                :installments="loan.installments"
+                @updateValue="handleUpdateValue"
+              />
+            </div>
+          </div>
+          <div class="col">
+            <credit-offers-loan-layout @next="nextStep" />
+          </div>
+        </div>
+      </div> </credit-offers-state
+  ></q-page>
 </template>
 
 <script setup>
+import CreditOffersState from "src/system/components/loan/CreditOffersState.vue";
 import { defineComponent, onMounted } from "vue";
 import RouteBack from "src/system/components/btn/RouterBack.vue";
 import SliderLoanValues from "src/system/components/loan/SliderLoanValues.vue";

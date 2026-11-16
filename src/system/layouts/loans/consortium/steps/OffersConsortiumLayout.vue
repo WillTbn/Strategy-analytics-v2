@@ -85,8 +85,6 @@ import { useLoanStore } from "src/stores/loan";
 import { storeToRefs } from "pinia";
 import { useRoute } from "vue-router";
 import OffersTemplate from "src/system/templates/loan/OffersTemplate.vue";
-import consortiaoffers from "src/composables/system/fake/consortia_offers_fake_date.json";
-import consortiaOuthersOffers from "src/composables/system/fake/consortia_offers_outhers_fake_date.json";
 import CardOffersLoan from "src/system/components/loan/CardOffersLoan.vue";
 defineComponent({
   name: "OffersConsortiumLayout",
@@ -105,19 +103,4 @@ const optionsLayout = [
   { label: "Lista", value: "text-imagem", icon: "IconLayoutList" },
   { label: "Card", value: "text", icon: "IconLayoutGrid" },
 ];
-onMounted(() => {
-  containerClass.value = route.query.hash ? true : false;
-
-  consortia_offers.value = consortiaoffers.map((e, i) => ({
-    id: i + 1,
-    component: "CardOffersLoan",
-    ...e,
-  }));
-  consortia_outhers_offers.value = consortiaOuthersOffers.map((e, i) => ({
-    id: i + 1,
-    main: true,
-    component: "CardOffersLoan",
-    ...e,
-  }));
-});
 </script>

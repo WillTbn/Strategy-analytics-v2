@@ -107,6 +107,9 @@
         :key="operation"
         :mode="operation"
         :model="walletModel"
+        :submit-operation="
+          operation === 'withdrawal' ? submitClientWalletOperation : null
+        "
         @close="operation = null"
         @completed="
           operation = null;
@@ -126,6 +129,7 @@ import {
 } from "@tabler/icons-vue";
 import { ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { submitClientWalletOperation } from "src/services/clientWalletOperations";
 import WalletOperation from "./WalletOperation.vue";
 import useStorage from "src/composables/system/useStorage";
 import { useStoreLayout } from "src/stores/layoutStore";

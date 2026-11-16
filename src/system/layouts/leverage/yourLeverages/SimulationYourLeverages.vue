@@ -1,27 +1,24 @@
 <template>
   <div class="simulation-your-leverages max-height-28em">
+    <p v-if="!rows.length" class="q-pa-md text-grey">
+      Nenhum empréstimo neste status.
+    </p>
     <simulation-section
-      class=""
-      v-for="(item, index) in yourLeverages"
-      :key="index"
-      :title="item.title"
-      :status="item.status"
-    ></simulation-section>
+      v-for="loan in rows"
+      :key="loan.id"
+      :title="loan.publicCode"
+      :status="financeLabel(loan.status)"
+      :type-description="financeLabel(loan.kind)"
+      :link="{ name: 'Empréstimos', query: { hash: loan.id } }"
+    />
   </div>
 </template>
-
 <script setup>
-import { defineComponent, ref, onMounted } from "vue";
-import leveragesFakeDate from "src/composables/system/fake/leverages_fake_data.json";
+import { computed } from "vue";
 import SimulationSection from "src/system/components/leverage/SimulationSection.vue";
-const yourLeverages = ref();
-
-onMounted(() => {
-  yourLeverages.value = leveragesFakeDate.simulation;
-});
-defineComponent({
-  name: "SimulationYourLeverages",
-});
+import { useClientLoans } from "src/composables/system/useClientLoans";
+import { loansByStatus } from "src/services/clientLoans";
+import { financeLabel } from "src/services/financeService";
+const { resource } = useClientLoans(),
+  rows = computed(() => loansByStatus(resource.state.data, "simulation"));
 </script>
-
-<style scoped lang="sass"></style>

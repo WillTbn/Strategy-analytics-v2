@@ -63,40 +63,7 @@ const componentsMaps = {
   RecusedStatus,
 };
 const emit = defineEmits(["next", "select"]);
-const offers = [
-  {
-    image: "/icons/banks/strategy.png",
-    header: "Crédito Ofertado: R$ 600.000,00",
-    description: "60x de R$ 8754,06 à R$ 13672,12",
-    subDescription: "Juros: 1,09% até 2,09% ao mês",
-    component: "ApprovedStatus",
-    offer: "sa",
-  },
-  {
-    image: "/icons/banks/credito.png",
-    header: "Crédito Ofertado: R$ 500.000,00",
-    description: "60x de R$ 8754,06 à R$ 15000,12",
-    subDescription: "Juros: 1,09% até 2,09% ao mês",
-    component: "ReceivedStatus",
-    offer: "credito",
-  },
-
-  {
-    image: "/icons/banks/inter.png",
-    header: "Solicitação de Crédito não aceita",
-    description: "Aguarde a Análise",
-    subDescription: "Crédito foi recusado por [motivo]",
-    component: "RecusedStatus",
-    offer: "inter",
-  },
-  {
-    image: "/icons/banks/c6.png",
-    header: "",
-    description: "Aguarde a Análise",
-    component: "AnalysisStatus",
-    offer: "c6",
-  },
-];
+const offers = [];
 </script>
 
 <style scoped>

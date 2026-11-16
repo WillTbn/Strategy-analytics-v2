@@ -5,21 +5,32 @@
       :btnLink="false"
       classAdd="q-px-md q-mt-md q-pb-md q-gutter-sm"
     >
-      <card-resume-leverage
-        v-for="(item, index) in contracts"
-        :key="index"
-        :title="item.title"
-        :description="item.description"
-        :icon="item.icon"
-        :text="item.text"
-        :loading="item.loading"
-        :plusValue="item.plusValue"
-      />
+      <resource-state
+        :state="resource.state"
+        @retry="load"
+        class="full-width row q-gutter-md"
+      >
+        <card-resume-leverage
+          v-for="(item, index) in contracts"
+          :key="index"
+          :title="item.title"
+          :description="item.description"
+          :icon="item.icon"
+          :text="item.text"
+          :loading="item.loading"
+          :plusValue="item.plusValue"
+        />
+      </resource-state>
     </card-overview-layout>
   </div>
 </template>
 
 <script setup>
+import { computed } from "vue";
+import ResourceState from "src/system/components/finance/ResourceState.vue";
+import { useClientLoans } from "src/composables/system/useClientLoans";
+import { loansByStatus, loanDebtAmounts } from "src/services/clientLoans";
+import { amountLabel } from "src/services/walletPresentation";
 import { defineComponent } from "vue";
 import CardOverviewLayout from "../CardOverviewLayout.vue";
 import CardResumeLeverage from "src/system/components/cardResume/CardResumeLeverage.vue";
@@ -28,32 +39,37 @@ defineComponent({
   name: "OverViewLeverageLayout",
 });
 
-const contracts = [
+const { resource, load } = useClientLoans();
+const contracts = computed(() => [
   {
     title: "Total Empréstimos",
-    text: "02 vigentes",
+    text:
+      String(loansByStatus(resource.state.data, "actives").length) +
+      " vigentes",
     icon: "IconFileInvoice",
   },
   {
     title: "Dívida Total",
+    text:
+      loanDebtAmounts(resource.state.data)
+        .map((row) =>
+          row.value == null ? row.currency + " —" : amountLabel(row),
+        )
+        .join(" · ") || "—",
     icon: "IconReceipt2",
-    text: "48.2791,00",
-    description: "(USD 85,196.39)",
   },
   {
     title: "Próxima Parcela",
+    text: "—",
+    description: "Indisponível",
     icon: "IconCalendarDollar",
-    text: "R$ 2.192,27",
-    description: "Venc.: 02/12/25",
   },
   {
     title: "Empréstimos em Análise",
+    text: String(loansByStatus(resource.state.data, "simulation").length),
     icon: "IconClockHour4",
-    text: "01",
-    description: "Fim.: 02/16/28",
   },
-];
-
+]);
 // Seu código aqui
 </script>
 

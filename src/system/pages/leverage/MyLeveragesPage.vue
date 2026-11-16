@@ -26,6 +26,7 @@
 </template>
 
 <script setup>
+import { provideClientLoans } from "src/composables/system/useClientLoans";
 import { defineComponent } from "vue";
 import TitlePage from "src/system/components/TitlePage.vue";
 import OverViewLeverageLayout from "src/system/layouts/leverage/OverViewLeverageLayout.vue";
@@ -33,7 +34,7 @@ import ResumeMyLeverageLayout from "src/system/layouts/leverage/ResumeMyLeverage
 defineComponent({
   name: "MyLeveragesPage",
 });
-// Seu código aqui
+provideClientLoans();
 </script>
 
 <style scoped>

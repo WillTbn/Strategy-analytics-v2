@@ -163,6 +163,7 @@ const routes = [
       },
       {
         path: "leverage",
+        component: () => import("../system/layouts/leverage/LendingAccess.vue"),
         props: true,
         children: [
           {
@@ -186,6 +187,7 @@ const routes = [
       // },
       {
         path: "loan",
+        component: () => import("../system/layouts/leverage/LendingAccess.vue"),
         props: true,
         children: [
           {

@@ -13,12 +13,7 @@
             {{ title }}
           </span>
           <div class="simulation-status text-inter-14-400 q-ml-sm">
-            <IconCar
-              width="16"
-              height="16"
-              style="vertical-align: text-bottom"
-            />
-            Com garatia de Automóvel
+            {{ typeDescription }}
           </div>
         </div>
         <div
@@ -29,7 +24,7 @@
             <span class="text-primary text-inter-17-700">
               {{ status }}
             </span>
-            de 7 etapas
+            <template v-if="totalSteps">de {{ totalSteps }} etapas</template>
           </p>
         </div>
       </div>
@@ -57,14 +52,16 @@ defineComponent({
   name: "SimulationSection",
 });
 defineProps({
-  title: { type: String, default: "teste" },
-  currentBalance: { type: Number, default: 500 },
-  currentEntry: { type: Number, default: 500 },
-  profitDistributionBalance: { type: Number, default: 500 },
+  title: { type: String },
+  currentBalance: { type: Number, default: null },
+  currentEntry: { type: Number, default: null },
+  profitDistributionBalance: { type: Number, default: null },
   distributionDate: { type: String },
   icon: { type: String, default: "IconFileDollar" },
   status: { type: String },
-  link: { type: String },
+  totalSteps: Number,
+  typeDescription: String,
+  link: { type: [String, Object] },
   isActive: Boolean,
 });
 const emit = defineEmits(["select"]);

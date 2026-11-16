@@ -1,67 +1,36 @@
 <template>
   <div class="active-your-leverages max-height-28em">
+    <p v-if="!rows.length" class="q-pa-md text-grey">
+      Nenhum empréstimo neste status.
+    </p>
     <paid-off-loans-section
-      v-for="loan in yourLeverages"
+      v-for="loan in rows"
       :key="loan.id"
-      :title="loan.title"
-      :isActive="loan.id == loanSelection"
-      :nextInstallment="loan.detalhes.proxima_parcela.valor"
-      :dueDate="loan.detalhes.proxima_parcela.vencimento"
-      :interest="loan.detalhes.juros"
-      :status="loan.detalhes.status_parcelas"
-      :totalInstallments="loan.detalhes.total_parcelas"
-      :installmentsPaidOff="loan.detalhes.parcelas_quitadas"
-      :administrativeFee="loan.detalhes.taxa_administracao"
-      :profDistribution="loan.detalhes.distribuicao_lucros"
-      :embeddedBid="loan.detalhes.lance_embutido"
-      :type="loan.type.value"
-      :typeDescription="loan.type.description"
-      :adminstration="loan.administradora"
-      :paidOff="loan.paid_off_date"
-      @select="loanSelect(loan.id)"
-      @closed="loanSelection = null"
+      :title="loan.publicCode"
+      :is-active="selected === loan.id"
+      :interest="
+        loan.interestRatePercent == null
+          ? ''
+          : String(loan.interestRatePercent) + '%'
+      "
+      :type-description="financeLabel(loan.kind)"
+      :hash="loan.id"
+      :status="financeLabel(loan.status)"
+      @select="selected = loan.id"
+      @closed="selected = null"
+      ><p class="text-grey">
+        Parcelas e pagamentos indisponíveis para consulta.
+      </p></paid-off-loans-section
     >
-      <component
-        :is="componentMaps['TableInstallments']"
-        :parcelas="loan.parcelas"
-        :paidOff="loan.paid_off_date"
-      />
-    </paid-off-loans-section>
   </div>
 </template>
-
 <script setup>
-import { defineComponent, ref, onMounted } from "vue";
-import leveragesFakeDate from "src/composables/system/fake/leverages_fake_data.json";
+import { computed, ref } from "vue";
 import PaidOffLoansSection from "src/system/components/leverage/PaidOffLoansSection.vue";
-import TableInstallments from "src/system/components/leverage/TableInstallments.vue";
-import CardPayInstallments from "src/system/components/loan/CardPayInstallments.vue";
-import CardQrcodePayment from "src/system/components/loan/CardQrcodePayment.vue";
-import { useLoanStore } from "src/stores/loan";
-import { storeToRefs } from "pinia";
-
-const storeLoan = useLoanStore();
-const { installmentsValues, selectedPay } = storeToRefs(storeLoan);
-const yourLeverages = ref();
-const loanSelection = ref(null);
-const tabPay = ref("home");
-const dialogPay = ref(false);
-const loanSelect = (id) => {
-  console.log("Ola", id);
-  loanSelection.value = id;
-};
-const componentMaps = {
-  TableInstallments,
-};
-onMounted(() => {
-  yourLeverages.value = leveragesFakeDate.paid_off;
-});
-defineComponent({
-  name: "PaidOffYourLeverages",
-});
-// Seu código aqui
+import { useClientLoans } from "src/composables/system/useClientLoans";
+import { loansByStatus } from "src/services/clientLoans";
+import { financeLabel } from "src/services/financeService";
+const { resource } = useClientLoans(),
+  selected = ref(null);
+const rows = computed(() => loansByStatus(resource.state.data, "quitada"));
 </script>
-
-<style scoped>
-/* Seus estilos aqui */
-</style>
