@@ -1,50 +1,29 @@
 <template>
   <q-page class="secured-loan-page">
-    <div class="row q-pa-lg q-mt-lg">
-      <div class="col-auto">
-        <route-back v-if="securedLoan == 'home'" />
-      </div>
-    </div>
-    <q-tab-panels v-model="securedLoan" animated class="bg-transparent">
-      <q-tab-panel name="home"> <secured-home-layout /> </q-tab-panel>
-      <q-tab-panel name="automovel">
-        <div class="row q-px-lg">
-          <div class="col-auto">
-            <IconArrowLeft @click.prevent="backStep('home')" />
-          </div>
-        </div>
-        <secured-auto-layout />
-      </q-tab-panel>
-      <q-tab-panel name="imovel">
-        <div class="row q-px-lg">
-          <div class="col-auto">
-            <IconArrowLeft @click.prevent="backStep('home')" />
-          </div>
-        </div>
-        <secured-imovel-layout />
-      </q-tab-panel>
-    </q-tab-panels>
+    <template v-if="selected === 'home'">
+      <div class="q-pa-lg"><route-back /></div>
+      <secured-home-layout @simular="selected = $event" />
+    </template>
+    <secured-request-wizard
+      v-else
+      :key="selected"
+      :type="selected"
+      :draft="drafts[selected]"
+      v-model:step="steps[selected]"
+      @back="selected = 'home'"
+    />
   </q-page>
 </template>
-
 <script setup>
-import { defineComponent } from "vue";
-import { useLoanStore } from "src/stores/loan";
-import { storeToRefs } from "pinia";
+import { reactive, ref } from "vue";
 import RouteBack from "src/system/components/btn/RouterBack.vue";
 import SecuredHomeLayout from "src/system/layouts/loans/SecuredHomeLayout.vue";
-import SecuredAutoLayout from "src/system/layouts/loans/SecuredAutoLayout.vue";
-import SecuredImovelLayout from "src/system/layouts/loans/SecuredImovelLayout.vue";
-defineComponent({
-  name: "SecuredLoanPage",
+import SecuredRequestWizard from "src/system/components/loan/SecuredRequestWizard.vue";
+import { newSecuredDraft } from "src/services/loanRequestDraft";
+const selected = ref("home");
+const steps = reactive({ imovel: 0, automovel: 0 });
+const drafts = reactive({
+  imovel: newSecuredDraft(),
+  automovel: newSecuredDraft(),
 });
-const storeLoan = useLoanStore();
-const { securedLoan } = storeToRefs(storeLoan);
-const backStep = (item) => {
-  storeLoan.setSecuredLoan(item);
-};
 </script>
-
-<style scoped>
-/* Seus estilos aqui */
-</style>

@@ -45,8 +45,6 @@
 
 <script setup>
 import { defineComponent } from "vue";
-import { useLoanStore } from "src/stores/loan";
-import { storeToRefs } from "pinia";
 import NotificationBadge from "src/system/components/badge/NotificationBadge.vue";
 import TitleinterMedium from "src/system/components/TitleinterMedium.vue";
 import CardGarantia from "src/system/components/card/CardGarantia.vue";
@@ -72,12 +70,8 @@ const optionsGarantia = [
   },
 ];
 
-const storeLoan = useLoanStore();
-// const {} = storeToRefs()
-
-const toSimular = (select) => {
-  storeLoan.setSecuredLoan(select);
-};
+const emit = defineEmits(["simular"]);
+const toSimular = (select) => emit("simular", select);
 </script>
 
 <style scoped></style>

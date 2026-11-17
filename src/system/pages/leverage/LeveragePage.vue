@@ -31,17 +31,12 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, onMounted, ref } from "vue";
+import { defineComponent } from "vue";
 import TitlePage from "src/system/components/TitlePage.vue";
 import LeverageResumeLayout from "src/system/layouts/leverage/LeverageResumeLayout.vue";
-import { useUserStore } from "src/stores/user";
-import { storeToRefs } from "pinia";
-import { IconArrowLeft } from "@tabler/icons-vue";
 defineComponent({
   name: "LeveragePage",
 });
-
-const storeUser = useUserStore();
 
 // const dialog = computed(() => level.value);
 
@@ -51,9 +46,8 @@ const list = [
     title: "Empréstimo com Garantia",
     subtitle:
       "Crédito com juros menores usando um patrimônio seu como segurança",
-    banks: ["Banco A", "Banco B", "Banco C"],
     image: "/img/colateral.png",
-    link: "loan/securedLoan",
+    link: "/system/loan/securedLoan",
     banks: [
       "/icons/banks/c6.png",
       "/icons/banks/inter.png",
@@ -71,18 +65,16 @@ const list = [
     title: "Consórcio",
     subtitle:
       "Participe de um grupo e consulte seu patrimônio no momento certo",
-    banks: ["Banco F", "Banco G"],
     image: "/img/consorcio.png",
-    link: "loan/consortiumLoan",
+    link: "/system/loan/consortiumLoan",
     banks: ["/icons/banks/porto.png", "/icons/banks/bradesco.png"],
   },
   {
     id: 3,
     title: "Empréstimo Colateral",
     subtitle: "Transforme seus ativos financeiros em crédito rápido e seguro!",
-    banks: ["Banco D", "Banco E"],
     image: "/img/garantia.png",
-    link: "loan/collateralLoan",
+    link: "/system/loan/collateralLoan",
     banks: [
       "/icons/coins/real.png",
       "/icons/coins/dollar.png",

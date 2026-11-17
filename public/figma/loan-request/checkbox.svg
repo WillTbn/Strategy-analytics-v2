@@ -1,0 +1,11 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Checkbox/Inactive/Default">
+<g id="Plate">
+<path d="M0 4C0 1.79086 1.79086 0 4 0H12C14.2091 0 16 1.79086 16 4V12C16 14.2091 14.2091 16 12 16H4C1.79086 16 0 14.2091 0 12V4Z" fill="white"/>
+<mask id="stroke0_0_541" fill="white">
+<path d="M0 4C0 1.79086 1.79086 0 4 0H12C14.2091 0 16 1.79086 16 4V12C16 14.2091 14.2091 16 12 16H4C1.79086 16 0 14.2091 0 12V4Z"/>
+</mask>
+<path d="M4 16H12C14.2091 16 16 14.2091 16 12V4C16 1.79086 14.2091 0 12 0H4C1.79086 0 0 1.79086 0 4V12C0 14.2091 1.79086 16 4 16Z" stroke-width="2" stroke="#C3C3C3" mask="url(#stroke0_0_541)"/>
+</g>
+</g>
+</svg>

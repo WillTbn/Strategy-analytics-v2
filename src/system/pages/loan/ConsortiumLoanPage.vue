@@ -1,51 +1,28 @@
 <template>
   <q-page class="consortium-loan-page">
-    <div class="row q-pa-lg q-mt-lg">
-      <div class="col-auto">
-        <router-back v-if="securedLoan == 'home'" />
-      </div>
-    </div>
-    <q-tab-panels v-model="securedLoan" animated class="bg-transparent">
-      <q-tab-panel name="home">
-        <secured-consortium-home-layout />
-      </q-tab-panel>
-      <q-tab-panel name="automovel">
-        <div class="row q-px-lg">
-          <div class="col-auto">
-            <IconArrowLeft @click.prevent="backStep('home')" />
-          </div>
-        </div>
-        <secured-consortium-auto-layout />
-      </q-tab-panel>
-      <q-tab-panel name="imovel">
-        <div class="row q-px-lg">
-          <div class="col-auto">
-            <IconArrowLeft @click.prevent="backStep('home')" />
-          </div>
-        </div>
-        <!-- <secured-imovel-layout /> -->
-        <secured-consortium-imovel-layout />
-      </q-tab-panel>
-    </q-tab-panels>
+    <template v-if="selected === 'home'">
+      <div class="q-pa-lg"><route-back /></div>
+      <secured-consortium-home-layout @simular="selected = $event" />
+    </template>
+    <secured-request-wizard
+      v-else
+      :key="selected"
+      consortium
+      :type="selected"
+      :draft="drafts[selected]"
+      @back="selected = 'home'"
+    />
   </q-page>
 </template>
-
 <script setup>
-import { defineComponent } from "vue";
-import { useLoanStore } from "src/stores/loan";
-import { storeToRefs } from "pinia";
-import RouterBack from "src/system/components/btn/RouterBack.vue";
+import { reactive, ref } from "vue";
+import RouteBack from "src/system/components/btn/RouterBack.vue";
 import SecuredConsortiumHomeLayout from "src/system/layouts/loans/consortium/SecuredConsortiumHomeLayout.vue";
-import SecuredConsortiumAutoLayout from "src/system/layouts/loans/consortium/SecuredConsortiumAutoLayout.vue";
-import SecuredConsortiumImovelLayout from "src/system/layouts/loans/consortium/SecuredConsortiumImovelLayout.vue";
-
-defineComponent({
-  name: "ConsortiumLoanPage",
+import SecuredRequestWizard from "src/system/components/loan/SecuredRequestWizard.vue";
+import { newSecuredDraft } from "src/services/loanRequestDraft";
+const selected = ref("home");
+const drafts = reactive({
+  imovel: newSecuredDraft(),
+  automovel: newSecuredDraft(),
 });
-const storeLoan = useLoanStore();
-const { securedLoan } = storeToRefs(storeLoan);
 </script>
-
-<style scoped>
-/* Seus estilos aqui */
-</style>

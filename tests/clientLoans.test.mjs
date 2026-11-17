@@ -118,14 +118,91 @@ test("withdrawal cannot pretend to verify a password the documented DTO cannot r
   assert.equal(reads, 1);
 });
 
-test('collateral flow cannot reach local fake success and clamps a restored final step',async()=>{
- const Vue=await import('vue'),{parse,compileScript}=await import('@vue/compiler-sfc');
- const context=vm.createContext({console,Function}),step=Vue.ref(5),notices=[];
- const file='src/system/pages/loan/CollateraLoanPage.vue';const {descriptor}=parse(readFileSync(file,'utf8'));const script=compileScript(descriptor,{id:file});
- const deps={vue:Vue,quasar:{useQuasar:()=>({notify:value=>notices.push(value)})},'src/stores/loan':{useLoanStore:()=>({})},pinia:{storeToRefs:()=>({step_collateral:step,loan_callateral:Vue.ref([])})}};
- const m=new vm.SourceTextModule(script.content,{context});await m.link(async name=>{const values=deps[name]||{default:{}};return new vm.SyntheticModule(Object.keys(values),function(){for(const k in values)this.setExport(k,values[k])},{context})});await m.evaluate();const scope=Vue.effectScope();const h=scope.run(()=>m.namespace.default.setup({}, {expose(){}}));assert.equal(step.value,3);h.nextStep();assert.equal(step.value,3);assert.equal(notices.length,1);h.backStep();assert.equal(step.value,2);h.nextStep();assert.equal(step.value,3);scope.stop();
+test("collateral draft validates each step and never reaches a fake submitted state", async () => {
+  const Vue = await import("vue"),
+    { parse, compileScript } = await import("@vue/compiler-sfc");
+  const draftRules = await import("../src/services/loanRequestDraft.js");
+  const presentation = await import("../src/services/profilePresentation.js");
+  const context = vm.createContext({ console, Function });
+  const file = "src/system/components/loan/CollateralRequestWizard.vue";
+  const { descriptor } = parse(readFileSync(file, "utf8"));
+  const script = compileScript(descriptor, { id: file });
+  const deps = {
+    vue: Vue,
+    "src/services/loanRequestDraft": draftRules,
+    "src/services/profilePresentation": presentation,
+  };
+  const module = new vm.SourceTextModule(script.content, { context });
+  await module.link(async (name) => {
+    const values = deps[name] || { default: {} };
+    return new vm.SyntheticModule(
+      Object.keys(values),
+      function () {
+        for (const key in values) this.setExport(key, values[key]);
+      },
+      { context },
+    );
+  });
+  await module.evaluate();
+  const scope = Vue.effectScope(),
+    events = [];
+  const h = scope.run(() =>
+    module.namespace.default.setup(
+      {},
+      { expose() {}, emit: (event) => events.push(event) },
+    ),
+  );
+  h.next();
+  assert.equal(h.step.value, 0);
+  assert.match(h.error.value, /motivo/);
+  h.draft.reason = "investment";
+  h.next();
+  assert.equal(h.step.value, 1);
+  h.next();
+  assert.equal(h.step.value, 1);
+  assert.match(h.error.value, /valor/);
+  h.draft.amount = 200000;
+  h.next();
+  assert.equal(h.step.value, 2);
+  h.next();
+  assert.equal(h.step.value, 2);
+  assert.match(h.error.value, /parcelamento/);
+  h.draft.installments = 60;
+  h.next();
+  assert.equal(h.step.value, 3);
+  for (let i = 0; i < 5; i++) h.next();
+  assert.equal(h.step.value, 3);
+  assert.ok(h.summaryRows.value.some((row) => row[1] === "Indisponível"));
+  assert.deepEqual(events, []);
+  h.back();
+  assert.equal(h.step.value, 2);
+  scope.stop();
 });
-test('changed loan and wallet templates compile, including gated offer slots',async()=>{
- const {parse,compileScript,compileTemplate}=await import('@vue/compiler-sfc');
- for(const file of ['src/system/pages/loan/CollateraLoanPage.vue','src/system/pages/loan/OffersFinalLoanPage.vue','src/system/layouts/loans/consortium/steps/OffersConsortiumLayout.vue','src/system/layouts/loans/collateral/InstallmentCollateralLayout.vue','src/system/pages/Wallet/CashWalletPage.vue','src/system/layouts/leverage/LendingAccess.vue']){const {descriptor}=parse(readFileSync(file,'utf8'));const script=compileScript(descriptor,{id:file});const compiled=compileTemplate({source:descriptor.template.content,filename:file,id:file,compilerOptions:{bindingMetadata:script.bindings}});assert.deepEqual(compiled.errors,[],file);}
+test("changed loan and wallet templates compile, including gated offer slots", async () => {
+  const { parse, compileScript, compileTemplate } = await import(
+    "@vue/compiler-sfc"
+  );
+  for (const file of [
+    "src/system/components/loan/CollateralRequestWizard.vue",
+    "src/system/components/loan/SecuredRequestWizard.vue",
+    "src/system/components/loan/LoanAmountControl.vue",
+    "src/system/pages/loan/SecuredLoanPage.vue",
+    "src/system/pages/loan/ConsortiumLoanPage.vue",
+    "src/system/pages/loan/CollateraLoanPage.vue",
+    "src/system/pages/loan/OffersFinalLoanPage.vue",
+    "src/system/layouts/loans/consortium/steps/OffersConsortiumLayout.vue",
+    "src/system/layouts/loans/collateral/InstallmentCollateralLayout.vue",
+    "src/system/pages/Wallet/CashWalletPage.vue",
+    "src/system/layouts/leverage/LendingAccess.vue",
+  ]) {
+    const { descriptor } = parse(readFileSync(file, "utf8"));
+    const script = compileScript(descriptor, { id: file });
+    const compiled = compileTemplate({
+      source: descriptor.template.content,
+      filename: file,
+      id: file,
+      compilerOptions: { bindingMetadata: script.bindings },
+    });
+    assert.deepEqual(compiled.errors, [], file);
+  }
 });
