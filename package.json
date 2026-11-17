@@ -10,7 +10,9 @@
     "format": "prettier --write \"**/*.{js,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "node --experimental-vm-modules --test tests/*.test.mjs",
     "dev": "quasar dev",
-    "build": "quasar build"
+    "build": "quasar build",
+    "postinstall": "node scripts/security/patch-picomatch.mjs",
+    "audit:security": "node scripts/security/audit.mjs"
   },
   "dependencies": {
     "@egjs/vue3-flicking": "^4.14.0",
@@ -56,5 +58,8 @@
   "allowScripts": {
     "@parcel/watcher@2.6.0": true,
     "esbuild@0.25.12": true
+  },
+  "overrides": {
+    "picomatch": "4.0.7"
   }
 }
