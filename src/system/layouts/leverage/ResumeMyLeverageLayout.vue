@@ -4,7 +4,8 @@
       ><card-overview-layout
         title="Suas Alavancagens"
         :btnLink="false"
-        classAdd="q-px-md q-mt-md q-pb-md q-gutter-sm"
+        class="loan-section"
+        classAdd=""
       >
         <q-tabs
           v-model="leverage"
@@ -23,7 +24,7 @@
           </q-tab>
         </q-tabs>
 
-        <q-tab-panels v-model="leverage" animated class="bg-transparent col-12">
+        <q-tab-panels v-model="leverage" class="bg-transparent col-12">
           <q-tab-panel
             v-for="(item, index) in alavaragensTypes"
             :key="index"
@@ -57,16 +58,61 @@ const componentsMaps = {
 const leverage = ref("actives");
 const alavaragensTypes = [
   {
-    title: "Em análise",
+    title: "Em Simulação",
     value: "simulation",
     component: "SimulationYourLeverages",
   },
   { title: "Ativas", value: "actives", component: "ActiveYourLeverages" },
-  { title: "Quitados", value: "quitada", component: "PaidOffYourLeverages" },
+  { title: "Quitadas", value: "quitada", component: "PaidOffYourLeverages" },
 ];
 </script>
 
 <style scoped>
+.loan-section {
+  padding: 24px;
+  border: 1px solid #efefef29;
+  border-radius: 4px;
+  box-shadow: 4px 4px 12px #0000003d;
+  background: linear-gradient(183deg, #0000003d, #00000014 51%, #0000000a);
+  backdrop-filter: blur(20px);
+}
+.loan-section :deep(h2) {
+  margin: 0 0 24px;
+  font:
+    700 24px/1.5 Inter,
+    sans-serif;
+}
+.loan-section :deep(.q-tab__focus-helper) {
+  display: none;
+}
+.loan-section :deep(.q-tab:focus-visible) {
+  outline: 2px solid #75cfff;
+  outline-offset: -4px;
+}
+.loan-section :deep(.q-tabs) {
+  margin-bottom: 24px;
+}
+.loan-section :deep(.q-tab) {
+  text-transform: none;
+  min-height: 48px;
+  color: #989898;
+  padding: 12px 24px;
+}
+.loan-section :deep(.q-tab--active) {
+  color: white;
+}
+.loan-section :deep(.q-tab-panels) {
+  width: 100%;
+}
+@media (max-width: 600px) {
+  .loan-section {
+    padding: 16px;
+  }
+  .loan-section :deep(.q-tab) {
+    padding: 12px;
+  }
+}
+
 .q-tab-panel {
   padding: 0 !important;
 }

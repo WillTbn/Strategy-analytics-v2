@@ -44,6 +44,7 @@ import {
   registrationCatalog,
   registrationRegionOptions,
   documentRegistrationPayload,
+  registrationDocumentCountryId,
   displayRegistrationDate,
   displayRegistrationAmount,
 } from "src/services/registrationIntegration";
@@ -237,19 +238,27 @@ export function useRegistrationFlow(step) {
         documentDrafts[variant] = draft;
       }
       if (!hydrated.has(`documents:${variant}`)) {
-        hydrateRegistrationDocuments(documentDrafts[variant], profile, variant);
+        hydrateRegistrationDocuments(
+          documentDrafts[variant],
+          profile,
+          variant,
+          catalog.value.countries,
+        );
         hydrated.add(`documents:${variant}`);
       }
       documentCatalog.value = {
         region: registrationRegionOptions(
           variant,
           documentDrafts[variant].values.region,
+          profile.preferences?.countryIsoCode,
         ),
         issuerRegion: registrationRegionOptions(
           variant,
           documentDrafts[variant].details[documentDrafts[variant].type]
             ?.issuerRegion,
+          profile.preferences?.countryIsoCode,
         ),
+        issuerCountry: catalog.value.countries,
       };
       catalog.value.regions = documentCatalog.value.region;
     }
@@ -426,9 +435,17 @@ export function useRegistrationFlow(step) {
         const saveDocument = async (documentType, attachments = []) => {
           if (documentType.code !== "CPF")
             assertRegistrationDocumentNumber(draft);
+          const documentCountryId = registrationDocumentCountryId(
+            draft,
+            profile.preferences.countryId,
+            documentType.code,
+          );
+          const documentCountryIso = catalog.value.countries.find(
+            (country) => country.value === documentCountryId,
+          )?.isoCode;
           const definition = await getClientDocumentDataDefinition(
             documentType.id,
-            profile.preferences.countryId,
+            documentCountryId,
           );
           const payload = documentRegistrationPayload(
             definition,
@@ -441,7 +458,7 @@ export function useRegistrationFlow(step) {
               file,
               {
                 documentTypeId: documentType.id,
-                countryId: profile.preferences.countryId,
+                countryId: documentCountryId,
                 issuedOn: payload.issuedOn,
                 expiresOn: payload.expiresOn,
                 metadata: payload.data,
@@ -460,7 +477,9 @@ export function useRegistrationFlow(step) {
           const existing = profile.identificationDocuments?.documents?.find(
             (d) =>
               d.documentTypeId === documentType.id &&
-              d.countryIsoCode === profile.preferences.countryIsoCode,
+              d.source === "ProvidedDocument" &&
+              d.status === "Active" &&
+              d.countryIsoCode === documentCountryIso,
           );
           let result;
           if (existing?.documentId) {

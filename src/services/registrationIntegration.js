@@ -1,3 +1,4 @@
+import { registrationSubdivisions } from "./registrationSubdivisions.js";
 import { countryName } from "./countryNames.js";
 import { currentProfilePatch } from "./profileEdit.js";
 import { parseRegistrationAmount } from "./registrationEmployment.js";
@@ -201,12 +202,24 @@ export const brazilianStates =
   "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO"
     .split(" ")
     .map((value) => ({ value, label: value }));
-export function registrationRegionOptions(variant, value) {
-  return variant === "br"
-    ? brazilianStates
-    : value
-      ? [{ value, label: value }]
-      : [];
+export function registrationRegionOptions(variant, value, countryIsoCode) {
+  const representative = {
+    "us-ca": "US",
+    "south-america": "AR",
+    jp: "JP",
+    cn: "CN",
+    africa: "ZA",
+    au: "AU",
+  };
+  const iso = String(
+    countryIsoCode || representative[variant] || "",
+  ).toUpperCase();
+  const options = (
+    variant === "br" ? brazilianStates : registrationSubdivisions[iso] || []
+  ).map((row) => ({ ...row }));
+  if (value && !options.some((row) => row.value === value))
+    options.push({ value, label: value });
+  return options.sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
 }
 export function registrationCatalog(catalog, profile, professional) {
   const existing = (options, value) =>
@@ -230,6 +243,17 @@ export function registrationCatalog(catalog, profile, professional) {
     occupations: existing(catalog.occupations, professional?.occupation),
     currencies: catalog.currencies || [],
   };
+}
+export function registrationDocumentCountryId(
+  draft,
+  residenceCountryId,
+  documentCode,
+) {
+  if (!["PASSPORT", "PASSAPORTE"].includes(documentCode))
+    return residenceCountryId;
+  const countryId = draft.details.Passaporte?.issuerCountry;
+  if (!countryId) throw new Error("Selecione o país emissor do passaporte.");
+  return countryId;
 }
 export function documentRegistrationPayload(
   definition,

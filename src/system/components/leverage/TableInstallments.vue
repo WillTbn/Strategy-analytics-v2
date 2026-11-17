@@ -1,5 +1,6 @@
 <template>
-  <div class="q-pa-md">
+  <div class="loan-installments">
+    <p v-if="error" class="loan-installments-error" role="alert">{{ error }}</p>
     <!-- Botões de ação abaixo da tabela -->
     <div class="row justify-between" v-if="!paidOff">
       <div class="col-auto">
@@ -10,6 +11,7 @@
           color="primary"
           no-caps
           label="Pagar parcelas selecionadas"
+          :disable="!paySelected || busy || !payableSelected.length"
           @click="pagarParcelasSelecionadas"
           flat
         />
@@ -19,6 +21,7 @@
           no-caps
           flat
           label="Baixar Extrato de Parcelas"
+          :disable="!downloadStatement || busy"
           @click="baixarExtrato"
         />
       </div>
@@ -31,15 +34,19 @@
           no-caps
           flat
           label="Baixar Extrato de Parcelas"
+          :disable="!downloadStatement || busy"
           @click="baixarExtrato"
         />
       </div>
     </div>
     <div class="text-inter-17-500 q-mb-sm">Tabela de Parcelas</div>
     <q-table
-      :rows="parcelas"
+      :rows="visibleRows"
       :columns="columns"
       row-key="numero"
+      dark
+      :pagination="{ rowsPerPage: 0 }"
+      :rows-per-page-options="[0]"
       flat
       dense
       hide-pagination
@@ -52,11 +59,9 @@
       <template v-slot:body-cell-comprovante="props">
         <q-td :props="props">
           <div v-if="props.row.comprovante">
-            <q-icon
-              size="32px"
-              class="icon-png"
-              name="img:/icons/pdf-icon.png"
-            ></q-icon>
+            <span class="loan-pdf"
+              ><img src="/figma/my-leverage/pdf.png" alt=""
+            /></span>
             <span class="text-neutral">{{ props.row.comprovante }}</span>
           </div>
           <div v-else>
@@ -65,8 +70,9 @@
               class="text-neutral"
               no-caps
               @click="fazerUpload(props.row)"
+              :disable="!uploadReceipt || busy"
             >
-              <IconPlus width="16" height="16" class="q-mr-sm" />
+              <img src="/figma/my-leverage/plus.svg" alt="" class="q-mr-sm" />
               <span class=""> Fazer Upload </span>
             </q-btn>
           </div>
@@ -80,10 +86,11 @@
             v-if="props.row.pagar_agora"
             color="primary"
             @click="pagarParcela(props.row)"
+            :disable="!payOne || busy"
             style="border-radius: 6px"
             no-caps
           >
-            <IconFileDollar width="16" height="16" class="q-mr-sm" />
+            <img src="/figma/my-leverage/pay.svg" alt="" class="q-mr-sm" />
             <span>Pagar agora</span>
           </q-btn>
           <q-btn
@@ -94,13 +101,19 @@
             style="border-radius: 6px"
             no-caps
           >
-            <IconFileDollar width="16" height="16" class="q-mr-sm" />
+            <img
+              src="/figma/my-leverage/pay-disabled.svg"
+              alt=""
+              class="q-mr-sm"
+            />
             <span>Pagar agora</span>
           </q-btn>
           <q-btn
             flat
             no-caps
             label="Antecipar"
+            :disable="!anticipate || busy"
+            @click="run(() => anticipate(props.row))"
             color="primary"
             v-if="!props.row.pagar_agora && !props.row.comprovante"
           />
@@ -121,32 +134,67 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
-import { useLoanStore } from "src/stores/loan";
-import useNotify from "src/composables/useNotify";
-import { storeToRefs } from "pinia";
+import { ref, computed, watch, onScopeDispose } from "vue";
 const props = defineProps({
-  parcelas: {
-    type: Array,
-    required: true,
-    default: () => [],
-  },
-  paidOff: {
-    type: [String, Boolean],
-  },
+  parcelas: { type: Array, default: () => [] },
+  paidOff: Boolean,
+  paySelected: Function,
+  payOne: Function,
+  uploadReceipt: Function,
+  downloadStatement: Function,
+  anticipate: Function,
 });
-
-const storeLoan = useLoanStore();
-const { selectedPay } = storeToRefs(storeLoan);
-const selected = ref([]);
-const pending = ref(false);
-const emit = defineEmits(["sendPayment"]);
-const pagination = ref({
-  rowsPerPage: 10,
-  sortBy: "numero",
+const selected = ref([]),
+  pending = ref(false),
+  busy = ref(false),
+  error = ref("");
+let active = true;
+const isPaid = (row) => /^Pago\b/i.test(row.status || "");
+const visibleRows = computed(() =>
+  pending.value && !props.paidOff
+    ? props.parcelas.filter((row) => !isPaid(row))
+    : props.parcelas,
+);
+const payableSelected = computed(() =>
+  selected.value.filter((row) => props.parcelas.includes(row) && !isPaid(row)),
+);
+watch(
+  () => props.parcelas,
+  () => {
+    selected.value = [];
+    error.value = "";
+  },
+);
+async function run(action) {
+  if (!action || busy.value) return;
+  busy.value = true;
+  error.value = "";
+  try {
+    await action();
+  } catch {
+    if (active)
+      error.value = "Não foi possível concluir esta ação. Tente novamente.";
+  } finally {
+    if (active) busy.value = false;
+  }
+}
+const fazerUpload = (row) =>
+  props.uploadReceipt && !isPaid(row) && run(() => props.uploadReceipt(row));
+const pagarParcela = (row) =>
+  props.payOne &&
+  props.parcelas.includes(row) &&
+  !isPaid(row) &&
+  row.pagar_agora === true &&
+  run(() => props.payOne(row));
+const pagarParcelasSelecionadas = () =>
+  props.paySelected &&
+  payableSelected.value.length &&
+  run(() => props.paySelected([...payableSelected.value]));
+const baixarExtrato = () =>
+  props.downloadStatement && run(props.downloadStatement);
+onScopeDispose(() => {
+  active = false;
 });
-const { errorNotify } = useNotify();
-
 const columns = ref([
   {
     name: "numero",
@@ -163,7 +211,7 @@ const columns = ref([
     field: "vencimento",
     sortable: true,
     classes: (row) => {
-      if (row.status.includes("Atrasado")) return "text-error";
+      if (String(row.status || "").includes("Atrasado")) return "text-error";
     },
   },
   {
@@ -173,7 +221,9 @@ const columns = ref([
     field: "valor",
     sortable: true,
     format: (val) =>
-      `${val.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+      val == null || !Number.isFinite(Number(val))
+        ? "—"
+        : Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 }),
   },
   {
     name: "status",
@@ -195,65 +245,73 @@ const columns = ref([
     field: "pagar_agora",
   },
 ]);
-
-const getSelectedString = computed(() => {
-  return selected.value.length === 0
-    ? ""
-    : `${selected.value.length} record${selected.value.length > 1 ? "s" : ""} selected of ${props.parcelas.length}`;
-});
-
-const getStatusColor = (status) => {
-  if (status.includes("Pago")) return "bg-btn-success";
-  if (status.includes("Atrasado")) return "bg-btn-error";
-  return "bg-btn-neutral";
-};
-
-const verComprovante = (comprovante) => {
-  console.log("Visualizar comprovante:", comprovante);
-  // Implementar lógica para visualizar comprovante
-};
-
-const fazerUpload = (parcela) => {
-  console.log("Fazer upload para parcela:", parcela.numero);
-  // Implementar lógica de upload
-};
-
-const pagarParcela = (parcela) => {
-  console.log("Pagar parcela:", parcela.numero);
-  // Implementar lógica de pagamento
-};
-
-const pagarParcelasSelecionadas = () => {
-  if (selected.value.length <= 0) {
-    errorNotify("Selecione pelo menos uma parcela", null, "bottom");
-    return;
-  }
-  console.log("Pagar parcelas selecionadas:", selected.value);
-  // Implementar lógica para múltiplos pagamentos
-
-  selectedPay.value = selected.value;
-  emit("sendPayment");
-};
-
-const baixarExtrato = () => {
-  console.log("Baixar extrato de parcelas");
-  // Implementar lógica para download do extrato
-};
+const getStatusColor = (status) =>
+  /^Pago\b/i.test(status || "")
+    ? "bg-btn-success"
+    : /Atrasado/i.test(status || "")
+      ? "bg-btn-error"
+      : "bg-btn-neutral";
 </script>
 <style scoped>
-.q-table {
-  font-family: "Roboto", sans-serif;
+.loan-installments {
+  font-family: Inter, sans-serif;
+  color: white;
+  min-width: 0;
 }
-
-.q-badge {
-  font-size: 12px;
-  padding: 4px 8px;
+.loan-installments :deep(.q-table__container) {
+  color: white;
+  background: transparent;
+}
+.loan-installments :deep(.q-table__middle) {
+  max-height: 315px;
+  overflow: auto;
+}
+.loan-installments :deep(th),
+.loan-installments :deep(td) {
+  color: #efefef;
+  border-color: #efefef29;
+}
+.loan-installments :deep(th) {
+  font-size: 14px;
+  font-weight: 400;
+}
+.loan-installments :deep(.q-toggle__label) {
+  font-size: 14px;
+}
+.loan-installments :deep(.q-btn) {
+  font-size: 14px;
+}
+.loan-pdf {
+  display: inline-block;
+  position: relative;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+.loan-pdf img {
+  position: absolute;
+  width: 177.34%;
+  height: 100.26%;
+  left: -38.67%;
+  top: -0.13%;
+  max-width: none;
+}
+.loan-installments-error {
+  color: #ffb4ab;
 }
 .icon-png {
-  max-width: 3rem;
-  /* min-width: 60px; */
-  width: 100%;
-  height: 1.8rem;
+  max-width: 32px;
+  height: 32px;
   object-fit: contain;
+}
+@media (max-width: 700px) {
+  .loan-installments > .row {
+    gap: 12px;
+  }
+  .loan-installments :deep(.q-table) {
+    min-width: 800px;
+  }
 }
 </style>

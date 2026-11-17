@@ -1,26 +1,15 @@
 <template>
   <q-page class="my-levereges-page">
-    <div class="row">
-      <div class="col-12">
-        <title-page
-          :toBack="true"
-          title="Minhas Alavancagens"
-          :breadcrumbs="[
-            { label: 'Alavancagem' },
-            { label: 'Minhas Alavancagens' },
-          ]"
-        />
-      </div>
-      <div class="col-12 q-mx-sm row">
-        <div class="col-12 q-pa-lg">
-          <over-view-leverage-layout />
-        </div>
-      </div>
-      <div class="col-12 q-mx-sm row">
-        <div class="col-12 q-pa-lg">
-          <resume-my-leverage-layout />
-        </div>
-      </div>
+    <title-page
+      :toBack="true"
+      title="Minhas Alavancagens"
+      :breadcrumbs="[
+        { label: 'Alavancagem' },
+        { label: 'Minhas Alavancagens' },
+      ]"
+    />
+    <div class="my-leverages-sections">
+      <over-view-leverage-layout /><resume-my-leverage-layout />
     </div>
   </q-page>
 </template>
@@ -38,5 +27,20 @@ provideClientLoans();
 </script>
 
 <style scoped>
-/* Seus estilos aqui */
+.my-leverages-sections {
+  display: grid;
+  gap: 48px;
+  padding: 24px 48px 48px;
+  min-width: 0;
+}
+.my-levereges-page {
+  font-family: Inter, sans-serif;
+  color: white;
+}
+@media (max-width: 700px) {
+  .my-leverages-sections {
+    padding: 16px;
+    gap: 24px;
+  }
+}
 </style>

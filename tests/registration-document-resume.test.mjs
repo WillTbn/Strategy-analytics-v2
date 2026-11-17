@@ -37,7 +37,9 @@ test("CPF resume preserves only the server mask and never submits it as a new CP
   const { profile } = fixture();
   profile.identificationDocuments.documents.push({
     ...profile.identificationDocuments.documents[0],
-    documentCode: "CPF", documentId: "cpf", numberMasked: "******4725",
+    documentCode: "CPF",
+    documentId: "cpf",
+    numberMasked: "******4725",
   });
   const draft = newRegistrationDocuments("br");
   hydrateRegistrationDocuments(draft, profile, "br");
@@ -120,4 +122,32 @@ test("passport selection and date format follow saved server type, never invent 
   assert.equal(draft.type, "Passaporte");
   assert.equal(draft.details.Passaporte.issuedDate, "01/01/2025");
   assert.equal(draft.details.Passaporte.expiryDate, "04/03/2030");
+});
+
+test("passport resume preserves a different issuing country and changing it invalidates reused evidence", () => {
+  const draft = newRegistrationDocuments("europe");
+  const profile = {
+    preferences: { countryIsoCode: "PT" },
+    identificationDocuments: {
+      documents: [
+        {
+          documentCode: "PASSPORT",
+          documentId: "passport",
+          documentTypeId: "type",
+          source: "ProvidedDocument",
+          status: "Active",
+          countryIsoCode: "BR",
+          numberMasked: "****0001",
+          evidenceSummary: { count: 1, latestStatus: "Approved" },
+        },
+      ],
+    },
+  };
+  hydrateRegistrationDocuments(draft, profile, "europe", [
+    { isoCode: "BR", value: "brazil-id" },
+  ]);
+  assert.equal(draft.details.Passaporte.issuerCountry, "brazil-id");
+  assert.equal(canReuseRegistrationDocument(draft, profile, "europe"), true);
+  draft.details.Passaporte.issuerCountry = "portugal-id";
+  assert.equal(canReuseRegistrationDocument(draft, profile, "europe"), false);
 });

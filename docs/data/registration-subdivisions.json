@@ -1,0 +1,18 @@
+{
+  "source": {
+    "sha": "5a0898338e7b93ca779fdc17a875d49e2aacfad8",
+    "url": "https://raw.githubusercontent.com/olahol/iso-3166-2.js/5a0898338e7b93ca779fdc17a875d49e2aacfad8/data.csv"
+  },
+  "license": "MIT; public/licenses/iso-3166-2.txt",
+  "selection": [
+    "US",
+    "CA",
+    "AR",
+    "JP",
+    "CN",
+    "ZA",
+    "AU"
+  ],
+  "sourceSha256": "47b8493adedd2e7aefdd1e676e62f5b3784535b5275b666aa1688fc3fc6861b0",
+  "purpose": "Offline options for existing state/province selectors. Codes are ISO subdivision suffixes, not API country IDs. Existing persisted values are preserved. No runtime dependency or third-party user-data lookup."
+}

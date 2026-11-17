@@ -1,117 +1,171 @@
 <template>
-  <q-card class="card-pay-installments">
-    <div class="row">
-      <div class="col-12">
-        <p class="text-inter-24-700">Pagamento de Parcelas</p>
-        <p class="text-grey">
-          Verifique todas as informações antes de prosseguir para o pagamento da
-          parcela
-        </p>
+  <q-card class="loan-payment-card card-pay-installments"
+    ><h2>Pagamento de Parcelas</h2>
+    <p>
+      Verifique todas as informações antes de prosseguir para o pagamento da
+      parcela.
+    </p>
+    <div class="payment-loan">
+      <div class="payment-loan-title">
+        <img src="/figma/my-leverage/active.svg" alt="" /><strong>{{
+          title || "Empréstimo"
+        }}</strong
+        ><span v-if="typeDescription" class="payment-loan-type"
+          ><img v-if="kind" :src="'/figma/my-leverage/' + kind.icon" alt="" />{{
+            typeDescription
+          }}</span
+        >
       </div>
-      <div class="col-12 row items-center q-mt-md">
-        <q-avatar size="32px" flat class="text-primary">
-          <component :is="icon" />
-        </q-avatar>
-        <span class="text-inter-17-700 q-ml-xs" style="vertical-align: middle">
-          {{ title }}
-        </span>
-        <div class="simulation-status text-inter-14-400 q-ml-sm">
-          <component
-            :is="typeLoanIcon[type]"
-            width="16"
-            height="16"
-            style="vertical-align: text-bottom"
-          />
-          {{ typeDescription }}
+      <p>
+        Parcela(s) à pagar :
+        <strong>{{
+          installments.length
+            ? installments.map((value) => "#" + value).join(" e ")
+            : "—"
+        }}</strong>
+      </p>
+    </div>
+    <div class="payment-summary">
+      <h3>Resumo</h3>
+      <dl>
+        <div>
+          <dt>Data de Pagamento</dt>
+          <dd>
+            {{ quote?.paymentDate ? profileDate(quote.paymentDate) : "—" }}
+          </dd>
         </div>
-        <div class="col-12 text-inter-17-400 q-mt-md">
-          <span class="text-neutral">Parcela(s) à pagar :</span>
-          <span class="text-primary"> #11 e #12</span>
+        <div>
+          <dt>Valor à ser Pago</dt>
+          <dd>{{ money(quote?.grossAmount) }}</dd>
         </div>
-      </div>
+        <div>
+          <dt>Desconto por Antecipação</dt>
+          <dd class="payment-discount">
+            {{
+              quote?.discountAmount == null
+                ? "—"
+                : "- " + money(quote.discountAmount)
+            }}
+          </dd>
+        </div>
+        <div>
+          <dt>Total à ser Pago</dt>
+          <dd class="payment-total">{{ money(quote?.totalAmount) }}</dd>
+        </div>
+      </dl>
     </div>
-    <div class="col-12 row q-pa-sm tool-resume q-my-md">
-      <div class="col-12 text-inter-17-500">Resumo</div>
-      <text-between
-        title="Data do Pagameto"
-        :description="formatDateBR(datePay)"
-      />
-      <text-between
-        title="Valor à ser Pago"
-        :description="`${$filters.currentValueBR(valuesPay)}`"
-      />
-      <text-between
-        title="Desconto por Antecipação"
-        colorTextDescription="text-positive"
-        :description="`- ${$filters.currentValueBR(desconto)}`"
-      />
-      <text-between
-        title="Total à se Pago"
-        colorTextDescription="text-primary"
-        :description="` ${$filters.currentValueBR(valuePAy)}`"
-      />
-    </div>
-    <div class="row justify-between">
-      <div class="col-auto">
-        <q-btn flat color="white" v-close-popup no-caps>
-          <IconArrowLeft />
-          Voltar
-        </q-btn>
-      </div>
-      <div class="col-auto">
-        <q-btn
-          label="Ir para Pagamento"
-          color="primary"
-          @click.prevent="$emit('next')"
-          no-caps
-        />
-      </div>
-    </div>
-  </q-card>
+    <div class="loan-payment-footer">
+      <q-btn flat no-caps color="white" @click="$emit('back')"
+        ><img src="/figma/my-leverage/payment-back.svg" alt="" />Voltar</q-btn
+      ><q-btn
+        no-caps
+        color="primary"
+        label="Ir para Pagamento"
+        :disable="!canContinue || !validQuote"
+        @click="$emit('next')"
+      /></div
+  ></q-card>
 </template>
-
 <script setup>
-import { defineComponent, onMounted, ref } from "vue";
-import useStates from "src/composables/useStates";
-import TextBetween from "src/system/components/TextBetween.vue";
-defineComponent({
-  name: "CardPayInstallments",
-});
-const datePay = ref(new Date());
-const formatDateBR = (date) => {
-  return date.toLocaleDateString("pt-BR");
-};
+import { computed } from "vue";
+import { loanKindPresentation } from "src/services/loanSummaryPresentation";
+import { profileDate, profileMoney } from "src/services/profilePresentation";
 const props = defineProps({
-  icon: { type: String, default: "IconFileDollar" },
-  title: { type: String },
-  type: { type: String },
-  typeDescription: { type: String },
-  valuesPay: { type: [String, Number] },
+  title: String,
+  type: String,
+  typeDescription: String,
+  installments: { type: Array, default: () => [] },
+  quote: { type: Object, default: null },
+  canContinue: Boolean,
 });
-const { typeLoanIcon } = useStates();
-const desconto = (props.valuesPay * 0.02).toFixed(2);
-const valuePAy = (props.valuesPay - desconto).toFixed(2);
-const emit = defineEmits(["next"]);
+defineEmits(["back", "next"]);
+const kind = computed(() => loanKindPresentation(props.type));
+const money = (value) =>
+  value == null ? "—" : profileMoney(value, props.quote?.currency);
+const validQuote = computed(
+  () =>
+    props.quote &&
+    /^[A-Z]{3}$/.test(props.quote.currency || "") &&
+    props.quote.paymentDate &&
+    profileDate(props.quote.paymentDate) !== "Não informado" &&
+    ["grossAmount", "discountAmount", "totalAmount"].every(
+      (key) =>
+        props.quote[key] !== null &&
+        props.quote[key] !== undefined &&
+        props.quote[key] !== "" &&
+        Number.isFinite(Number(props.quote[key])) &&
+        Number(props.quote[key]) >= 0,
+    ),
+);
 </script>
-
-<style scoped lang="sass">
-.simulation-status
-  height: 24px
-  gap: 4px
-  padding-top: 1px
-  padding-right: 8px
-  padding-bottom: 1px
-  padding-left: 8px
-  border-radius: 4px
-  background: linear-gradient(202.99deg, rgba(255, 255, 255, 0.16) 0.52%, rgba(255, 255, 255, 0.04) 50%, rgba(255, 255, 255, 0.01) 99.48%)
-  border: 1px solid #656565
-  cursor: pointer
-.tool-resume
-  gap: 12px
-  padding-top: 8px
-  padding-right: 12px
-  padding-bottom: 8px
-  padding-left: 12px
-  border-radius: 8px
-  background: linear-gradient(202.99deg, rgba(255, 255, 255, 0.06) 0.52%, rgba(255, 255, 255, 0.01) 79.69%)
+<style scoped lang="scss">
+@import "./loanPaymentCard.scss";
+.payment-loan {
+  padding: 12px;
+  margin-top: 32px;
+}
+.payment-loan-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 17px;
+}
+.payment-loan-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  border: 1px solid #656565;
+  border-radius: 4px;
+  padding: 2px 8px;
+  background: #ffffff0a;
+}
+.payment-loan p {
+  font-size: 17px;
+  line-height: 1.35;
+  margin: 16px 0 0;
+  color: #dcdcdc;
+}
+.payment-loan p strong {
+  color: #00a3ff;
+}
+.payment-summary {
+  margin-top: 32px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: linear-gradient(203deg, #ffffff0f, #ffffff03 80%);
+}
+.payment-summary h3 {
+  font:
+    500 17px/1.35 Inter,
+    sans-serif;
+  margin: 0 0 12px;
+}
+.payment-summary dl {
+  margin: 0;
+}
+.payment-summary dl > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 35px;
+  font-size: 14px;
+}
+.payment-summary dt {
+  color: #989898;
+}
+.payment-summary dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.payment-discount {
+  color: #52c41a;
+}
+.payment-total {
+  color: #00a3ff;
+  font-weight: 700;
+}
 </style>

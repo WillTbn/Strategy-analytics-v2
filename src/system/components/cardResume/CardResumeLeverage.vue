@@ -1,64 +1,83 @@
 <template>
-  <q-inner-loading
-    :showing="loading"
-    label="Please wait..."
-    label-class="text-teal"
-    label-style="font-size: 1.1em"
-  />
-  <div class="col-10 col-sm q-my-md-lg q-my-xs-md card-resume-leverage q-px-lg">
-    <div class="tool">
-      <div class="q-mb-sm">
-        <div class="row items-center q-gutter-sm">
-          <component
-            :is="icon"
-            color="#00a3ff"
-            width="24"
-            height="24"
-          ></component>
-          <span class="text-roboto-20-400 text-weight-bolder text-grey">
-            {{ title }}
-          </span>
-        </div>
-      </div>
-      <div class="row justify-between items-center q-mt-lg">
-        <div class="col-lg-auto col">
-          <div style="line-height: 1rem">
-            <p class="text-roboto-32-700">
-              {{ text }}
-            </p>
-          </div>
-        </div>
-        <p class="text-roboto-16-400 text-muted col-lg-auto col">
-          <!-- (USD {{ $filters.convertCoin(balance) }}) -->
-          {{ description }}
-        </p>
-      </div>
+  <article class="card-resume-leverage">
+    <div class="resume-title">
+      <img v-if="iconSrc" :src="iconSrc" alt="" /><component
+        v-else
+        :is="icon"
+        color="#00a3ff"
+        width="24"
+        height="24"
+      /><span>{{ title }}</span>
     </div>
-  </div>
+    <div class="resume-value">
+      <strong>{{ text }}</strong
+      ><small v-if="description">{{ description }}</small>
+    </div>
+    <q-inner-loading :showing="loading" color="primary" />
+  </article>
 </template>
-
-<script>
-import { comment } from "postcss";
-import { defineComponent } from "vue";
-export default defineComponent({
-  name: "CardResumeLeverage",
-  props: {
-    title: { type: String },
-    description: { type: String },
-    text: { type: String },
-    icon: { type: String, default: "IconFileInvoice" },
-    btnBgColor: { type: String, default: "btn-bank" },
-    bgBadgeBank: { type: String, default: "badge-bank" },
-    loading: { type: Boolean },
-    plusValue: { type: String },
-    // iconTheme: { type: String, default: "white" },
-  },
-  setup() {
-    return {};
-  },
+<script setup>
+defineProps({
+  title: String,
+  description: String,
+  text: String,
+  iconSrc: String,
+  icon: { type: String, default: "IconFileInvoice" },
+  loading: Boolean,
+  plusValue: String,
 });
 </script>
-
 <style scoped>
-/* Seus estilos aqui */
+.card-resume-leverage {
+  position: relative;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid #efefef14;
+  border-radius: 8px;
+  background: linear-gradient(
+    190deg,
+    #0000003d 0.52%,
+    #00000014 51%,
+    #0000000a 99.48%
+  );
+  backdrop-filter: blur(16px);
+  font-family: Inter, sans-serif;
+  color: white;
+}
+.resume-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #dcdcdc;
+  font-size: 20px;
+  line-height: 1.35;
+}
+.resume-value {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 24px;
+}
+.resume-value strong {
+  font-size: 32px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.resume-value small {
+  font-size: 14px;
+  color: #989898;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .card-resume-leverage {
+    padding: 16px;
+  }
+  .resume-title {
+    font-size: 17px;
+  }
+  .resume-value strong {
+    font-size: 26px;
+  }
+}
 </style>

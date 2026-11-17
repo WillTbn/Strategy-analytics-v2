@@ -4,6 +4,7 @@ const fields = [
   "documentNumber",
   "issuer",
   "issuerRegion",
+  "issuerCountry",
   "issuedDate",
   "expiryDate",
 ];
@@ -22,7 +23,8 @@ export function currentRegistrationDocument(profile, code) {
   const matches = (profile.identificationDocuments?.documents || []).filter(
     (d) =>
       d.documentCode === code &&
-      d.countryIsoCode === profile.preferences?.countryIsoCode &&
+      (["PASSPORT", "PASSAPORTE"].includes(code) ||
+        d.countryIsoCode === profile.preferences?.countryIsoCode) &&
       d.source === "ProvidedDocument" &&
       d.status === "Active" &&
       d.documentId,
@@ -31,7 +33,12 @@ export function currentRegistrationDocument(profile, code) {
 }
 export const registrationDocumentCode = (type, variant) =>
   type === "Passaporte" ? "PASSPORT" : variant === "br" ? "RG" : null;
-export function hydrateRegistrationDocuments(draft, profile, variant) {
+export function hydrateRegistrationDocuments(
+  draft,
+  profile,
+  variant,
+  countries = [],
+) {
   const config = documentVariants[variant];
   if (!config) return;
   draft.savedDocuments ||= {};
@@ -52,6 +59,16 @@ export function hydrateRegistrationDocuments(draft, profile, variant) {
       documentNumber: doc.numberMasked || "",
       issuer: doc.issuer || "",
       issuerRegion: doc.issuerState || null,
+      ...(type === "Passaporte"
+        ? {
+            issuerCountry:
+              doc.countryId ||
+              countries.find(
+                (country) => country.isoCode === doc.countryIsoCode,
+              )?.value ||
+              null,
+          }
+        : {}),
       issuedDate: isoDate(doc.issuedOn, format),
       expiryDate: isoDate(doc.expiresOn, format),
     };

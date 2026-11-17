@@ -6,9 +6,12 @@
     <simulation-section
       v-for="loan in rows"
       :key="loan.id"
-      :title="loan.publicCode"
-      :status="financeLabel(loan.status)"
-      :type-description="financeLabel(loan.kind)"
+      :title="loanTitle(loan)"
+      :type="loan.kind"
+      :status="loanProcessLabel(loan.status)"
+      :type-description="
+        loanKindPresentation(loan.kind)?.label || financeLabel(loan.kind)
+      "
       :link="{ name: 'Empréstimos', query: { hash: loan.id } }"
     />
   </div>
@@ -17,6 +20,12 @@
 import { computed } from "vue";
 import SimulationSection from "src/system/components/leverage/SimulationSection.vue";
 import { useClientLoans } from "src/composables/system/useClientLoans";
+import {
+  loanProcessLabel,
+  loanKindPresentation,
+  loanInterestText,
+  loanSummaryTitle as loanTitle,
+} from "src/services/loanSummaryPresentation";
 import { loansByStatus } from "src/services/clientLoans";
 import { financeLabel } from "src/services/financeService";
 const { resource } = useClientLoans(),

@@ -47,9 +47,13 @@
         :disabled="busy"
       />
     </div>
-    <p v-if="variant === 'br' && form.savedTaxNumber" class="muted" role="status">
-      CPF cadastrado: {{ form.savedTaxNumber }}. Para manter, deixe o campo vazio.
-      Para alterar, informe o novo CPF completo.
+    <p
+      v-if="variant === 'br' && form.savedTaxNumber"
+      class="muted"
+      role="status"
+    >
+      CPF cadastrado: {{ form.savedTaxNumber }}. Para manter, deixe o campo
+      vazio. Para alterar, informe o novo CPF completo.
     </p>
     <div class="type">
       <p>Tipo de documento</p>
@@ -186,11 +190,15 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "back", "validated"]);
 const config = computed(() => documentVariants[props.variant]);
 const form = reactive(copyRegistrationDocuments(props.modelValue));
-const beforeRows = computed(() => (config.value.before || []).map((row) =>
-  row.map((field) => field.key === "taxNumber" && props.variant === "br" && form.savedTaxNumber
-    ? { ...field, placeholder: form.savedTaxNumber }
-    : field),
-));
+const beforeRows = computed(() =>
+  (config.value.before || []).map((row) =>
+    row.map((field) =>
+      field.key === "taxNumber" && props.variant === "br" && form.savedTaxNumber
+        ? { ...field, placeholder: form.savedTaxNumber }
+        : field,
+    ),
+  ),
+);
 const controls = ref({});
 const errors = ref({}),
   notice = ref("");
@@ -214,6 +222,13 @@ watch(() => form.values.postalCode, postal.invalidate, { flush: "sync" });
 onBeforeUnmount(postal.invalidate);
 const lookupPostalCode = () => {
   if (props.variant === "br" && !props.busy) return postal.lookup();
+  if (
+    props.variant === "jp" &&
+    !props.busy &&
+    String(form.values.postalCode || "").trim()
+  )
+    postalState.error =
+      "Preenchimento automático indisponível. Preencha província e cidade manualmente.";
 };
 const optionsFor = (key) => {
   const options = props.catalog[key] || [];

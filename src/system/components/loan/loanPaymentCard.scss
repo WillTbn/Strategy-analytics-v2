@@ -1,0 +1,50 @@
+.loan-payment-card {
+  width: 572px;
+  max-width: 100%;
+  padding: 24px 32px 16px;
+  border: 2px solid #00a3ff;
+  border-radius: 8px;
+  background: linear-gradient(194deg, #0000003d, #00000014 51%, #0000000a);
+  box-shadow: 4px 4px 48px 12px #00a3ff3d;
+  color: white;
+  font-family: Inter, sans-serif;
+}
+.loan-payment-card h2 {
+  font:
+    700 24px/1.5 Inter,
+    sans-serif;
+  margin: 0 0 8px;
+}
+.loan-payment-card > p {
+  font:
+    400 17px/1.35 Inter,
+    sans-serif;
+  color: #bdbdbd;
+  margin: 0;
+}
+.loan-payment-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+}
+.loan-payment-footer :deep(.q-btn__content) {
+  gap: 8px;
+}
+.loan-payment-error {
+  color: #ffb4ab !important;
+  font-size: 14px !important;
+  margin-top: 16px !important;
+}
+@media (max-width: 600px) {
+  .loan-payment-card {
+    padding: 24px 16px 16px;
+  }
+  .loan-payment-footer {
+    gap: 8px;
+  }
+  .loan-payment-footer :deep(.q-btn) {
+    font-size: 12px;
+  }
+}
