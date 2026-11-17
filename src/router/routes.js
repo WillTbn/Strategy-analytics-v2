@@ -213,6 +213,12 @@ const routes = [
                   import("../system/pages/loan/SimulationLoanPage.vue"),
               },
               {
+                path: "documents",
+                name: "Documentação do Imóvel em Garantia",
+                component: () =>
+                  import("../system/pages/loan/PropertyLoanDocumentsPage.vue"),
+              },
+              {
                 path: "offers_final",
                 name: "Orfetas Finais",
                 component: () =>

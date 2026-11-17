@@ -10,8 +10,10 @@
         />
       </div>
     </div>
-    <span class="text-inter-20-500">Passo {{ stepNumber }}</span>
-    <span class="text-inter-20-500 text-grey">/ {{ stepTotal }}</span>
+    <slot name="caption">
+      <span class="text-inter-20-500">Passo {{ stepNumber }}</span>
+      <span class="text-inter-20-500 text-grey">/ {{ stepTotal }}</span>
+    </slot>
   </div>
 </template>
 
