@@ -2,6 +2,7 @@
   <div class="offers-template modal-contract q-pa-lg">
     <div class="row justify-between">
       <div class="col-auto text-inter-24-700">{{ textHeader }}</div>
+      <slot name="headingExtra" />
       <div class="col-12 text-grey q-mt-lg q-mb-sm">
         {{ textDescription }}
       </div>

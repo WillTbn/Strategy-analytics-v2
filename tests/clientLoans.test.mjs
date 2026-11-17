@@ -123,6 +123,9 @@ test("collateral draft validates each step and never reaches a fake submitted st
     { parse, compileScript } = await import("@vue/compiler-sfc");
   const draftRules = await import("../src/services/loanRequestDraft.js");
   const presentation = await import("../src/services/profilePresentation.js");
+  const offerPresentation = await import(
+    "../src/services/loanOfferPresentation.js"
+  );
   const context = vm.createContext({ console, Function });
   const file = "src/system/components/loan/CollateralRequestWizard.vue";
   const { descriptor } = parse(readFileSync(file, "utf8"));
@@ -131,6 +134,7 @@ test("collateral draft validates each step and never reaches a fake submitted st
     vue: Vue,
     "src/services/loanRequestDraft": draftRules,
     "src/services/profilePresentation": presentation,
+    "src/services/loanOfferPresentation": offerPresentation,
   };
   const module = new vm.SourceTextModule(script.content, { context });
   await module.link(async (name) => {

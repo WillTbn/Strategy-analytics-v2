@@ -125,3 +125,14 @@ test("vehicle cannot pretend a valid FIPE simulation without a real catalogue", 
     [1, 2, 3, 3, 4, 4],
   );
 });
+
+test("vehicle model catalogue rejects duplicate ids and has no fabricated fallback prices", async () => {
+  const { availableVehicleModels } = await import(
+    "../src/services/loanRequestDraft.js"
+  );
+  const option = { id: "qa-model", label: "Modelo de teste", fipeValue: null };
+  assert.deepEqual(availableVehicleModels([option]), [option]);
+  assert.deepEqual(availableVehicleModels([option, option]), []);
+  assert.deepEqual(availableVehicleModels(null), []);
+  assert.deepEqual(availableVehicleModels([{ id: "qa", label: "" }]), []);
+});

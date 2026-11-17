@@ -149,3 +149,21 @@ export function securedStepError(draft, index, type) {
     return "Informe quanto falta para pagar.";
   return "";
 }
+
+// Model cards receive a neutral catalogue view-model; no local FIPE table or invented price.
+export function availableVehicleModels(value) {
+  if (
+    !Array.isArray(value) ||
+    value.some(
+      (item) =>
+        !item ||
+        typeof item.id !== "string" ||
+        !item.id.trim() ||
+        typeof item.label !== "string" ||
+        !item.label.trim(),
+    ) ||
+    new Set(value.map((item) => item.id)).size !== value.length
+  )
+    return [];
+  return value;
+}

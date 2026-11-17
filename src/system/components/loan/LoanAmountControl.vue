@@ -5,8 +5,10 @@
     :role="panelId ? 'tabpanel' : undefined"
     :aria-labelledby="labelledby"
   >
+    <p v-if="title" class="amount-caption">{{ title }}</p>
     <money-input
       v-if="editingAmount"
+      :disable="disabled"
       ref="amountInput"
       v-model="model"
       aria-label="Valor do empréstimo"
@@ -22,6 +24,7 @@
       ><button
         type="button"
         aria-label="Editar valor do empréstimo"
+        :disabled="disabled"
         @click="editAmount"
       >
         <img :src="asset('pencil.svg')" alt="" />
@@ -31,6 +34,7 @@
       <div class="amount-range">
         <q-slider
           v-model="model"
+          :disable="disabled"
           :min="min"
           :max="max"
           :step="increment"
@@ -47,7 +51,10 @@
       </div>
       <div class="slider-limits">
         <span>{{ minLabel }}</span
-        ><span>{{ maxLabel }}</span>
+        ><span class="amount-max"
+          >{{ maxLabel
+          }}<img v-if="maxInfo" src="/figma/loan-request/info-limit.svg" alt=""
+        /></span>
       </div>
     </div>
   </div>
@@ -57,6 +64,9 @@ import { nextTick, ref } from "vue";
 import MoneyInput from "src/system/components/form/MoneyInput.vue";
 import { profileMoney } from "src/services/profilePresentation";
 defineProps({
+  disabled: Boolean,
+  title: String,
+  maxInfo: Boolean,
   min: { type: Number, required: true },
   max: { type: Number, required: true },
   increment: { type: Number, default: 1000 },
@@ -76,3 +86,21 @@ async function editAmount() {
 }
 </script>
 <style scoped src="./loanRequest.scss"></style>
+
+<style scoped>
+.amount-caption {
+  font-size: 17px;
+  color: #989898;
+  margin: 0;
+  text-align: center;
+  line-height: 1.35;
+}
+</style>
+
+<style scoped>
+.amount-max {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+</style>

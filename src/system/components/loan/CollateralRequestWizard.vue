@@ -5,13 +5,23 @@
         type="button"
         class="request-back"
         aria-label="Voltar"
+        :disabled="pending"
         @click="back"
       >
         <img :src="asset('back.svg')" alt="" />
       </button>
       <h1>Solicitar Empréstimo</h1>
     </div>
-    <div class="collateral-content">
+    <final-steps-loan-layout
+      v-if="confirmed"
+      confirmed
+      title="Simulação de Empréstimo realizada!"
+      sub-title="A simulação será analisada e retornaremos com mais detalhes"
+      name-router="Alavancagem"
+      text-router="Ir para Alavancagem"
+      class="collateral-completed"
+    />
+    <div v-else class="collateral-content">
       <div class="collateral-warning">
         <img :src="asset('warning.svg')" alt="" /><span
           >Quanto melhor seu Perfil de investimento, melhor as condições de
@@ -50,6 +60,7 @@
         <loan-amount-control
           v-else-if="step === 1"
           v-model="draft.amount"
+          :disabled="pending"
           :min="50000"
           :max="500000"
           min-label="R$ 50 mil"
@@ -67,12 +78,25 @@
               type="button"
               :aria-pressed="draft.installments === count"
               :class="{ selected: draft.installments === count }"
+              :disabled="pending"
               @click="draft.installments = count"
             >
               {{ count }}x
             </button>
           </div>
-          <p class="request-unavailable" role="status">
+          <div v-if="quote" class="collateral-value">
+            <strong
+              >{{ draft.installments }}x de
+              {{
+                profileMoney(quote.installmentAmount, quote.currency)
+              }}</strong
+            >
+            <p>
+              Com juros à partir de
+              {{ offerPercent(quote.monthlyInterestRate) }} ao mês
+            </p>
+          </div>
+          <p v-else class="request-unavailable" role="status">
             Valores de parcelas e juros indisponíveis.
           </p>
         </template>
@@ -87,10 +111,17 @@
             </dl>
           </div>
           <label class="choice"
-            ><input type="checkbox" disabled />Eu confirmo e aceito as condições
-            da simulação acima.</label
+            ><input
+              v-model="draft.accepted"
+              type="checkbox"
+              :disabled="!quote || pending"
+            />Eu confirmo e aceito as condições da simulação acima.</label
           >
-          <p class="request-unavailable" role="status">
+          <p
+            v-if="!quote || !submitSimulation"
+            class="request-unavailable"
+            role="status"
+          >
             {{ loanServiceUnavailable }}
           </p>
         </template>
@@ -100,10 +131,19 @@
             v-if="step > 0"
             type="button"
             class="collateral-previous"
+            :disabled="pending"
             @click="back"
           >
             <img :src="asset('previous.svg')" alt="" />Voltar</button
-          ><q-btn type="submit" color="primary" no-caps :disable="step === 3"
+          ><q-btn
+            type="submit"
+            color="primary"
+            no-caps
+            :loading="pending"
+            :disable="
+              pending ||
+              (step === 3 && (!quote || !draft.accepted || !submitSimulation))
+            "
             >Prosseguir<img :src="asset('next.svg')" alt=""
           /></q-btn>
         </div>
@@ -112,7 +152,13 @@
   </section>
 </template>
 <script setup>
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, watch, onScopeDispose } from "vue";
+import FinalStepsLoanLayout from "src/system/layouts/loans/FinalStepsLoanLayout.vue";
+import {
+  matchingCollateralQuote,
+  offerPercent,
+  collateralQuoteSignature,
+} from "src/services/loanOfferPresentation";
 import LoanAmountControl from "./LoanAmountControl.vue";
 import {
   loanServiceUnavailable,
@@ -120,23 +166,94 @@ import {
   validLoanAmount,
 } from "src/services/loanRequestDraft";
 import { profileMoney } from "src/services/profilePresentation";
+const props = defineProps({
+  simulation: { type: Object, default: null },
+  submitSimulation: { type: Function, default: null },
+});
 const emit = defineEmits(["back"]);
 const asset = (name) => `/figma/loan-request/${name}`;
 const step = ref(0),
   error = ref("");
-const draft = reactive({ reason: "", amount: null, installments: null });
+const draft = reactive({
+  reason: "",
+  amount: null,
+  installments: null,
+  accepted: false,
+});
+const pending = ref(false),
+  confirmed = ref(false);
+let alive = true;
+const quote = computed(() => matchingCollateralQuote(props.simulation, draft));
+watch(
+  () => props.simulation,
+  () => {
+    draft.accepted = false;
+  },
+  { deep: true },
+);
+watch(
+  () => [draft.amount, draft.installments],
+  () => {
+    draft.accepted = false;
+  },
+);
+onScopeDispose(() => {
+  alive = false;
+});
 const reasons = ["goods", "investment", "debts", "refinance", "other"].map(
   (value) => securedReasons.find((r) => r.value === value),
 );
 const installments = [60, 90, 120, 150, 180, 210, 240];
 const summaryRows = computed(() => [
   ["Valor do Empréstimo", profileMoney(draft.amount, "BRL")],
-  ["Total a Pagar", "Indisponível"],
-  ["Taxa de Juros", "Indisponível"],
-  ["Parcelamento", `${draft.installments}x · Valor indisponível`],
-  ["Pagamento por Distrib. de Lucros", "Indisponível"],
+  [
+    "Total a Pagar",
+    quote.value
+      ? profileMoney(quote.value.totalAmount, quote.value.currency)
+      : "Indisponível",
+  ],
+  [
+    "Taxa de Juros",
+    quote.value
+      ? offerPercent(quote.value.monthlyInterestRate)
+      : "Indisponível",
+  ],
+  [
+    "Parcelamento",
+    `${draft.installments}x · ${quote.value ? profileMoney(quote.value.installmentAmount, quote.value.currency) : "Valor indisponível"}`,
+  ],
+  [
+    "Pagamento por Distrib. de Lucros",
+    quote.value
+      ? `${offerPercent(quote.value.profitDistributionPercent)} (${profileMoney(quote.value.profitDistributionAmount, quote.value.currency)})/mês`
+      : "Indisponível",
+  ],
 ]);
-function next() {
+async function next() {
+  if (pending.value) return;
+  if (step.value === 3) {
+    if (!quote.value || !draft.accepted || !props.submitSimulation) return;
+    const current = quote.value,
+      signature = collateralQuoteSignature(current);
+    pending.value = true;
+    error.value = "";
+    try {
+      const result = await props.submitSimulation({ ...draft }, current);
+      if (
+        alive &&
+        quote.value &&
+        collateralQuoteSignature(quote.value) === signature &&
+        result?.submitted === true
+      )
+        confirmed.value = true;
+    } catch {
+      if (alive)
+        error.value = "Não foi possível enviar a simulação. Tente novamente.";
+    } finally {
+      if (alive) pending.value = false;
+    }
+    return;
+  }
   error.value =
     step.value === 0 && !reasons.some((r) => r.value === draft.reason)
       ? "Selecione o motivo do empréstimo."
@@ -148,6 +265,7 @@ function next() {
   if (!error.value && step.value < 3) step.value++;
 }
 function back() {
+  if (pending.value) return;
   error.value = "";
   if (step.value > 0) step.value--;
   else emit("back");
@@ -155,6 +273,9 @@ function back() {
 </script>
 <style scoped src="./loanRequest.scss"></style>
 <style scoped>
+.collateral-completed {
+  margin-top: 64px;
+}
 .collateral-title {
   display: flex;
   align-items: center;

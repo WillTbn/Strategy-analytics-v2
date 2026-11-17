@@ -396,14 +396,39 @@
             /></label-form>
             <label-form
               text-label="Qual o modelo do veículo? Clique para Selecionar"
-              ><p class="request-unavailable" role="status">
-                Consulta de modelos indisponível.
-              </p></label-form
             >
+              <div v-if="models.length" class="vehicle-models">
+                <button
+                  v-for="model in models"
+                  :key="model.id"
+                  type="button"
+                  :aria-pressed="draft.model === model.id"
+                  :class="{ selected: draft.model === model.id }"
+                  @click="draft.model = model.id"
+                >
+                  {{ model.label }}
+                </button>
+              </div>
+              <p v-else class="request-unavailable" role="status">
+                Consulta de modelos indisponível.
+              </p>
+            </label-form>
             <div class="fipe-unavailable">
-              <img :src="asset('info.svg')" alt="" /><span
-                >Valor FIPE indisponível.</span
-              >
+              <img :src="asset('info.svg')" alt="" />
+              <div>
+                <strong>{{
+                  selectedModel
+                    ? profileMoney(
+                        selectedModel.fipeValue,
+                        selectedModel.currency,
+                      )
+                    : "Valor FIPE indisponível."
+                }}</strong>
+                <p v-if="selectedModel" class="fipe-reference">
+                  Preço Médio com Base em Consulta pela FIPE ·
+                  {{ selectedModel.fipeReference || "Referência indisponível" }}
+                </p>
+              </div>
             </div>
             <div class="payment-row">
               <fieldset>
@@ -455,8 +480,9 @@ import {
   getClientFinancialProfile,
   getPreferenceCatalog,
 } from "src/services/clientProfileService";
-import { profileFields } from "src/services/profilePresentation";
+import { profileFields, profileMoney } from "src/services/profilePresentation";
 import {
+  availableVehicleModels,
   clearInapplicableLoanFields,
   loanServiceUnavailable,
   ownerOptions,
@@ -469,6 +495,7 @@ import {
 } from "src/services/loanRequestDraft";
 const props = defineProps({
   consortium: Boolean,
+  modelOptions: { type: Array, default: () => [] },
   type: { type: String, required: true },
   draft: { type: Object, required: true },
   step: { type: Number, default: 0 },
@@ -480,6 +507,13 @@ const asset = (name) => `/figma/loan-request/${name}`;
 const draft = computed(() => props.draft);
 const router = useRouter();
 const error = ref("");
+const models = computed(() => availableVehicleModels(props.modelOptions));
+const selectedModel = computed(() =>
+  models.value.find((model) => model.id === draft.value.model),
+);
+watch(models, () => {
+  if (!selectedModel.value) draft.value.model = "";
+});
 const amount = computed({
   get: () =>
     props.consortium
@@ -650,3 +684,35 @@ function back() {
 }
 </script>
 <style scoped src="./loanRequest.scss"></style>
+
+<style scoped>
+.vehicle-models {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.vehicle-models button {
+  background: linear-gradient(182deg, #ffffff29, #ffffff03);
+  border: 1px solid #efefef14;
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  padding: 8px;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.vehicle-models .selected {
+  border-color: #00a3ff;
+}
+.fipe-reference {
+  font-size: 14px;
+  color: #989898;
+  line-height: 1.35;
+  margin: 4px 0 0;
+}
+.vehicle-models button:focus-visible {
+  outline: 2px solid #00a3ff;
+  outline-offset: 3px;
+}
+</style>
