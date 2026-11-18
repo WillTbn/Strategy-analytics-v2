@@ -7,13 +7,19 @@
     </p>
     <div class="payment-loan">
       <div class="payment-loan-title">
-        <img src="/figma/my-leverage/active.svg" alt="" /><strong>{{
+        <img :src="assets.file" alt="" /><strong>{{
           title || "Empréstimo"
         }}</strong
         ><span v-if="typeDescription" class="payment-loan-type"
-          ><img v-if="kind" :src="'/figma/my-leverage/' + kind.icon" alt="" />{{
-            typeDescription
-          }}</span
+          ><img
+            v-if="kind"
+            :src="
+              type === 'secured_automovel'
+                ? assets.car
+                : '/figma/my-leverage/' + kind.icon
+            "
+            alt=""
+          />{{ typeDescription }}</span
         >
       </div>
       <p>
@@ -56,7 +62,7 @@
     </div>
     <div class="loan-payment-footer">
       <q-btn flat no-caps color="white" @click="$emit('back')"
-        ><img src="/figma/my-leverage/payment-back.svg" alt="" />Voltar</q-btn
+        ><img :src="assets.back" alt="" />Voltar</q-btn
       ><q-btn
         no-caps
         color="primary"
@@ -68,6 +74,8 @@
 </template>
 <script setup>
 import { computed } from "vue";
+import { validLoanPaymentQuote } from "src/services/loanPaymentPresentation";
+import { leveragePaymentAssets as assets } from "src/services/leveragePaymentAssets";
 import { loanKindPresentation } from "src/services/loanSummaryPresentation";
 import { profileDate, profileMoney } from "src/services/profilePresentation";
 const props = defineProps({
@@ -82,36 +90,34 @@ defineEmits(["back", "next"]);
 const kind = computed(() => loanKindPresentation(props.type));
 const money = (value) =>
   value == null ? "—" : profileMoney(value, props.quote?.currency);
-const validQuote = computed(
-  () =>
-    props.quote &&
-    /^[A-Z]{3}$/.test(props.quote.currency || "") &&
-    props.quote.paymentDate &&
-    profileDate(props.quote.paymentDate) !== "Não informado" &&
-    ["grossAmount", "discountAmount", "totalAmount"].every(
-      (key) =>
-        props.quote[key] !== null &&
-        props.quote[key] !== undefined &&
-        props.quote[key] !== "" &&
-        Number.isFinite(Number(props.quote[key])) &&
-        Number(props.quote[key]) >= 0,
-    ),
-);
+const validQuote = computed(() => validLoanPaymentQuote(props.quote));
 </script>
 <style scoped lang="scss">
 @import "./loanPaymentCard.scss";
 .payment-loan {
   padding: 12px;
   margin-top: 32px;
+  border-radius: 8px;
+  backdrop-filter: blur(20px);
+  background: linear-gradient(184.16deg, #0000003d, #00000014 51%, #0000000a);
+  box-shadow: 4px 4px 12px #0000003d;
 }
 .payment-loan-title {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
   font-size: 17px;
+  line-height: 1.35;
+}
+.payment-loan-title strong {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .payment-loan-type {
+  min-height: 24px;
+  line-height: 1.35;
   display: inline-flex;
   align-items: center;
   gap: 4px;

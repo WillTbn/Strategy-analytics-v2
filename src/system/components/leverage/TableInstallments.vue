@@ -50,6 +50,8 @@
       flat
       dense
       hide-pagination
+      hide-selected-banner
+      :no-data-label="emptyLabel"
       class="bg-transparent"
       selection="multiple"
       v-model:selected="selected"
@@ -138,6 +140,8 @@ import { ref, computed, watch, onScopeDispose } from "vue";
 const props = defineProps({
   parcelas: { type: Array, default: () => [] },
   paidOff: Boolean,
+  currency: { type: String, default: "BRL" },
+  emptyLabel: { type: String, default: "Nenhuma parcela disponível." },
   paySelected: Function,
   payOne: Function,
   uploadReceipt: Function,
@@ -195,7 +199,7 @@ const baixarExtrato = () =>
 onScopeDispose(() => {
   active = false;
 });
-const columns = ref([
+const columns = computed(() => [
   {
     name: "numero",
     required: true,
@@ -217,13 +221,26 @@ const columns = ref([
   {
     name: "valor",
     align: "right",
-    label: "Valor da Parcela (R$)",
+    label: /^[A-Z]{3}$/.test(props.currency || "")
+      ? "Valor da Parcela (" +
+        new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: props.currency,
+        })
+          .formatToParts(0)
+          .find((p) => p.type === "currency").value +
+        ")"
+      : "Valor da Parcela",
     field: "valor",
     sortable: true,
     format: (val) =>
-      val == null || !Number.isFinite(Number(val))
+      !(typeof val === "number" || (typeof val === "string" && val.trim())) ||
+      !Number.isFinite(Number(val))
         ? "—"
-        : Number(val).toLocaleString("pt-BR", { minimumFractionDigits: 2 }),
+        : Number(val).toLocaleString("pt-BR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
   },
   {
     name: "status",

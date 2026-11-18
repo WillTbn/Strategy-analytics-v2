@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 import * as Vue from "vue";
 import { parse, compileScript } from "@vue/compiler-sfc";
 import * as profile from "../src/services/profilePresentation.js";
+import * as assets from "../src/services/leveragePaymentAssets.js";
+import * as payments from "../src/services/loanPaymentPresentation.js";
 import * as summary from "../src/services/loanSummaryPresentation.js";
 async function mount(name, overrides = {}) {
   const file = "src/system/components/loan/" + name + ".vue",
@@ -16,6 +18,8 @@ async function mount(name, overrides = {}) {
   const deps = {
     vue: Vue,
     "src/services/profilePresentation": profile,
+    "src/services/loanPaymentPresentation": payments,
+    "src/services/leveragePaymentAssets": assets,
     "src/services/loanSummaryPresentation": summary,
     quasar: { copyToClipboard: async () => {} },
   };
@@ -122,4 +126,105 @@ test("missing Pix data or adapter cannot submit, and late receipt response is di
   finish({ submitted: true });
   await pending;
   assert.equal(f.events.length, 0);
+});
+
+test("payment quote rejects booleans, blank amounts, impossible dates and inconsistent totals", () => {
+  const quote = {
+    currency: "BRL",
+    paymentDate: "2026-11-18",
+    grossAmount: 200,
+    discountAmount: 10,
+    totalAmount: 190,
+  };
+  assert.equal(payments.validLoanPaymentQuote(quote), true);
+  for (const patch of [
+    { grossAmount: false },
+    { totalAmount: " " },
+    { paymentDate: "2026-02-30" },
+    { discountAmount: 201 },
+    { totalAmount: 200 },
+  ]) {
+    assert.equal(payments.validLoanPaymentQuote({ ...quote, ...patch }), false);
+  }
+});
+test("selection rejects paid, unknown, duplicate and boolean installment numbers", () => {
+  const rows = [
+    { numero: 11, status: "Em aberto" },
+    { numero: 12, status: "Pago: 18/11/2026" },
+  ];
+  assert.equal(payments.installmentSelection(rows, [rows[0]])[0], rows[0]);
+  for (const selected of [[rows[1]], [{ numero: 99 }], [rows[0], rows[0]]])
+    assert.throws(() => payments.installmentSelection(rows, selected));
+  assert.throws(() =>
+    payments.installmentSelection([{ numero: true }], [{ numero: true }]),
+  );
+});
+test("payment session binds loan, installments, currency and immutable quote without calculating an offer", () => {
+  const result = {
+    quote: {
+      currency: "BRL",
+      paymentDate: "2026-11-18",
+      grossAmount: 100,
+      discountAmount: 0,
+      totalAmount: 100,
+    },
+    pixCode: "FICTICIO",
+    pixKey: "QA",
+  };
+  const session = payments.loanPaymentSession(
+    { id: "loan-1", currencyIsoCode: "BRL" },
+    [{ numero: 11 }],
+    result,
+  );
+  result.quote.totalAmount = 7;
+  assert.equal(session.quote.totalAmount, 100);
+  assert.equal(Object.isFrozen(session.quote), true);
+  assert.equal(payments.validLoanPaymentSession(session), true);
+  assert.throws(() =>
+    payments.loanPaymentSession(
+      { id: "loan-2", currencyIsoCode: "USD" },
+      [{ numero: 11 }],
+      result,
+    ),
+  );
+  assert.equal(
+    payments.validLoanPaymentSession({ ...session, installments: [] }),
+    false,
+  );
+  assert.equal(
+    payments.validLoanPaymentSession({ ...session, installments: [11, "11"] }),
+    false,
+  );
+});
+test("payment flow only advances with confirmed submission and resets when session changes", async () => {
+  const session = payments.loanPaymentSession(
+    { id: "loan-1", currencyIsoCode: "BRL" },
+    [{ numero: 11 }],
+    {
+      quote: {
+        currency: "BRL",
+        paymentDate: "2026-11-18",
+        grossAmount: 100,
+        discountAmount: 0,
+        totalAmount: 100,
+      },
+      pixCode: "FICTICIO",
+      pixKey: "QA",
+    },
+  );
+  const f = await mount("LoanInstallmentPayment", {
+    session,
+    submitReceipt: async () => ({ submitted: true }),
+  });
+  f.h.continuePayment();
+  assert.equal(f.h.step.value, "payment");
+  f.h.submitted({ submitted: false });
+  assert.equal(f.h.step.value, "payment");
+  f.h.submitted({ submitted: true });
+  assert.equal(f.h.step.value, "submitted");
+  f.props.session = null;
+  assert.equal(f.h.step.value, "review");
+  f.h.continuePayment();
+  assert.equal(f.h.step.value, "review");
+  f.stop();
 });

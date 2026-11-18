@@ -1,11 +1,12 @@
 .loan-payment-card {
   width: 572px;
   max-width: 100%;
-  padding: 24px 32px 16px;
-  border: 2px solid #00a3ff;
+  padding: 22px 30px 14px;
+  border: 2px solid #2cb7ff;
   border-radius: 8px;
-  background: linear-gradient(194deg, #0000003d, #00000014 51%, #0000000a);
-  box-shadow: 4px 4px 48px 12px #00a3ff3d;
+  background: linear-gradient(201.68deg, #0000003d, #00000014 51%, #0000000a);
+  backdrop-filter: blur(16px);
+  box-shadow: 0px 0px 48px 12px #00a3ff3d;
   color: white;
   font-family: Inter, sans-serif;
 }
@@ -28,6 +29,9 @@
   justify-content: space-between;
   gap: 16px;
   margin-top: 24px;
+}
+.loan-payment-footer :deep(.q-btn) {
+  min-height: 40px;
 }
 .loan-payment-footer :deep(.q-btn__content) {
   gap: 8px;

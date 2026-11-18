@@ -33,7 +33,7 @@
         for="loan-payment-receipt"
         @dragover.prevent
         @drop.prevent="choose($event.dataTransfer.files)"
-        ><img src="/figma/my-leverage/payment-upload.svg" alt="" /><span
+        ><img :src="assets.upload" alt="" /><span
           >Clique aqui ou arraste arquivos para fazer o upload</span
         ></label
       ><input
@@ -50,7 +50,7 @@
     <p v-if="error" role="alert" class="loan-payment-error">{{ error }}</p>
     <div class="loan-payment-footer">
       <q-btn flat no-caps color="white" :disable="busy" @click="$emit('back')"
-        ><img src="/figma/my-leverage/payment-back.svg" alt="" />Voltar</q-btn
+        ><img :src="assets.pixBack" alt="" />Voltar</q-btn
       ><q-btn
         no-caps
         color="primary"
@@ -62,6 +62,7 @@
 </template>
 <script setup>
 import { ref, watch, onScopeDispose } from "vue";
+import { leveragePaymentAssets as assets } from "src/services/leveragePaymentAssets";
 import QrcodeVue from "qrcode.vue";
 import { copyToClipboard } from "quasar";
 const props = defineProps({
@@ -137,6 +138,9 @@ onScopeDispose(() => {
 </script>
 <style scoped lang="scss">
 @import "./loanPaymentCard.scss";
+.card-qrcode-payment {
+  background: linear-gradient(207.24deg, #0000003d, #00000014 51%, #0000000a);
+}
 .payment-qr {
   width: 180px;
   height: 180px;
@@ -168,7 +172,7 @@ onScopeDispose(() => {
 .payment-receipt > label:first-child {
   display: block;
   font:
-    500 17px/1.35 Inter,
+    500 14px/1.35 Inter,
     sans-serif;
   margin-bottom: 4px;
 }

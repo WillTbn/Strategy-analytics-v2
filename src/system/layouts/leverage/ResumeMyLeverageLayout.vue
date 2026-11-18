@@ -57,12 +57,12 @@ const componentsMaps = {
 
 const leverage = ref("actives");
 const alavaragensTypes = [
+  { title: "Ativas", value: "actives", component: "ActiveYourLeverages" },
   {
     title: "Em Simulação",
     value: "simulation",
     component: "SimulationYourLeverages",
   },
-  { title: "Ativas", value: "actives", component: "ActiveYourLeverages" },
   { title: "Quitadas", value: "quitada", component: "PaidOffYourLeverages" },
 ];
 </script>

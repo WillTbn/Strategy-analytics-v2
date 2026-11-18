@@ -46,6 +46,7 @@ async function mount(overrides = {}) {
   const props = Vue.reactive({
     parcelas: [paid, open, future],
     paidOff: false,
+    currency: "BRL",
     paySelected: null,
     payOne: null,
     uploadReceipt: null,
@@ -111,5 +112,19 @@ test("new installment projection clears stale selection", async () => {
   f.props.parcelas = [{ ...future }];
   await Vue.nextTick();
   assert.equal(f.h.selected.value.length, 0);
+  f.stop();
+});
+
+test("installment header follows supplied currency and missing amounts never display as zero", async () => {
+  const f = await mount();
+  const money = () => f.h.columns.value.find((c) => c.name === "valor");
+  assert.match(money().label, /R\$/);
+  f.props.currency = "USD";
+  assert.match(money().label, /US\$/);
+  for (const value of [null, undefined, false, " "])
+    assert.equal(money().format(value), "—");
+  assert.equal(money().format(0), "0,00");
+  f.props.currency = null;
+  assert.equal(money().label, "Valor da Parcela");
   f.stop();
 });

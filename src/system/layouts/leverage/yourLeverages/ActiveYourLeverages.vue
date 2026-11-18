@@ -1,34 +1,8 @@
-<template>
-  <div class="active-your-leverages max-height-28em">
-    <p v-if="!rows.length" class="q-pa-md text-grey">
-      Nenhum empréstimo neste status.
-    </p>
-    <active-loans-section
-      v-for="loan in rows"
-      :key="loan.id"
-      :title="loanTitle(loan)"
-      :type="loan.kind"
-      :is-active="selected === loan.id"
-      :interest="loanInterestText(loan.interestRatePercent)"
-      :type-description="loanKindPresentation(loan.kind)?.label || financeLabel(loan.kind)"
-      :hash="loan.id"
-      :status="financeLabel(loan.status)"
-      @select="selected = loan.id"
-      @closed="selected = null"
-      ><p class="text-grey">
-        Parcelas e pagamentos indisponíveis para consulta.
-      </p></active-loans-section
-    >
-  </div>
-</template>
-<script setup>
-import { computed, ref } from "vue";
-import ActiveLoansSection from "src/system/components/leverage/ActiveLoansSection.vue";
-import { useClientLoans } from "src/composables/system/useClientLoans";
-import { loanKindPresentation, loanInterestText, loanSummaryTitle as loanTitle } from "src/services/loanSummaryPresentation";
-import { loansByStatus } from "src/services/clientLoans";
-import { financeLabel } from "src/services/financeService";
-const { resource } = useClientLoans(),
-  selected = ref(null);
-const rows = computed(() => loansByStatus(resource.state.data, "actives"));
+<template><active-leverage-list :loans="rows" :payment-adapter="paymentAdapter"/></template><script setup>
+import {computed} from "vue";
+import ActiveLeverageList from "src/system/components/leverage/ActiveLeverageList.vue";
+import {useClientLoans} from "src/composables/system/useClientLoans";
+import {loansByStatus} from "src/services/clientLoans";
+const {resource,paymentAdapter}=useClientLoans();
+const rows=computed(()=>loansByStatus(resource.state.data,"actives"));
 </script>
