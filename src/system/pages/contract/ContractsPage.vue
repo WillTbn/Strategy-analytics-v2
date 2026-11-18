@@ -1,22 +1,13 @@
 <template>
-  <q-page class="q-pa-md"
-    ><title-page title="Meus contratos" />
-    <section class="tool q-pa-lg">
-      <contract-opportunity @open="requestOpen = true" />
-      <finance-table path="client/contracts" :columns="contractColumns"
-        ><template #body-cell-actions="p"
-          ><q-td :props="p"
-            ><q-btn
-              flat
-              no-caps
-              label="Ver contrato"
-              :to="{
-                name: 'contract',
-                params: { id: p.row.id },
-              }" /></q-td></template
-      ></finance-table>
-    </section>
-    <q-dialog v-model="requestOpen" :persistent="requestBusy"
+  <q-page class="contract-directory-page"
+    ><title-page subtitle="Contratos" title="Contratos" /><contract-directory
+      :list-state="contracts.state"
+      :overview-state="home.state"
+      @retry-list="loadContracts"
+      @retry-overview="loadHome"
+      @request="requestOpen = true" /><q-dialog
+      v-model="requestOpen"
+      :persistent="requestBusy"
       ><opportunity-investment
         offer
         @closed="requestOpen = false"
@@ -24,25 +15,46 @@
   ></q-page>
 </template>
 <script setup>
-import { ref } from "vue";
-import ContractOpportunity from "../../components/contract/ContractOpportunity.vue";
-import OpportunityInvestment from "../../layouts/contracts/OpportunityInvestment.vue";
-const requestOpen = ref(false),
-  requestBusy = ref(false);
+import { ref, onScopeDispose } from "vue";
 import TitlePage from "../../components/TitlePage.vue";
-import FinanceTable from "../../components/finance/FinanceTable.vue";
-import { columns, money, dateLabel } from "src/services/financeService";
-const contractColumns = columns([
-  ["publicCode", "Contrato"],
-  ["name", "Nome"],
-  ["status", "Status", (r) => r.businessStatus?.name || "—"],
-  [
-    "participation",
-    "Minha participação",
-    (r) => money(r.myParticipation?.allocatedAmount, r.currencyCode),
-  ],
-  ["startDate", "Início", (r) => dateLabel(r.startDate)],
-  ["endDate", "Término", (r) => dateLabel(r.endDate)],
-  ["actions", "Detalhes"],
-]);
+import ContractDirectory from "../../components/contract/ContractDirectory.vue";
+import OpportunityInvestment from "../../layouts/contracts/OpportunityInvestment.vue";
+import { useFinanceResource } from "src/composables/useFinanceResource";
+import { financeGet } from "src/services/financeService";
+import {
+  captureClientSession,
+  isClientSessionCurrent,
+} from "src/services/clientApi";
+import { readContractDirectory } from "src/services/contractDirectory";
+const contracts = useFinanceResource(),
+  home = useFinanceResource(),
+  requestOpen = ref(false),
+  requestBusy = ref(false);
+let active = true,
+  revision = 0;
+function loadContracts() {
+  const current = ++revision,
+    session = captureClientSession();
+  return contracts.load(() =>
+    readContractDirectory(
+      financeGet,
+      () => active && current === revision && isClientSessionCurrent(session),
+    ),
+  );
+}
+function loadHome() {
+  const session = captureClientSession();
+  return home.load(async () => {
+    const result = await financeGet("client/home");
+    return active && isClientSessionCurrent(session) ? result.data : null;
+  });
+}
+loadContracts();
+loadHome();
+onScopeDispose(() => {
+  active = false;
+  revision++;
+  contracts.reset();
+  home.reset();
+});
 </script>

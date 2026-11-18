@@ -108,7 +108,13 @@ const ready = computed(() =>
 );
 const backIcon = computed(() =>
   props.offer
-    ? "/system/icons/contracts/offer/imgArrowLeft.svg"
+    ? [
+        "/system/icons/contracts/offer/imgArrowLeft.svg",
+        "/system/icons/contracts/directory/1-37919-imgArrowLeft.svg",
+        "/system/icons/contracts/directory/1-39765-imgArrowLeft.svg",
+        "/system/icons/contracts/directory/1-41589-imgArrowLeft.svg",
+        "/system/icons/contracts/request/1-45461-imgArrowLeft.svg",
+      ][stepHighPerfomance.value - 1]
     : `/system/icons/contracts/request/1-${stepHighPerfomance.value === 5 ? "45461" : "41693"}-imgArrowLeft.svg`,
 );
 async function increment() {
@@ -147,9 +153,9 @@ const decrement = () => {
   stepHighPerfomance.value--;
 };
 const goContract = () => {
-  stepHighPerfomance.value = 1;
-  router.replace({ name: "contracts" });
+  if (busy.value) return;
   emit("closed");
+  router.replace({ name: "Contratos" });
 };
 // Seu código aqui
 </script>
@@ -240,6 +246,8 @@ const goContract = () => {
 }
 .opportunity-investment--offer {
   width: 720px;
+  padding-bottom: 16px;
+  background: linear-gradient(203deg, #0000003d, #00000014 51%, #0000000a);
 }
 .opportunity-investment--offer-finish {
   width: 572px;
@@ -259,10 +267,10 @@ const goContract = () => {
   margin-bottom: 0;
 }
 .opportunity-investment--offer :deep(.badge-four) {
-  max-height: 466px;
+  max-height: 498px;
 }
 .opportunity-investment--offer :deep(.list-type-control) {
-  max-height: 466px;
+  max-height: 498px;
   padding-inline: 32px;
 }
 .opportunity-investment--offer :deep(.q-card__section > p:first-child) {
@@ -339,5 +347,54 @@ const goContract = () => {
 }
 .opportunity-investment--offer :deep(.q-item__label .q-ml-sm) {
   margin-left: 0;
+}
+.opportunity-investment--offer .opportunity-investment__footer .q-btn {
+  min-height: 40px;
+  font:
+    500 14px/1 Roboto,
+    sans-serif;
+  letter-spacing: 0.5px;
+}
+.opportunity-investment--offer :deep(.q-linear-progress__track) {
+  background: #292929;
+  opacity: 1;
+}
+.opportunity-investment--offer > form {
+  margin: 0;
+}
+.opportunity-investment--offer :deep(.q-item__label--caption) {
+  font:
+    400 14px/1.35 Inter,
+    sans-serif;
+  margin-top: 8px;
+}
+.opportunity-investment--offer :deep(.q-item__label .icon-control) {
+  width: 16px;
+  margin-right: 8px;
+}
+.opportunity-investment--offer {
+  padding: 46px 30px 14px;
+}
+.opportunity-investment--offer-finish {
+  padding: 22px 30px 14px;
+}
+.opportunity-investment--offer-finish .opportunity-investment__step {
+  margin: 0 0 40px;
+}
+.opportunity-investment--offer-finish > form > .text-center .q-btn {
+  min-height: 40px;
+  font:
+    500 14px/1 Roboto,
+    sans-serif;
+  letter-spacing: 0.5px;
+}
+@media (max-width: 600px) {
+  .opportunity-investment--offer,
+  .opportunity-investment--offer-finish {
+    padding: 24px 16px 16px;
+  }
+  .opportunity-investment--offer-finish .opportunity-investment__step {
+    margin-bottom: 24px;
+  }
 }
 </style>
