@@ -5,7 +5,11 @@
     :class="['themed-background', system.theme]"
   >
     <div class="theme-3-layer"></div>
-    <navbar-layout :key="route.name" v-if="!loading" />
+    <navbar-layout
+      :key="route.name"
+      :presentation="navbarPresentation"
+      v-if="!loading"
+    />
     <q-page-container style="min-height: 95vh">
       <!-- @click.prevent="drawerThemeAction(false)" -->
       <router-view v-slot="{ Component }">
@@ -39,6 +43,7 @@ import useAuth from "../../composables/system/useAuth";
 import useStates from "../../composables/useStates";
 
 import NavbarLayout from "../layouts/NavbarLayout.vue";
+import { communicationDirectoryAssets as communicationAssets } from "src/services/communicationDirectoryAssets";
 // import CodeEmail from "./auth/CodeEmail.vue";
 import FooterSystem from "../components/FooterSystem.vue";
 // import NavbarLayout from "../layouts/NavbarLayout.vue";
@@ -50,6 +55,21 @@ export default defineComponent({
   setup() {
     const route = useRoute();
     const router = useRouter();
+    const navbarPresentation = computed(() =>
+      route.name === "Comunicação"
+        ? {
+            bell: communicationAssets.bell,
+            brand: communicationAssets.brand,
+            brandMask: communicationAssets.brandMask,
+            icons: {
+              IconHome: communicationAssets.home,
+              IconFileDollar: communicationAssets.contract,
+              IconSpeakerphone: communicationAssets.communication,
+              IconReceipt2: communicationAssets.leverage,
+            },
+          }
+        : null,
+    );
     const layout = useLayoutStore();
     const storeLayout = useStoreLayout();
     const { system } = storeToRefs(storeLayout);
@@ -93,6 +113,7 @@ export default defineComponent({
       //console.log("data->", data.value);
     });
     return {
+      navbarPresentation,
       piniaDataLoaded,
       route,
       loading,

@@ -1,0 +1,14 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="speakerphone" clip-path="url(#clip0_0_1000)">
+<g id="Vector">
+</g>
+<path id="Vector_2" d="M18 8C18.7956 8 19.5587 8.31607 20.1213 8.87868C20.6839 9.44129 21 10.2044 21 11C21 11.7956 20.6839 12.5587 20.1213 13.1213C19.5587 13.6839 18.7956 14 18 14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
+<path id="Vector_3" d="M10 8V19C10 19.2652 9.89464 19.5196 9.70711 19.7071C9.51957 19.8946 9.26522 20 9 20H8C7.73478 20 7.48043 19.8946 7.29289 19.7071C7.10536 19.5196 7 19.2652 7 19V14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
+<path id="Vector_4" d="M12 8L16.524 4.23C16.6555 4.12051 16.8154 4.05075 16.9851 4.02891C17.1548 4.00706 17.3271 4.03403 17.482 4.10665C17.6369 4.17927 17.7679 4.29454 17.8597 4.43895C17.9514 4.58336 18.0001 4.75092 18 4.922V17.078C18.0001 17.2491 17.9514 17.4166 17.8597 17.5611C17.7679 17.7055 17.6369 17.8207 17.482 17.8933C17.3271 17.966 17.1548 17.9929 16.9851 17.9711C16.8154 17.9492 16.6555 17.8795 16.524 17.77L12 14H4C3.73478 14 3.48043 13.8946 3.29289 13.7071C3.10536 13.5196 3 13.2652 3 13V9C3 8.73478 3.10536 8.48043 3.29289 8.29289C3.48043 8.10536 3.73478 8 4 8H12Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
+</g>
+<defs>
+<clipPath id="clip0_0_1000">
+<rect width="24" height="24" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,5 +1,5 @@
 <template>
-  <q-page class="q-pa-md"
+  <q-page class="contract-detail-page"
     ><title-page title="Meu contrato" to-back />
     <section class="tool q-pa-lg q-mb-lg">
       <resource-state :state="detail.state" @retry="loadDetail"
@@ -33,6 +33,7 @@
         ></resource-state
       >
     </section>
+    <operation-layout class="q-mb-lg" />
     <section class="tool q-pa-lg q-mb-lg">
       <h2 class="text-h6">Documentos liberados</h2>
       <q-banner v-if="error" role="alert">{{ error }}</q-banner
@@ -80,6 +81,7 @@
 import { onScopeDispose, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import TitlePage from "../../components/TitlePage.vue";
+import OperationLayout from "../../layouts/contracts/OperationLayout.vue";
 import ResourceState from "../../components/finance/ResourceState.vue";
 import { useFinanceResource } from "src/composables/useFinanceResource";
 import {
@@ -211,6 +213,15 @@ watch(
 );
 </script>
 <style scoped>
+.contract-detail-page {
+  padding: 24px 48px 48px;
+}
+@media (max-width: 700px) {
+  .contract-detail-page {
+    padding: 16px;
+  }
+}
+
 .contract-facts {
   display: grid;
   grid-template-columns: minmax(120px, 1fr) 2fr;

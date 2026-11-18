@@ -28,7 +28,7 @@ export default function useMode() {
     {
       // toName: { name: "calendar" },
       toName: { name: "Alavancagem" },
-      name: "Alavancagem",
+      name: "Empréstimos",
       inative: false,
       icon: 'IconReceipt2'
     }
