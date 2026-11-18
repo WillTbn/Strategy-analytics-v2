@@ -25,8 +25,9 @@
           dense
           class="title-page-back"
           aria-label="Voltar à página anterior"
-          @click="$router.back()"
-          ><img src="/system/icons/profile/back.svg" alt=""
+          :disable="backDisabled"
+          @click="backTo ? $router.push(backTo) : $router.back()"
+          ><img :src="backIcon" alt=""
         /></q-btn>
         {{ title }}
       </div>
@@ -53,6 +54,9 @@ export default defineComponent({
       default: () => [],
     },
     toBack: { type: Boolean, default: false },
+    backTo: { type: [String, Object], default: null },
+    backIcon: { type: String, default: "/system/icons/profile/back.svg" },
+    backDisabled: { type: Boolean, default: false },
   },
 });
 </script>

@@ -56,9 +56,8 @@ export const WALLET_TYPES = [
 export const YIELD_DESCRIPTION =
   "Saldo parado na Strategy. Os rendimentos ainda não estão disponíveis.";
 export const finiteMoney = (value) =>
-  value !== null &&
-  value !== undefined &&
-  value !== "" &&
+  (typeof value === "number" ||
+    (typeof value === "string" && !!value.trim())) &&
   Number.isFinite(Number(value))
     ? Number(value)
     : null;
@@ -127,6 +126,7 @@ export function validateWalletOperation({
   bank,
   password,
   model,
+  requirePassword = true,
 }) {
   if (!WALLET_CURRENCIES.some((item) => item.code === currency))
     return "Selecione uma moeda.";
@@ -150,7 +150,12 @@ export function validateWalletOperation({
     (!bank || bank.status !== "Active" || bankCurrency(bank) !== currency)
   )
     return "Selecione uma conta ativa na mesma moeda.";
-  if (mode === "withdrawal" && !password) return "Informe sua Senha de Saque.";
+  if (
+    mode === "withdrawal" &&
+    requirePassword &&
+    !(typeof password === "string" && password.trim())
+  )
+    return "Informe sua Senha de Saque.";
   return "";
 }
 

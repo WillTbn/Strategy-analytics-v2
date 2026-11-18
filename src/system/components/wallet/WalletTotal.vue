@@ -90,7 +90,7 @@
       <q-btn
         class="btn-pattern-transparent"
         no-caps
-        @click="operation = 'withdrawal'"
+        @click="router.push({ name: 'Saque' })"
         ><IconArrowUp
           width="24"
           height="24"

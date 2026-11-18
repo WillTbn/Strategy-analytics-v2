@@ -1,6 +1,15 @@
 <template>
+  <wallet-withdrawal
+    v-if="mode === 'withdrawal'"
+    :model="model"
+    :submit-operation="submitOperation"
+    @close="emit('close')"
+    @completed="emit('completed')"
+    @busy="emit('busy', $event)"
+    @state="emit('state', $event)"
+  />
   <client-transfer-operation
-    v-if="mode === 'transfer' && otherClient"
+    v-else-if="mode === 'transfer' && otherClient"
     @own="otherClient = false"
     @close="emit('close')"
     @completed="emit('completed')"
@@ -60,17 +69,7 @@
           /></label>
         </div>
       </template>
-      <div :class="{ 'operation-columns': mode === 'withdrawal' }">
-        <label v-if="mode === 'withdrawal'"
-          >Moeda<q-select
-            v-model="currency"
-            :options="currencyOptions"
-            emit-value
-            map-options
-            outlined
-            dense
-            aria-label="Moeda do saque"
-        /></label>
+      <div>
         <label
           >{{
             mode === "deposit"
@@ -101,76 +100,6 @@
         Disponível na {{ fromLabel }} ({{ currency }}):
         {{ walletMoney(available, currency) }}
       </p>
-      <template v-if="mode === 'withdrawal'">
-        <label
-          >Conta bancária de destino
-          <q-select
-            v-model="bankId"
-            :options="bankOptions"
-            emit-value
-            map-options
-            outlined
-            dense
-            :loading="banks.state.loading"
-            aria-label="Conta bancária de destino"
-          >
-            <template #option="scope"
-              ><q-item v-bind="scope.itemProps"
-                ><q-item-section>{{ scope.opt.label }}</q-item-section
-                ><q-item-section side
-                  ><q-badge>{{
-                    scope.opt.currency || "Moeda não informada"
-                  }}</q-badge></q-item-section
-                ></q-item
-              ></template
-            >
-            <template #after-options
-              ><q-item
-                clickable
-                :to="{ name: 'profile', query: { tab: 'bank', action: 'add' } }"
-                @click="emit('close')"
-                ><q-item-section
-                  >+ Adicionar conta bancária</q-item-section
-                ></q-item
-              ></template
-            >
-            <template #no-option
-              ><q-item
-                ><q-item-section
-                  >Nenhuma conta disponível</q-item-section
-                ></q-item
-              ></template
-            >
-          </q-select>
-        </label>
-        <p v-if="banks.state.error" role="alert">
-          {{ banks.state.error }}
-          <q-btn
-            flat
-            dense
-            no-caps
-            label="Tentar novamente"
-            @click="loadBanks"
-          />
-        </p>
-        <label
-          >Senha de Saque<q-input
-            v-model="password"
-            type="password"
-            autocomplete="off"
-            outlined
-            dense
-            aria-label="Senha de Saque"
-        /></label>
-        <q-btn
-          flat
-          no-caps
-          dense
-          class="forgot-password"
-          label="Esqueci minha Senha de Saque"
-          @click="recoveryOpen = true"
-        />
-      </template>
       <section v-if="mode === 'deposit'" class="deposit-instructions">
         <template v-if="currency === 'BRL'">
           <div class="pix-code">
@@ -249,19 +178,8 @@
         <dl>
           <dt>Carteira de origem</dt>
           <dd>{{ fromLabel }} ({{ currency }})</dd>
-          <dt>
-            {{
-              mode === "transfer" ? "Carteira de destino" : "Conta de destino"
-            }}
-          </dt>
-          <dd>
-            {{
-              mode === "transfer"
-                ? toLabel
-                : bankOptions.find((item) => item.value === bankId)?.label ||
-                  "Selecione uma conta"
-            }}
-          </dd>
+          <dt>Carteira de destino</dt>
+          <dd>{{ toLabel }}</dd>
           <dt>Moeda</dt>
           <dd>{{ currency }}</dd>
           <dt>Valor</dt>
@@ -280,9 +198,7 @@
           >
           <dt>Prazo</dt>
           <dd>
-            {{
-              mode === "withdrawal" ? "Até 1 dia útil" : transferDeadline(from)
-            }}
+            {{ transferDeadline(from) }}
           </dd>
           <dt>Data da solicitação</dt>
           <dd>{{ requestDate }}</dd>
@@ -321,27 +237,18 @@
         />
       </footer>
     </q-form>
-    <q-dialog v-model="recoveryOpen"
-      ><q-card class="tool q-pa-lg wallet-password-recovery"
-        ><forgotpassword-layout @status-login="recoveryOpen = false" /></q-card
-    ></q-dialog>
   </q-card>
 </template>
 <script setup>
-import { computed, onScopeDispose, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import QrcodeVue from "qrcode.vue";
 import { copyToClipboard, useQuasar } from "quasar";
-import ForgotpasswordLayout from "src/system/layouts/auth/ForgotpasswordLayout.vue";
 import MoneyInput from "src/system/components/form/MoneyInput.vue";
+import WalletWithdrawal from "./WalletWithdrawal.vue";
 import ClientTransferOperation from "./ClientTransferOperation.vue";
-import { useFinanceResource } from "src/composables/useFinanceResource";
-import { listAllClientBanks } from "src/services/clientProfileService";
-import { financeGet } from "src/services/financeService";
 import {
   WALLET_CURRENCIES,
-  readWalletBankAccounts,
   YIELD_DESCRIPTION,
-  bankCurrency,
   walletBalance,
   walletMoney,
   balanceAfter,
@@ -357,7 +264,7 @@ const props = defineProps({
   model: { type: Object, default: null },
   submitOperation: { type: Function, default: null },
 });
-const emit = defineEmits(["close", "completed"]);
+const emit = defineEmits(["close", "completed", "busy", "state"]);
 const otherClient = ref(false);
 const titles = {
   deposit: "Depósito",
@@ -386,11 +293,8 @@ const currency = ref(
 );
 const from = ref("deposit"),
   amount = ref(0),
-  bankId = ref(null),
-  password = ref(""),
   error = ref(""),
-  busy = ref(false),
-  recoveryOpen = ref(false);
+  busy = ref(false);
 const requestDate = new Intl.DateTimeFormat("pt-BR", {
   timeZone: "America/Sao_Paulo",
 }).format(new Date());
@@ -398,14 +302,6 @@ const walletOptions = [
   { label: "Carteira de Depósito", value: "deposit" },
   { label: "Carteira Strategy", value: "strategy" },
 ];
-const currencyBadge = (code) => {
-  const item = WALLET_CURRENCIES.find((item) => item.code === code);
-  return item ? item.symbol + " · " + item.code : "Moeda não informada";
-};
-const currencyOptions = WALLET_CURRENCIES.map((item) => ({
-  label: item.code + " · " + item.name,
-  value: item.code,
-}));
 const to = computed(() => (from.value === "deposit" ? "strategy" : "deposit"));
 const fromLabel = computed(
   () =>
@@ -427,61 +323,8 @@ const available = computed(() =>
 const instructions = computed(
   () => props.model?.instructions?.[currency.value],
 );
-const banks = useFinanceResource();
-const bankCatalog = useFinanceResource();
-const loadBankCatalog = () => bankCatalog.load(listAllClientBanks);
-let bankRevision = 0;
-const loadBanks = () => {
-  const revision = ++bankRevision;
-  return banks.load(() =>
-    readWalletBankAccounts(
-      (page) =>
-        financeGet("client/profile/bank-accounts", { page, pageSize: 100 }),
-      () => revision === bankRevision,
-    ),
-  );
-};
-const bankOptions = computed(() =>
-  (banks.state.data || []).map((bank) => ({
-    value: bank.id,
-    label:
-      (bank.bankName ||
-        bankCatalog.state.data?.find((item) => item.id === bank.bankId)?.name ||
-        "Banco não informado") +
-      (bank.branch ? " · Ag. " + bank.branch : "") +
-      " · " +
-      (bank.accountNumberMasked || "Conta protegida"),
-    currency: bankCurrency(bank),
-    disable: bank.status !== "Active" || !bankCurrency(bank),
-  })),
-);
-const bank = computed(() =>
-  banks.state.data?.find((item) => item.id === bankId.value),
-);
-watch(bankId, () => {
-  if (bankCurrency(bank.value)) currency.value = bankCurrency(bank.value);
-});
 watch(currency, () => {
-  if (bank.value && bankCurrency(bank.value) !== currency.value)
-    bankId.value = null;
   error.value = "";
-});
-watch(
-  () => props.mode,
-  (mode) => {
-    password.value = "";
-    if (mode === "withdrawal") {
-      loadBanks();
-      loadBankCatalog();
-    }
-  },
-  { immediate: true },
-);
-onScopeDispose(() => {
-  password.value = "";
-  bankRevision++;
-  banks.reset();
-  bankCatalog.reset();
 });
 const bankFields = [
   { key: "beneficiary", label: "Beneficiário" },
@@ -500,8 +343,6 @@ const validation = computed(() =>
     amount: amount.value,
     currency: currency.value,
     from: from.value,
-    bank: bank.value,
-    password: password.value,
     model: props.model,
   }),
 );
@@ -529,9 +370,6 @@ async function confirm() {
       amount: amount.value,
       from: props.mode === "withdrawal" ? "deposit" : from.value,
       to: to.value,
-      bankId: bankId.value,
-      withdrawalPassword:
-        props.mode === "withdrawal" ? password.value : undefined,
     });
     emit("completed");
   } catch (e) {
@@ -540,7 +378,6 @@ async function confirm() {
         ? e.message
         : "Não foi possível concluir a operação. Confira os dados e tente novamente.";
   } finally {
-    password.value = "";
     busy.value = false;
   }
 }
