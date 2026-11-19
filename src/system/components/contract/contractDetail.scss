@@ -414,7 +414,7 @@
 }
 .detail-participant-popover {
   width: 392px;
-  max-width: calc(100vw - 32px) !important;
+  max-width: calc(100vw - 32px);
   padding: 24px;
   background: linear-gradient(160deg, #1f283ddd, #0c344de8);
   border: 1px solid #efefef29;
