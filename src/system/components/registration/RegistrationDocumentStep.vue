@@ -180,6 +180,7 @@ import {
 import { registrationFileState } from "src/services/registrationDocumentResume";
 import { lookupBrazilianPostalCode } from "src/services/postalCodeService";
 import { createRegistrationPostalLookup } from "src/services/registrationPostalCode";
+import { createJapaneseRegistrationPostalLookup } from "src/services/japanesePostalCode";
 const props = defineProps({
   variant: { type: String, required: true },
   modelValue: { type: Object, required: true },
@@ -218,17 +219,28 @@ const postal = createRegistrationPostalLookup({
     ];
   },
 });
-watch(() => form.values.postalCode, postal.invalidate, { flush: "sync" });
-onBeforeUnmount(postal.invalidate);
+const japanesePostal = createJapaneseRegistrationPostalLookup({
+  values: form.values,
+  state: postalState,
+});
+const invalidatePostal = () => {
+  postal.invalidate();
+  japanesePostal.invalidate();
+};
+watch(() => form.values.postalCode, invalidatePostal, { flush: "sync" });
+watch(
+  () => props.variant,
+  () => {
+    invalidatePostal();
+    postalRegions.value = [];
+  },
+  { flush: "sync" },
+);
+onBeforeUnmount(invalidatePostal);
 const lookupPostalCode = () => {
-  if (props.variant === "br" && !props.busy) return postal.lookup();
-  if (
-    props.variant === "jp" &&
-    !props.busy &&
-    String(form.values.postalCode || "").trim()
-  )
-    postalState.error =
-      "Preenchimento automático indisponível. Preencha província e cidade manualmente.";
+  if (props.busy) return;
+  if (props.variant === "br") return postal.lookup();
+  if (props.variant === "jp") return japanesePostal.lookup();
 };
 const optionsFor = (key) => {
   const options = props.catalog[key] || [];
