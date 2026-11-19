@@ -1,39 +1,17 @@
 <template>
   <q-page class="contract-detail-page"
-    ><title-page title="Meu contrato" to-back />
-    <section class="tool q-pa-lg q-mb-lg">
-      <resource-state :state="detail.state" @retry="loadDetail"
-        ><template v-if="detail.state.data"
-          ><h2 class="text-h6">
-            {{ detail.state.data.name || detail.state.data.publicCode }}
-          </h2>
-          <p>
-            {{ detail.state.data.publicCode }} ·
-            {{ detail.state.data.businessStatus?.name }}
-          </p>
-          <dl class="contract-facts">
-            <dt>Início</dt>
-            <dd>{{ dateLabel(detail.state.data.startDate) }}</dd>
-            <dt>Término previsto</dt>
-            <dd>{{ dateLabel(detail.state.data.expectedEndDate) }}</dd>
-            <dt>Minha participação</dt>
-            <dd>
-              {{
-                money(
-                  detail.state.data.myParticipation?.allocatedAmount,
-                  detail.state.data.currency?.isoCode,
-                )
-              }}
-            </dd>
-            <dt>Posição atual</dt>
-            <dd>{{ metric(detail.state.data.currentPosition) }}</dd>
-            <dt>Resultado</dt>
-            <dd>{{ metric(detail.state.data.result) }}</dd>
-          </dl></template
-        ></resource-state
-      >
-    </section>
-    <operation-layout class="q-mb-lg" />
+    ><title-page
+      :title="detail.state.data?.name || 'Detalhes do Contrato'"
+      subtitle="Contratos / Detalhes do Contrato"
+      to-back
+    />
+    <resource-state class="q-mb-xl" :state="detail.state" @retry="loadDetail">
+      <contract-detail-dashboard
+        v-if="detail.state.data"
+        :key="detail.state.data.id"
+        :contract="detail.state.data"
+      />
+    </resource-state>
     <section class="tool q-pa-lg q-mb-lg">
       <h2 class="text-h6">Documentos liberados</h2>
       <q-banner v-if="error" role="alert">{{ error }}</q-banner
@@ -81,13 +59,12 @@
 import { onScopeDispose, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import TitlePage from "../../components/TitlePage.vue";
-import OperationLayout from "../../layouts/contracts/OperationLayout.vue";
+import ContractDetailDashboard from "../../components/contract/ContractDetailDashboard.vue";
 import ResourceState from "../../components/finance/ResourceState.vue";
 import { useFinanceResource } from "src/composables/useFinanceResource";
 import {
   financeGet,
   financeLabel,
-  money,
   columns,
   dateLabel,
 } from "src/services/financeService";
@@ -101,10 +78,6 @@ const route = useRoute(),
   history = useFinanceResource(),
   opening = ref(null),
   error = ref("");
-const metric = (value) =>
-  value?.calculationStatus === "Available"
-    ? money(value.value, detail.state.data?.currency?.isoCode)
-    : "Indisponível";
 let active = true,
   viewRevision = 0,
   openingRevision = 0,

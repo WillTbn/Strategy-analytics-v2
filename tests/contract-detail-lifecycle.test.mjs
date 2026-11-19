@@ -70,7 +70,7 @@ async function harness({ popupAllowed = true } = {}) {
       columns: (definitions) => definitions,
     },
     "../../components/TitlePage.vue": { default: {} },
-    "../../layouts/contracts/OperationLayout.vue": { default: {} },
+    "../../components/contract/ContractDetailDashboard.vue": { default: {} },
     "../../components/finance/ResourceState.vue": { default: {} },
   };
   const cache = new Map();
