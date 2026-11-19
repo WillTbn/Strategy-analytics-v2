@@ -866,3 +866,49 @@
     height: 650px;
   }
 }
+
+/* Frame 1:48689 wraps the App panel; 1:49606 has a 452px content slot. */
+.detail-app-group {
+  padding: 23px;
+  border: 1px solid #efefef29;
+  border-radius: 8px;
+  background: linear-gradient(194deg, #0000003d, #00000014 51%, #0000000a);
+}
+.detail-application-surface {
+  min-height: 452px;
+}
+.detail-application-surface > div:not(.detail-phone-wrapper) {
+  height: 450px;
+}
+.detail-phone-wrapper {
+  width: 425px;
+  padding: 15px;
+}
+.detail-phone-stage {
+  padding: 23px;
+}
+.detail-provider-note {
+  position: absolute;
+  left: 19px;
+  bottom: 23px;
+}
+.detail-assets-content th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #26303f;
+}
+@media (max-width: 600px) {
+  .detail-app-group {
+    padding: 16px;
+  }
+  .detail-phone-stage {
+    padding: 12px;
+  }
+  .detail-phone-wrapper {
+    padding: 8px;
+  }
+  .detail-provider-note {
+    position: static;
+  }
+}

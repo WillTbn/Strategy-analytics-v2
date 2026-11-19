@@ -2,7 +2,10 @@
   <div class="contract-detail-view">
     <div
       class="detail-group"
-      :class="{ 'detail-grouped': presentation?.variant === 'grouped' }"
+      :class="{
+        'detail-grouped': presentation?.variant === 'grouped',
+        'detail-app-group': presentation?.variant === 'app',
+      }"
     >
       <template v-if="presentation?.variant !== 'app'">
         <section class="detail-panel detail-overview">
