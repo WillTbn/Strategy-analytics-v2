@@ -97,6 +97,9 @@ onScopeDispose(() => {
 <style scoped lang="sass">
 .WalletPage
   min-width: 0
+@media (max-width: 1023px)
+  .WalletPage > .row
+    max-width: 100%
 @media (max-width: 599px)
   .WalletPage
     margin-top: 16px

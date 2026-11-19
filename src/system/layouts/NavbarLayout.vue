@@ -290,6 +290,13 @@ export default defineComponent({
   color: white;
   box-shadow: inset 0 -3px #00a3ff;
 }
+@media (min-width: 600px) and (max-width: 1023px) {
+  .portal-navbar {
+    height: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
 @media (max-width: 599px) {
   .portal-header--designed .portal-navbar > .q-btn:first-child {
     width: 100%;

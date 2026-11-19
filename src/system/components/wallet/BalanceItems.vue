@@ -103,6 +103,13 @@ const comparisonLabel = computed(() =>
 defineEmits(["retry"]);
 </script>
 <style scoped>
+@media (max-width: 1023px) {
+  .balance-items,
+  .balance-items .row > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
 .balance-title {
   font:
     400 20px/1.35 Inter,
