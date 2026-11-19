@@ -130,6 +130,7 @@ async function increment() {
   try {
     const result = await props.submit(
       JSON.parse(JSON.stringify(storeInvestment.highPerfomance)),
+      { isActive: () => active },
     );
     if (!active) return;
     if (!result?.id) throw Error(requestSendUnavailable);

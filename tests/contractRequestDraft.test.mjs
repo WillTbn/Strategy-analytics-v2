@@ -1,4 +1,46 @@
-import test from 'node:test';import assert from 'node:assert/strict';import{emptyContractRequestDraft,requestStepReady,contractRequestComplete,submitContractRequest}from'../src/services/contractRequestDraft.js';
-test('140: each new request starts blank and validation is progressive across the five approved steps',()=>{const d=emptyContractRequestDraft();for(let i=1;i<=5;i++)assert.equal(requestStepReady(i,d),false);d.objective='Renda Passiva';d.time='Médio Prazo';d.modality='Aplicação Híbrida';d.amount='1.000,00';assert.equal(requestStepReady(3,d),false);d.amount_mensal='100,00';d.types=[1,2];d.regions=['EUA'];assert.equal(contractRequestComplete(d),true);d.amount='-1';assert.equal(contractRequestComplete(d),false);assert.deepEqual(emptyContractRequestDraft().regions,[])});
-test('140: zero, malformed amounts and missing final selections cannot submit',()=>{for(const amount of ['0','-1','1,123','1.2.3','NaN',''])assert.equal(requestStepReady(3,{modality:'Aplicação Única',amount}),false);assert.equal(requestStepReady(3,{modality:'Com Aportes Recorrentes',amount:'100,00'}),true);assert.equal(requestStepReady(4,{types:[0]}),false);assert.equal(requestStepReady(5,{regions:[]}),false)});
-test('140: missing submit endpoint rejects instead of showing the successful request screen',async()=>{await assert.rejects(submitContractRequest(emptyContractRequestDraft()),/Suas respostas foram mantidas/)});
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  emptyContractRequestDraft,
+  requestStepReady,
+  contractRequestComplete,
+  submitContractRequest,
+} from "../src/services/contractRequestDraft.js";
+test("140: each new request starts blank and validation is progressive across the five approved steps", () => {
+  const d = emptyContractRequestDraft();
+  for (let i = 1; i <= 5; i++) assert.equal(requestStepReady(i, d), false);
+  d.objective = "Renda Passiva";
+  d.time = "Médio Prazo";
+  d.modality = "Aplicação Híbrida";
+  d.amount = "1.000,00";
+  assert.equal(requestStepReady(3, d), false);
+  d.amount_mensal = "100,00";
+  d.types = [1, 2];
+  d.regions = ["EUA"];
+  assert.equal(contractRequestComplete(d), true);
+  d.amount = "-1";
+  assert.equal(contractRequestComplete(d), false);
+  assert.deepEqual(emptyContractRequestDraft().regions, []);
+});
+test("140: zero, malformed amounts and missing final selections cannot submit", () => {
+  for (const amount of ["0", "-1", "1,123", "1.2.3", "NaN", ""])
+    assert.equal(
+      requestStepReady(3, { modality: "Aplicação Única", amount }),
+      false,
+    );
+  assert.equal(
+    requestStepReady(3, {
+      modality: "Com Aportes Recorrentes",
+      amount: "100,00",
+    }),
+    true,
+  );
+  assert.equal(requestStepReady(4, { types: [0] }), false);
+  assert.equal(requestStepReady(5, { regions: [] }), false);
+});
+test("140: incomplete draft rejects before any request and never shows success", async () => {
+  await assert.rejects(
+    submitContractRequest(emptyContractRequestDraft()),
+    /Suas respostas foram mantidas/,
+  );
+});
