@@ -51,34 +51,51 @@
         >
           <article>
             <header>
-              <q-avatar size="64px"
+              <q-avatar size="48px"
                 ><img
                   v-if="person.avatar"
                   :src="person.avatar"
                   :alt="person.name" /><q-icon v-else name="person"
               /></q-avatar>
-              <div>
-                <p v-if="person.strategyId">
-                  ID Strategy: {{ person.strategyId }}
-                </p>
-                <p v-if="Number.isInteger(person.level) && person.level >= 0">
-                  Nível {{ person.level }}
-                </p>
+              <div class="detail-participant-identity">
+                <div class="detail-participant-id">
+                  <p v-if="person.strategyId">
+                    ID Strategy: {{ person.strategyId }}
+                  </p>
+                  <span
+                    v-if="Number.isInteger(person.level) && person.level >= 0"
+                    class="detail-participant-level"
+                    >Nível {{ person.level }}</span
+                  >
+                </div>
                 <h3>{{ person.name }}</h3>
               </div>
+              <div class="detail-participant-since">
+                <p>Cliente desde</p>
+                <strong>{{ date(person.customerSince) }}</strong>
+              </div>
             </header>
+            <q-separator dark class="detail-participant-divider" />
             <dl>
-              <dt>Cliente desde</dt>
-              <dd>{{ date(person.customerSince) }}</dd>
-              <dt>Valor Aportado Total</dt>
-              <dd>{{ money(person.total, currency) }}</dd>
-              <dt>Último Aporte</dt>
-              <dd>
-                {{ money(person.lastAmount, currency)
-                }}<small>{{ date(person.lastDate) }}</small>
-              </dd>
-              <dt>Entrada no Contrato</dt>
-              <dd>{{ date(person.entryDate) }}</dd>
+              <div>
+                <dt>Valor Aportado Total</dt>
+                <dd>{{ money(person.total, currency) }}</dd>
+              </div>
+              <div>
+                <dt>Último Aporte</dt>
+                <dd>
+                  {{ money(person.lastAmount, currency)
+                  }}<span class="detail-participant-last-date">{{
+                    date(person.lastDate)
+                  }}</span>
+                </dd>
+              </div>
+              <div>
+                <dt>Entrada no Contrato</dt>
+                <dd class="detail-participant-entry">
+                  {{ date(person.entryDate) }}
+                </dd>
+              </div>
             </dl>
           </article>
         </q-menu>
@@ -132,6 +149,7 @@ import {
   detailMoney as money,
   detailDate as date,
   detailNumber as number,
+  escapeDetailText as escapeText,
   detailPercent as percent,
 } from "src/services/contractDetailPresentation";
 const props = defineProps({
@@ -166,6 +184,27 @@ const chartOptions = {
   legend: { show: false },
   grid: { borderColor: "#ffffff1f" },
   xaxis: { type: "datetime" },
-  tooltip: { theme: "dark", y: { formatter: (v) => money(v, props.currency) } },
+  tooltip: {
+    custom: ({ seriesIndex, dataPointIndex }) => {
+      const point = props.data?.series?.[seriesIndex]?.data?.[dataPointIndex];
+      if (!point) return "";
+      const person = participants.value?.find(
+        (p) => p.id === point.participantId,
+      );
+      return (
+        '<div class="detail-contribution-tooltip">' +
+        (person?.avatar
+          ? '<img src="' +
+            escapeText(person.avatar) +
+            '" alt="" referrerpolicy="no-referrer" />'
+          : "") +
+        "<div><span>Aporte:</span><p><strong>" +
+        escapeText(money(point.y, props.currency)) +
+        "</strong><span>" +
+        escapeText(date(new Date(point.x).toISOString())) +
+        "</span></p></div></div>"
+      );
+    },
+  },
 };
 </script>
