@@ -335,7 +335,7 @@ const bankOptions = computed(() =>
       protectedAccount(b.accountNumberMasked),
     disable:
       b.status !== "Active" ||
-      !WALLET_CURRENCIES.some((c) => c.code === bankCurrency(b)),
+      (!!bankCurrency(b) && bankCurrency(b) !== currency.value),
   })),
 );
 const selectedOption = computed(() =>
@@ -355,7 +355,7 @@ const canContinue = computed(
   () =>
     !busy.value &&
     (step.value === "password"
-      ? !!props.submitOperation && !!password.value.trim()
+      ? !!props.submitOperation && /^\d{6}$/.test(password.value)
       : step.value === "review"
         ? !!snapshot.value
         : !props.bankState.loading &&
@@ -374,7 +374,7 @@ watch(
 );
 function changeCurrency() {
   amount.value = 0;
-  if (bank.value && bankCurrency(bank.value) !== currency.value)
+  if (bankCurrency(bank.value) && bankCurrency(bank.value) !== currency.value)
     bankId.value = null;
 }
 function selectBank() {
