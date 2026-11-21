@@ -43,7 +43,7 @@
         <div class="document-levels" aria-label="Níveis documentais">
           <div
             v-for="(description, index) in [
-              'Cadastro concluído',
+              'Cadastro, e-mail e celular',
               '5 documentos enviados',
               '3 patrimônios registrados',
             ]"
@@ -71,6 +71,7 @@
           </div>
         </div>
       </q-card>
+      <phone-verification v-if="accountLevelProgress?.phoneVerified === false" @verified="load" />
       <p v-if="!documentGroups.length" class="text-grey">
         Nenhum documento ou requisito disponível.
       </p>
@@ -360,6 +361,7 @@ import {
   documentUpdatedAt,
 } from "src/services/profileDocumentation";
 import LabelForm from "src/system/components/form/LabelForm.vue";
+import PhoneVerification from "src/system/components/setting/PhoneVerification.vue";
 import {
   captureClientSession,
   isClientSessionCurrent,

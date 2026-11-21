@@ -89,16 +89,18 @@ test("documentation uses the official account level and counts, independent of l
 test("level zero shows missing confirmations without falsely granting level one", () => {
   const value = documentationProgress({
     level: 0,
+    profileCompleted: false,
     emailConfirmed: true,
     phoneVerified: false,
   });
   assert.equal(value.level, 0);
-  assert.equal(value.value, 0.5);
-  assert.equal(value.counter, "1 / 2");
+  assert.equal(value.value, 1 / 3);
+  assert.equal(value.counter, "1 / 3");
   assert.match(value.text, /seu celular/);
   assert.equal(
     documentationProgress({
       level: 0,
+      profileCompleted: false,
       emailConfirmed: false,
       phoneVerified: false,
     }).value,
@@ -153,4 +155,33 @@ test("a resubmitted single-file row no longer offers the older rejected upload",
     .flatMap((group) => group.rows)
     .find((entry) => entry.documentTypeId === "HOLERITE");
   assert.equal(months.documents.length, 2);
+});
+
+test("level one requires the complete profile and both confirmations from PR244", () => {
+  assert.equal(
+    documentationProgress({
+      level: 0,
+      profileCompleted: false,
+      emailConfirmed: true,
+      phoneVerified: true,
+    }).value,
+    2 / 3,
+  );
+  assert.equal(
+    documentationProgress({
+      level: 0,
+      profileCompleted: true,
+      emailConfirmed: true,
+      phoneVerified: true,
+    }).value,
+    1,
+  );
+  assert.equal(
+    documentationProgress({
+      level: 0,
+      emailConfirmed: true,
+      phoneVerified: true,
+    }).value,
+    null,
+  );
 });

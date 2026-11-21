@@ -213,24 +213,28 @@ export function documentationProgress(progress) {
     return { level, value: 1, counter: "", text: "Você está no nível máximo!" };
   if (level === 0) {
     if (
+      typeof progress.profileCompleted !== "boolean" ||
       typeof progress.emailConfirmed !== "boolean" ||
       typeof progress.phoneVerified !== "boolean"
     )
       return unavailable;
     const confirmed =
-      Number(progress.emailConfirmed) + Number(progress.phoneVerified);
+      Number(progress.profileCompleted) +
+      Number(progress.emailConfirmed) +
+      Number(progress.phoneVerified);
     const missing = [
-      !progress.emailConfirmed && "seu e-mail",
-      !progress.phoneVerified && "seu celular",
+      !progress.profileCompleted && "complete seu cadastro",
+      !progress.emailConfirmed && "confirme seu e-mail",
+      !progress.phoneVerified && "confirme seu celular",
     ]
       .filter(Boolean)
       .join(" e ");
     return {
       level,
-      value: confirmed / 2,
-      counter: `${confirmed} / 2`,
+      value: confirmed / 3,
+      counter: `${confirmed} / 3`,
       text: missing
-        ? `Confirme ${missing} para alcançar o Nível 1.`
+        ? `Para alcançar o Nível 1, ${missing}.`
         : "Confirmações concluídas. Aguardando atualização do nível.",
     };
   }

@@ -72,8 +72,9 @@ test("review validates account, currency and balance before asking for password"
   assert.ok(
     flow.withdrawalFormError(form, model, { ...bank, status: "Inactive" }),
   );
-  assert.ok(
+  assert.equal(
     flow.withdrawalFormError(form, model, { ...bank, currencyIsoCode: null }),
+    "",
   );
   assert.ok(
     flow.withdrawalFormError({ ...form, bankId: "other" }, model, bank),

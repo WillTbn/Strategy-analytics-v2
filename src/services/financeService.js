@@ -65,6 +65,7 @@ const labels = {
   AssetRecord: "Patrimônio declarado",
   Contract: "Contrato",
   Validated: "Validada",
+  Initiated: "Iniciada",
   PendingValidation: "Aguardando validação",
   Canceled: "Cancelada",
   Create: "Criação",

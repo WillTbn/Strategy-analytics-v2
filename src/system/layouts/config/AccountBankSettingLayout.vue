@@ -43,7 +43,11 @@
                 name="img:/system/icons/profile/bank.svg"
             /></q-item-section>
             <q-item-section
-              ><q-item-label>{{ bankName(account.bankId) }}</q-item-label
+              ><q-item-label
+                >{{ bankName(account.bankId) }}
+                <q-badge v-if="account.currencyIsoCode" outline>{{
+                  currencyBadge(account.currencyIsoCode)
+                }}</q-badge></q-item-label
               ><q-item-label caption
                 >Ag. {{ account.branch || "—" }} · Conta
                 {{ account.accountNumberMasked || "mascarada" }}</q-item-label
@@ -112,6 +116,30 @@
             :rules="requiredRules"
             aria-label="Conta Corrente"
         /></label-form>
+        <label-form text-label="Moeda"
+          ><q-select
+            v-model="form.currencyId"
+            :options="currencyOptions"
+            emit-value
+            map-options
+            clearable
+            outlined
+            dense
+            :loading="currencyLoading"
+            :disable="saving || currencyLoading || !!currencyError"
+            aria-label="Moeda da conta"
+            placeholder="Sem moeda definida"
+        /></label-form>
+        <div v-if="currencyError" role="alert" class="col-12">
+          {{ currencyError
+          }}<q-btn
+            flat
+            dense
+            no-caps
+            label="Tentar novamente"
+            @click="loadCurrencies"
+          />
+        </div>
         <label-form text-label="Chave PIX"
           ><q-input
             :disable="saving"
@@ -191,6 +219,7 @@
 </template>
 
 <script setup>
+import { financeGet } from "src/services/financeService";
 import { computed, reactive, ref, onScopeDispose } from "vue";
 import LabelForm from "src/system/components/form/LabelForm.vue";
 import {
@@ -222,7 +251,35 @@ const accounts = ref([]),
   editingId = ref(null),
   archiveTarget = ref(null),
   formRef = ref(null);
+let currencyActive = true;
+onScopeDispose(() => {
+  currencyActive = false;
+});
+const currencyOptions = ref([]);
+const currencyError = ref("");
+const currencyLoading = ref(false);
+async function loadCurrencies() {
+  currencyLoading.value = true;
+  currencyError.value = "";
+  try {
+    const result = await financeGet("preferences/catalog");
+    if (!currencyActive) return;
+    currencyOptions.value = (result.data?.currencies || [])
+      .filter((c) => c.id && c.isActive !== false)
+      .map((c) => ({ value: c.id, label: c.code || c.value || c.isoCode }));
+    if (!currencyOptions.value.length) throw Error("Moedas indisponíveis.");
+  } catch {
+    if (currencyActive)
+      currencyError.value = "Não foi possível carregar as moedas.";
+  } finally {
+    if (currencyActive) currencyLoading.value = false;
+  }
+}
+loadCurrencies();
+const currencyBadge = (code) =>
+  ({ BRL: "R$ · BRL", USD: "US$ · USD" })[code] || code;
 const empty = () => ({
+  currencyId: null,
   bankId: null,
   branch: "",
   accountNumber: "",
@@ -311,6 +368,7 @@ const openEdit = async (account) => {
     if (!current(session)) return;
     editingId.value = account.id;
     Object.assign(form, {
+      currencyId: d.currencyId ?? null,
       bankId: d.bankId,
       branch: d.branch,
       accountNumber: "",
@@ -352,6 +410,7 @@ const save = async () => {
             ? "Document"
             : "Random";
     const payload = {
+      currencyId: form.currencyId ?? null,
       bankId: form.bankId,
       branch: form.branch,
       accountNumber: form.accountNumber,
@@ -483,7 +542,7 @@ load().then(() => {
 .bank-inline-form {
   display: grid;
   grid-template-columns:
-    minmax(200px, 1.4fr) repeat(3, minmax(120px, 1fr))
+    minmax(200px, 1.4fr) repeat(4, minmax(120px, 1fr))
     auto 32px 32px;
   align-items: start;
   gap: 16px;

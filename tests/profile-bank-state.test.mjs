@@ -59,6 +59,11 @@ async function harness(startWithCreate = false) {
     },
     "src/services/clientAuthService": { getApiErrorMessage: (e) => e.message },
     "src/services/clientProfileService": services,
+    "src/services/financeService": {
+      financeGet: async () => ({
+        data: { currencies: [{ id: "brl", code: "BRL" }] },
+      }),
+    },
     "src/services/clientApi": {
       captureClientSession: () => session,
       isClientSessionCurrent: (value) => value === session,
@@ -148,9 +153,10 @@ test("archived accounts stay hidden when the API returns them after a reload", a
     { id: "legacy-archived", archivedAtUtc: "2026-11-05T13:00:00Z" },
   ]);
   await reload;
-  assert.deepEqual(Array.from(h.model.accounts.value, (account) => account.id), [
-    "primary",
-  ]);
+  assert.deepEqual(
+    Array.from(h.model.accounts.value, (account) => account.id),
+    ["primary"],
+  );
 });
 test("latest bank list survives an older request failure", async () => {
   const h = await harness(),
@@ -340,7 +346,7 @@ test("existing fields are disabled during submission without introducing new act
   });
   app.component("QIcon", { render: () => null });
   const html = await renderToString(app);
-  assert.equal((html.match(/<(?:input|select)\b/g) || []).length, 5);
+  assert.equal((html.match(/<(?:input|select)\b/g) || []).length, 6);
   for (const tag of html.match(/<(?:input|select)\b[^>]*>/g) || [])
     assert.match(tag, /disabled/);
   assert.match(html, /aria-label="Confirmar conta"/);
@@ -358,6 +364,7 @@ test("inline banking payload preserves account type, splits the digit and exclud
     accountType: "Savings",
     pixKey: "qa@example.com",
     isPrimary: true,
+    currencyId: "usd-qa",
     holderName: "must never be sent",
     holderType: "Individual",
   });
@@ -368,6 +375,7 @@ test("inline banking payload preserves account type, splits the digit and exclud
   assert.equal(body.accountNumber, "1234");
   assert.equal(body.accountDigit, "X");
   assert.equal(body.accountType, "Savings");
+  assert.equal(body.currencyId, "usd-qa");
   assert.equal(body.pixKeyType, "Email");
   assert.equal(body.holderName, undefined);
   assert.equal(body.holderType, undefined);

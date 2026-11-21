@@ -115,7 +115,9 @@ export function bankCurrency(bank) {
 }
 export function compatibleBanks(banks, currency) {
   return (banks || []).filter(
-    (bank) => bank.status === "Active" && bankCurrency(bank) === currency,
+    (bank) =>
+      bank.status === "Active" &&
+      (!bankCurrency(bank) || bankCurrency(bank) === currency),
   );
 }
 export function validateWalletOperation({
@@ -147,7 +149,9 @@ export function validateWalletOperation({
   }
   if (
     mode === "withdrawal" &&
-    (!bank || bank.status !== "Active" || bankCurrency(bank) !== currency)
+    (!bank ||
+      bank.status !== "Active" ||
+      (bankCurrency(bank) && bankCurrency(bank) !== currency))
   )
     return "Selecione uma conta ativa na mesma moeda.";
   if (

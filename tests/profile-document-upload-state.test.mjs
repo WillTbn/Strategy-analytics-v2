@@ -57,7 +57,7 @@ async function harness({ summaryFailure = false } = {}) {
     getClientProfileSummary: async () => {
       if (summaryFailure) throw Error("summary unavailable");
       return {
-        levelProgress: { level: 0, emailConfirmed: true, phoneVerified: false },
+        levelProgress: { level: 0, profileCompleted: true, emailConfirmed: true, phoneVerified: false },
       };
     },
     ...Object.fromEntries(methods.map((key) => [key, () => queue(reads, key)])),
@@ -95,6 +95,7 @@ async function harness({ summaryFailure = false } = {}) {
     "src/services/clientAssetsService": { listClientAssets: async () => [] },
     "src/services/onboardingBlock": { onboardingBlockMessage },
     "src/system/components/form/LabelForm.vue": { default: {} },
+    "src/system/components/setting/PhoneVerification.vue": { default: {} },
     "src/composables/useNotify": {
       default: () => ({
         successNotify: (v) => notifications.push(v),

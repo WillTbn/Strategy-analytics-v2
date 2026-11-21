@@ -51,7 +51,8 @@ export function clientTransferPayload(form, recipient, wallets) {
   if (available === null)
     throw new Error("Aguarde a confirmação do saldo disponível.");
   if (amount > available) throw new Error("O valor excede o saldo disponível.");
-  if (!form.withdrawalPassword) throw new Error("Informe sua Senha de Saque.");
+  if (!/^\d{6}$/.test(form.withdrawalPassword || ""))
+    throw new Error("Informe sua Senha de Saque de 6 dígitos.");
   return {
     recipientStrategyId: recipient.strategyId,
     currencyId: form.currencyId,

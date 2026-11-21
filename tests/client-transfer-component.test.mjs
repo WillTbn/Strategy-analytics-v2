@@ -150,7 +150,7 @@ test("component drops late recipient response and does not submit without curren
   await flush();
   assert.equal(h.m.recipient.value.strategyId, "SA-NEW");
   h.m.form.amount = 1;
-  h.m.form.withdrawalPassword = "ficticia";
+  h.m.form.withdrawalPassword = "123456";
   assert.equal(h.m.canSubmit.value, true);
   h.m.form.recipientStrategyId = "SA-OTHER";
   await flush();
@@ -166,7 +166,7 @@ test("component submits contract once, clears secret after 409 and reports no su
     data: { strategyId: "SA-TEST", displayName: "Test T." },
   });
   await flush();
-  Object.assign(h.m.form, { amount: 1, withdrawalPassword: "ficticia" });
+  Object.assign(h.m.form, { amount: 1, withdrawalPassword: "123456" });
   const a = h.m.confirm(),
     b = h.m.confirm();
   await flush();
@@ -190,7 +190,7 @@ test("component submits contract once, clears secret after 409 and reports no su
 test("component disposal clears secret and ignores recipient arriving after close", async () => {
   const h = await harness();
   await h.lookup("SA-TEST");
-  h.m.form.withdrawalPassword = "ficticia";
+  h.m.form.withdrawalPassword = "123456";
   h.dispose();
   h.reads[0].resolve({
     data: { strategyId: "SA-TEST", displayName: "Test T." },

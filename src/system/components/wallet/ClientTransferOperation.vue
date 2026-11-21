@@ -106,6 +106,8 @@
       <label
         >Senha de Saque<q-input
           v-model="form.withdrawalPassword"
+          maxlength="6"
+          inputmode="numeric"
           type="password"
           outlined
           dense
@@ -342,9 +344,17 @@ async function confirm() {
       wallets.state.data,
     );
     busy.value = true;
-    await intent.submit(payload);
+    const result = await intent.submit(payload);
     if (active) {
-      $q.notify({ type: "positive", message: "Transferência solicitada." });
+      $q.notify({
+        type: "positive",
+        message:
+          result?.status === "Completed"
+            ? "Transferência concluída."
+            : result?.status === "Initiated"
+              ? "Transferência iniciada. Valor reservado para conclusão em até 30 dias."
+              : "Transferência registrada. Consulte o histórico.",
+      });
       emit("completed");
     }
   } catch (e) {

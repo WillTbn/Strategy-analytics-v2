@@ -95,8 +95,10 @@ export function getApiErrorMessage(
     return code.toLowerCase().includes("file")
       ? "O arquivo enviado não atende aos requisitos."
       : "Revise os dados informados e tente novamente.";
-  if (status === 503 || code.toLowerCase().includes("storage"))
+  if (code.toLowerCase().includes("storage"))
     return "O armazenamento está temporariamente indisponível. Tente novamente mais tarde.";
+  if (status === 503)
+    return "O serviço está temporariamente indisponível. Tente novamente mais tarde.";
   if (error?.response?.status === 403) {
     const payload = error.response?.data?.data ?? error.response?.data ?? {};
     const action =
@@ -113,6 +115,16 @@ export function getApiErrorMessage(
         `Conclua a etapa de onboarding “${action}” para continuar.`
       );
   }
+  const currencyErrors = {
+    "customers.invalid_bank_account_currency":
+      "Selecione uma moeda ativa para a conta.",
+    "transaction.bank_account_currency_mismatch":
+      "A moeda da operação deve ser a mesma da conta bancária.",
+  };
+  const currencyCode = error?.response?.data?.errors?.find(
+    (item) => currencyErrors[item.code],
+  )?.code;
+  if (currencyCode) return currencyErrors[currencyCode];
   const errors = error?.response?.data?.errors;
   if (Array.isArray(errors) && errors.length) {
     const message = errors

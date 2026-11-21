@@ -24,7 +24,7 @@ const form = () => ({
   sourceWallet: "Free",
   destinationWallet: "Applied",
   amount: 10,
-  withdrawalPassword: "ficticia",
+  withdrawalPassword: "123456",
 });
 const httpError = (status, code) => ({
   response: { status, data: { errors: [{ code }] } },
