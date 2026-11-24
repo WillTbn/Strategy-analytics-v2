@@ -18,10 +18,24 @@
       <div class="row justify-between items-center q-mt-lg">
         <div class="col-lg-auto col-12" style="display: flex; align-items: end">
           <div style="line-height: 1rem">
-            <p class="text-roboto-32-700">
+            <p
+              class="text-roboto-32-700"
+              :tabindex="showDetails ? 0 : undefined"
+              :aria-label="
+                showDetails ? `${title}: ${amountLabel(amounts[0])}` : undefined
+              "
+            >
               {{
                 loading ? "…" : viewValues ? "••••" : amountLabel(amounts[0])
               }}
+              <q-tooltip v-if="showDetails" style="max-width: 280px">
+                <div
+                  v-for="detail in details"
+                  :key="detail.label + detail.currency"
+                >
+                  {{ detail.label }}: {{ amountLabel(detail) }}
+                </div>
+              </q-tooltip>
             </p>
             <p
               v-for="amount in empty ? [] : amounts.slice(1)"
@@ -55,11 +69,6 @@
           {{ comparisonLabel }}
         </p>
       </div>
-      <div v-if="!loading && !error" class="text-caption q-mt-sm">
-        <div v-for="detail in details" :key="detail.label + detail.currency">
-          {{ detail.label }}: {{ viewValues ? "••••" : amountLabel(detail) }}
-        </div>
-      </div>
       <div v-if="error" role="alert" class="text-caption">
         {{ error }}
         <q-btn
@@ -92,6 +101,13 @@ const props = defineProps({
   showComparison: { type: Boolean, default: true },
   comparisonPercentage: { type: Number, default: null },
 });
+const showDetails = computed(
+  () =>
+    props.details.length > 0 &&
+    !props.loading &&
+    !props.error &&
+    !props.viewValues,
+);
 const comparisonLabel = computed(() =>
   numericValue(props.comparisonPercentage) === null
     ? "Variação indisponível"
