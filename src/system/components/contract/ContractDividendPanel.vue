@@ -58,6 +58,7 @@
 <script setup>
 import { computed, onScopeDispose, ref, watch } from "vue";
 import Apexchart from "vue3-apexcharts";
+import chartLocale from "apexcharts/dist/locales/pt-br.json";
 import {
   detailSeriesReady,
   detailNumber as number,
@@ -144,6 +145,8 @@ async function setDestination(value) {
 const options = computed(() => ({
   theme: { mode: "dark" },
   chart: {
+    locales: [chartLocale],
+    defaultLocale: "pt-br",
     background: "transparent",
     toolbar: { show: false },
     animations: { enabled: false },

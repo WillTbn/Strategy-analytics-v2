@@ -119,6 +119,7 @@
 <script setup>
 import { computed, reactive, ref, watch } from "vue";
 import Apexchart from "vue3-apexcharts";
+import chartLocale from "apexcharts/dist/locales/pt-br.json";
 import { contractSeriesPeriod } from "src/services/contractDirectory";
 import {
   detailAssets as assets,
@@ -218,6 +219,8 @@ const base = {
   theme: { mode: "dark" },
   colors: ["#00a3ff", "#00f5d9", "#7438ff"],
   chart: {
+    locales: [chartLocale],
+    defaultLocale: "pt-br",
     background: "transparent",
     toolbar: { show: false },
     animations: { enabled: false },
