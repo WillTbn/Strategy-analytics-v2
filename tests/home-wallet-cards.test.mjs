@@ -4,6 +4,8 @@ import vm from "node:vm";
 import { readFileSync } from "node:fs";
 import { parse, compileScript } from "@vue/compiler-sfc";
 import * as Vue from "vue";
+import { renderToString } from "@vue/server-renderer";
+import { amountLabel } from "../src/services/walletPresentation.js";
 import * as cards from "../src/services/homeWalletCards.js";
 const metric = (value) => ({ status: "Available", value });
 const home = () => ({
@@ -148,4 +150,118 @@ test("Home reload and failure clear old headlines instead of showing stale opera
   assert.deepEqual(Array.from(f.h.totals.value), []);
   f.props.home.error = "";
   assert.equal(f.h.totals.value[0].value, 999);
+});
+
+async function renderedCards() {
+  const context = vm.createContext({ console, Number, Array });
+  const code = compileScript(
+    parse(
+      readFileSync(
+        "src/system/layouts/wallet/BalancecurrentLayout.vue",
+        "utf8",
+      ),
+    ).descriptor,
+    { id: "balance-render", inlineTemplate: true },
+  ).content;
+  const mod = new vm.SourceTextModule(code, { context });
+  const layout = Vue.reactive({ dashboard: { view_wallet_value: false } });
+  const card = {
+    props: ["title", "amounts", "loading", "error", "viewValues"],
+    setup: (p) => () =>
+      Vue.h(
+        "output",
+        { "data-card": p.title || "Total" },
+        p.loading
+          ? "loading"
+          : p.error
+            ? "error"
+            : (p.viewValues ?? layout.dashboard.view_wallet_value)
+              ? "hidden"
+              : amountLabel(p.amounts?.[0]),
+      ),
+  };
+  const deps = {
+    vue: Vue,
+    pinia: { storeToRefs: Vue.toRefs },
+    "src/stores/layoutStore": { useStoreLayout: () => layout },
+    "src/services/walletModel": { YIELD_DESCRIPTION: "" },
+    "src/services/homeWalletCards": cards,
+    "src/system/components/wallet/BalanceItems.vue": { default: card },
+    "src/system/components/wallet/WalletTotal.vue": { default: card },
+  };
+  await mod.link(async (name) => {
+    const values = deps[name] || { default: { render: () => null } };
+    return new vm.SyntheticModule(
+      Object.keys(values),
+      function () {
+        for (const [key, value] of Object.entries(values))
+          this.setExport(key, value);
+      },
+      { context },
+    );
+  });
+  await mod.evaluate();
+  const props = Vue.reactive({
+    home: { loading: true, error: "", data: null },
+    wallets: { loading: true, error: "", data: null },
+    profile: { loading: true, data: null },
+    deposits: { loading: true, data: null },
+  });
+  const container = {
+    setup:
+      (_, { slots }) =>
+      () =>
+        Vue.h("div", slots.default?.()),
+  };
+  const render = async () => {
+    const app = Vue.createSSRApp({
+      render: () => Vue.h(mod.namespace.default, props),
+    });
+    app.component("q-card", container).component("q-card-section", container);
+    return Array.from(
+      (await renderToString(app)).matchAll(/<output[^>]*>(.*?)<\/output>/g),
+      (m) => m[1],
+    );
+  };
+  return { props, layout, render };
+}
+
+test("all four rendered card boundaries release one snapshot, independent of slower or failed auxiliary reads", async () => {
+  const f = await renderedCards();
+  assert.deepEqual(await f.render(), Array(4).fill("loading"));
+  f.props.wallets.loading = false;
+  f.props.wallets.error = "Operational wallets failed";
+  assert.deepEqual(await f.render(), Array(4).fill("loading"));
+  f.props.home.data = home();
+  f.props.home.loading = false;
+  const visible = [999, 10, 20, 30].map((value) =>
+    amountLabel({ currency: "BRL", value }),
+  );
+  assert.deepEqual(await f.render(), visible);
+  f.layout.dashboard.view_wallet_value = true;
+  assert.deepEqual(await f.render(), Array(4).fill("hidden"));
+  f.layout.dashboard.view_wallet_value = false;
+  assert.deepEqual(await f.render(), visible);
+  f.props.home.loading = true;
+  assert.deepEqual(await f.render(), Array(4).fill("loading"));
+  f.props.home.loading = false;
+  f.props.home.error = "Home failed";
+  assert.deepEqual(await f.render(), Array(4).fill("error"));
+});
+
+test("zero balances render R$ 0,00 together; missing metrics remain unavailable instead of invented zero", async () => {
+  const f = await renderedCards();
+  const snapshot = home();
+  for (const key of ["total", "deposit", "strategy", "patrimony"])
+    snapshot.wallets[key] = metric(0);
+  f.props.home.data = snapshot;
+  f.props.home.loading = false;
+  assert.deepEqual(
+    await f.render(),
+    Array(4).fill(amountLabel({ currency: "BRL", value: 0 })),
+  );
+  f.props.home.data.wallets.strategy = { status: "NotAvailable", value: null };
+  const values = await f.render();
+  assert.equal(values[2], "—");
+  assert.equal(values[0], amountLabel({ currency: "BRL", value: 0 }));
 });
