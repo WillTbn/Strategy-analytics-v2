@@ -5,12 +5,8 @@
         :amounts="totals"
         :wallet-model="walletModel"
         :empty="empty"
-        :loading="
-          home.loading ||
-          wallets.loading ||
-          (deposits.loading && totals.every((amount) => amount.value === null))
-        "
-        :error="home.error || wallets.error || deposits.error"
+        :loading="home.loading"
+        :error="home.error"
         @retry="$emit('retry-home')"
       />
       <chart-wallet
@@ -39,9 +35,9 @@
         :show-comparison="false"
         :amounts="depositAmounts"
         :details="depositDetails"
-        :loading="wallets.loading"
-        :error="wallets.error"
-        @retry="$emit('retry-wallets')"
+        :loading="home.loading"
+        :error="home.error || wallets.error"
+        @retry="$emit('retry-home')"
         description="Entrada e saída de dinheiro, sem rendimento. Saque para conta do mesmo titular e na mesma moeda, em até 1 dia útil."
         :view-values="dashboard.view_wallet_value"
       />
@@ -53,7 +49,7 @@
         :show-comparison="false"
         :amounts="strategyAmounts"
         :details="strategyDetails"
-        :loading="home.loading || wallets.loading"
+        :loading="home.loading"
         :error="home.error || wallets.error"
         @retry="$emit('retry-home')"
         :description="YIELD_DESCRIPTION"
@@ -66,9 +62,9 @@
         :empty="empty"
         :show-comparison="false"
         :amounts="assetAmounts"
-        :loading="wallets.loading"
-        :error="wallets.error"
-        @retry="$emit('retry-wallets')"
+        :loading="home.loading"
+        :error="home.error"
+        @retry="$emit('retry-home')"
         description="Bens declarados: imóveis, veículos, consórcios e investimentos externos. Compõe a Carteira Total, mas não é saldo disponível para saque."
         :view-values="dashboard.view_wallet_value"
       />
@@ -80,11 +76,10 @@ import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useStoreLayout } from "src/stores/layoutStore";
 import { YIELD_DESCRIPTION } from "src/services/walletModel";
-import { walletDisplayAmounts } from "src/services/portfolioProjection";
+import { homeWalletCardAmounts } from "src/services/homeWalletCards";
 import BalanceItems from "src/system/components/wallet/BalanceItems.vue";
 import WalletTotal from "src/system/components/wallet/WalletTotal.vue";
 import ChartWallet from "src/system/components/ChartWallet.vue";
-import { emptyAmounts } from "src/services/homePresentation";
 const props = defineProps({
   walletModel: { type: Object, default: null },
   home: { type: Object, required: true },
@@ -101,18 +96,12 @@ const props = defineProps({
 defineEmits(["retry-home", "retry-wallets"]);
 const { dashboard } = storeToRefs(useStoreLayout());
 const empty = computed(() => props.walletModel?.empty === true);
-// This view model is supplied only by an explicitly validated API adapter.
-function amountsFor(type) {
-  const wallet = props.walletModel?.[type];
-  if (wallet?.total != null && props.walletModel?.principalCurrency)
-    return [
-      { currency: props.walletModel.principalCurrency, value: wallet.total },
-    ];
-  return (wallet?.currencies || []).map((row) => ({
-    currency: row.currency,
-    value: row.balance,
-  }));
-}
+// Headline cards must never be reconstructed from native wallet balances.
+const cards = computed(() =>
+  homeWalletCardAmounts(
+    props.home.loading || props.home.error ? null : props.home.data,
+  ),
+);
 function detailsFor(type, fields) {
   return (props.walletModel?.[type]?.currencies || []).flatMap((row) =>
     fields.map(([key, label]) => ({
@@ -134,23 +123,10 @@ const strategyDetails = computed(() =>
     ["idle", "Parado"],
   ]),
 );
-const totals = computed(() =>
-  walletDisplayAmounts(props.walletModel, "total").map((row) => ({
-    currency: row.currency,
-    value: row.balance,
-  })),
-);
-const depositAmounts = computed(() =>
-  props.walletModel ? amountsFor("deposit") : empty.value ? emptyAmounts() : [],
-);
-const strategyAmounts = computed(() =>
-  props.walletModel
-    ? amountsFor("strategy")
-    : empty.value
-      ? emptyAmounts()
-      : [],
-);
-const assetAmounts = computed(() => amountsFor("assets"));
+const totals = computed(() => cards.value.total);
+const depositAmounts = computed(() => cards.value.deposit);
+const strategyAmounts = computed(() => cards.value.strategy);
+const assetAmounts = computed(() => cards.value.assets);
 const strategySubtitle = computed(() => {
   const contracts = props.home.data?.contracts;
   if (contracts?.status !== "Available" || !Array.isArray(contracts.items))

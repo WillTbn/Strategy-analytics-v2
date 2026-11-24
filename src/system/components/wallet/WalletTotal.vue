@@ -8,9 +8,8 @@
         tabindex="0"
         aria-label="Sobre a Carteira Total"
         ><q-tooltip
-          >Depósito + Strategy + Patrimônio, por moeda. O total depende da
-          disponibilidade das três parcelas; moedas diferentes não são
-          somadas.</q-tooltip
+          >Depósito + Strategy + Patrimônio, convertidos para a moeda principal
+          da sua conta pela cotação do dia.</q-tooltip
         ></q-icon
       >
     </p>
