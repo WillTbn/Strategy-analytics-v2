@@ -178,3 +178,12 @@ watch(
   margin-right: 8px
   color:#00A3FF
 </style>
+
+<style scoped>
+@media (max-width: 599px) {
+  .wallet-total .text-h3 {
+    font-size: clamp(1.25rem, 7vw, 2rem);
+    overflow-wrap: anywhere;
+  }
+}
+</style>
